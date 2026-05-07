@@ -3450,13 +3450,6 @@ function renderSettings(){
       icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>',
       action:'openSettingsTheme'
     },
-    {
-      key:'coachMode',
-      label:tt({pl:'Tryb trenera',en:'Coach Mode',de:'Trainer-Modus',es:'Modo entrenador'}),
-      value:S.coachMode?tt({pl:'Włączony',en:'Enabled',de:'Aktiviert',es:'Activado'}):tt({pl:'Wyłączony',en:'Disabled',de:'Deaktiviert',es:'Desactivado'}),
-      icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
-      action:'openSettingsCoachMode'
-    }
   ];
 
   const proCard=proCardHtml();
@@ -3967,8 +3960,8 @@ function initSupabase(){
         // Trigger sync flow on FRESH sign-in (not on session refresh / page reload)
         if(!wasLoggedIn&&(event==='SIGNED_IN'||event==='INITIAL_SESSION')){
           // Small delay so renderSettings finishes first; only on explicit sign-in
-          if(event==='SIGNED_IN')setTimeout(()=>{postLoginSyncFlow();upsertProfile();checkPendingInvitations();setupRealtimeSubscriptions();},400);
-          if(event==='INITIAL_SESSION')setTimeout(()=>{upsertProfile();checkPendingInvitations();setupRealtimeSubscriptions();autoSyncFromCloud();},600);
+          if(event==='SIGNED_IN')setTimeout(()=>{postLoginSyncFlow();upsertProfile();syncProfileFlags();checkPendingInvitations();setupRealtimeSubscriptions();},400);
+          if(event==='INITIAL_SESSION')setTimeout(()=>{upsertProfile();syncProfileFlags();checkPendingInvitations();setupRealtimeSubscriptions();autoSyncFromCloud();},600);
         }
       } else {
         S.user=null;
@@ -4458,6 +4451,24 @@ async function upsertProfile(){
     email:S.user.email,
     display_name:name,
   },{onConflict:'id'});
+}
+
+// Sync is_pro / is_coach flags set by admin from Supabase profiles
+async function syncProfileFlags(){
+  if(!sb||!S.user)return;
+  const {data,error}=await sb.from('profiles').select('is_pro,is_coach').eq('id',S.user.id).single();
+  if(error||!data)return;
+  let changed=false;
+  if(data.is_pro&&!S.isPro){S.isPro=true;changed=true;}
+  if(data.is_coach){
+    // Dynamically add to whitelist so isCoachAllowed() returns true
+    const email=(S.user.email||'').toLowerCase().trim();
+    if(!COACH_WHITELIST.map(e=>e.toLowerCase()).includes(email)){
+      COACH_WHITELIST.push(S.user.email);
+    }
+    if(!S.coachMode){S.coachMode=true;changed=true;}
+  }
+  if(changed){saveAll();updateCoachNav();updateAdminNav();renderDashboard();renderSettings();}
 }
 
 // ── CLIENT SCREEN ──────────────────────────────────────────
