@@ -5110,6 +5110,7 @@ function switchCalTab(tab){
 
 let _planningProgram=null;
 let _selectedPlanDate=null;
+let _planEditMode=false; // true = show add panel even if day has plan
 
 function getWeekDates(offsetWeeks=0){
   const now=new Date();
@@ -5131,89 +5132,187 @@ function renderWeekPlan(){
   const dates=getWeekDates(_planWeekOffset);
   const dayNames=T[lang]?.days||T.en.days;
   const today_=today();
+  const weekLabel=`${dates[0].slice(8)} — ${dates[6].slice(8)}.${dates[6].slice(5,7)}.${dates[6].slice(0,4)}`;
 
-  // Banner shown while assigning program days
-  const plannerBanner=_planningProgram?`
-    <div style="background:var(--accent-dim);border:1px solid var(--accent);border-radius:12px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px;">
+  // ── Banner: program assignment mode ──
+  let html='';
+  if(_planningProgram){
+    const dn=_planningProgram.days[_planningProgram.currentDayIdx];
+    const nm=dn?(typeof dn.name==='object'?(dn.name[lang]||dn.name.en||dn.name.pl||''):dn.name||''):'';
+    html+=`<div style="background:var(--accent-dim);border:1px solid var(--accent);border-radius:12px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px;">
       <div style="font-size:20px;">📅</div>
       <div style="flex:1;">
         <div style="font-size:13px;font-weight:700;color:var(--accent);">${tt({pl:'Kliknij dzień dla treningu',en:'Click a day for workout',de:'Tag für Training klicken',es:'Haz clic en un día'})} ${_planningProgram.currentDayIdx+1}/${_planningProgram.days.length}</div>
-        <div style="font-size:12px;color:var(--text2);margin-top:2px;">${(()=>{const n=_planningProgram.days[_planningProgram.currentDayIdx]?.name;return typeof n==='object'?(n[lang]||n.en||n.pl||''):n||'';})()}</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px;">${nm}</div>
       </div>
-      <button onclick="planCancelProgram()" style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:0;">✕</button>
-    </div>`:'';
+      <button data-wp="cancel-prog" style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:0;">✕</button>
+    </div>`;
+  }
 
-  const weekLabel=`${dates[0].slice(8)} — ${dates[6].slice(8)}.${dates[6].slice(5,7)}.${dates[6].slice(0,4)}`;
+  // ── Week navigation ──
+  html+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+    <button data-wp="prev" style="background:none;border:none;cursor:pointer;color:var(--text2);padding:6px;font-size:20px;">◀</button>
+    <div style="font-size:13px;font-weight:600;">${weekLabel}</div>
+    <button data-wp="next" style="background:none;border:none;cursor:pointer;color:var(--text2);padding:6px;font-size:20px;">▶</button>
+  </div>`;
 
-  const dayCards=dates.map((date,i)=>{
+  // ── Day cards ──
+  const dayCardsHtml=dates.map((date,i)=>{
     const plan=S.weekPlan?.[date];
     const isToday=date===today_;
     const isPast=date<today_;
     const isSelected=date===_selectedPlanDate;
     let content='';
-    if(plan&&plan.type==='custom'){
+    if(plan?.type==='custom'){
       content=`<div style="background:rgba(100,200,255,0.12);border-radius:8px;padding:4px 6px;font-size:11px;font-weight:600;color:#64c8ff;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${plan.name}</div>`;
-    } else if(plan&&plan.type==='template'){
+    }else if(plan?.type==='template'){
       content=`<div style="background:var(--accent-dim);border-radius:8px;padding:4px 6px;font-size:11px;font-weight:600;color:var(--accent);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${plan.name}</div>`;
-    } else {
+    }else{
       content=`<div style="font-size:11px;color:var(--text3);margin-top:4px;">Rest</div>`;
     }
     const border=isSelected?'border:2px solid var(--accent);':_planningProgram?'border:2px dashed var(--accent);':'border:1px solid var(--border);';
     const bg=isSelected?'var(--accent-dim2)':isToday?'var(--accent-dim)':'var(--bg2)';
-    // Hover only on non-selected cards
-    const hover=isSelected?'':` onmouseenter="this.style.background='var(--bg3)'" onmouseleave="this.style.background='${bg}'"`;
-    return`<div onclick="planDayClick('${date}')" style="${border}border-radius:12px;padding:10px 8px;background:${bg};${isPast?'opacity:0.65;':''}text-align:center;min-height:80px;cursor:pointer;transition:all 0.12s;user-select:none;"${hover}>
+    return`<div data-wp="day" data-date="${date}" style="${border}border-radius:12px;padding:10px 8px;background:${bg};${isPast?'opacity:0.65;':''}text-align:center;min-height:80px;cursor:pointer;transition:all 0.12s;user-select:none;">
       <div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;">${dayNames[i]}</div>
       <div style="font-size:18px;font-weight:700;${isToday||isSelected?'color:var(--accent)':''}">${date.slice(8)}</div>
       ${content}
     </div>`;
   }).join('');
+  html+=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:14px;">${dayCardsHtml}</div>`;
 
-  // Action panel shown when a day is selected
-  let actionPanel='';
+  // ── Action / info panel ──
   if(_selectedPlanDate&&!_planningProgram){
     const [y,m,d]=_selectedPlanDate.split('-');
-    const hasPlan=!!(S.weekPlan?.[_selectedPlanDate]);
+    const plan=S.weekPlan?.[_selectedPlanDate];
     const sd=_selectedPlanDate;
-    const tplBtns=S.templates.length
-      ?S.templates.map(tp=>`<button class="btn btn-ghost" style="text-align:left;font-size:13px;" onclick="planAssignTpl('${sd}',${tp.id})">💪 ${tp.name||'?'}</button>`).join('')
-      :`<div style="font-size:13px;color:var(--text3);text-align:center;padding:8px;">${tt({pl:'Brak szablonów',en:'No templates',de:'Keine Vorlagen',es:'Sin plantillas'})}</div>`;
-    const progBtn=S.programs&&S.programs.length
-      ?`<button class="btn btn-ghost" style="text-align:left;font-size:13px;" onclick="planPickProgram()">📅 ${tt({pl:'Z programu',en:'From program',de:'Aus Programm',es:'De programa'})}</button>`:'';
-    const removeBtn=hasPlan?`<button class="btn btn-danger" style="font-size:13px;margin-top:4px;" onclick="planRemoveDay('${sd}')">🗑 ${tt({pl:'Usuń dzień',en:'Remove',de:'Entfernen',es:'Eliminar'})}</button>`:'';
-    actionPanel=`
-      <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:14px;margin-bottom:14px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-          <span style="font-size:13px;font-weight:700;color:var(--accent);">📅 ${d}.${m}.${y}</span>
-          <button onclick="planDeselect()" style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:2px 6px;line-height:1;">✕</button>
+    html+=`<div style="background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:14px;margin-bottom:14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <span style="font-size:13px;font-weight:700;color:var(--accent);">📅 ${d}.${m}.${y}</span>
+        <button data-wp="deselect" style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:2px 6px;line-height:1;">✕</button>
+      </div>`;
+
+    if(plan&&!_planEditMode){
+      // ── Info view: day already has a workout ──
+      const icon=plan.type==='template'?'📋':'✏️';
+      const typeLbl=plan.type==='template'
+        ?tt({pl:'Szablon',en:'Template',de:'Vorlage',es:'Plantilla'})
+        :tt({pl:'Własny',en:'Custom',de:'Eigenes',es:'Personalizado'});
+      const exRows=plan.exercises?.length
+        ?plan.exercises.map(e=>`<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--border);">
+            <span style="color:var(--text2);">• ${e.name||'?'}</span>
+            <span style="color:var(--text3);flex-shrink:0;">${e.sets||3}×${e.reps||10}</span>
+          </div>`).join(''):'';
+      html+=`<div data-wp="view-detail" data-date="${sd}" style="cursor:pointer;margin-bottom:12px;" title="${tt({pl:'Kliknij by zobaczyć szczegóły',en:'Click to see details',de:'Klicken für Details',es:'Toca para ver detalles'})}">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:18px;">${icon}</span>
+            <div>
+              <div style="font-size:15px;font-weight:700;">${plan.name}</div>
+              <div style="font-size:11px;color:var(--text3);">${typeLbl}${plan.exercises?.length?' · '+plan.exercises.length+' '+tt({pl:'ćwiczeń',en:'exercises',de:'Übungen',es:'ejercicios'}):''}</div>
+            </div>
+            <span style="margin-left:auto;color:var(--text3);font-size:16px;">›</span>
+          </div>
+          ${exRows?`<div style="margin-top:8px;max-height:120px;overflow-y:auto;">${exRows}</div>`:''}
         </div>
-        <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">${tt({pl:'Dodaj trening',en:'Add workout',de:'Training hinzufügen',es:'Añadir entrenamiento'})}</div>
+        <div style="display:flex;gap:8px;">
+          <button data-wp="change-plan" class="btn btn-ghost" style="flex:1;font-size:13px;">🔄 ${tt({pl:'Zmień',en:'Change',de:'Ändern',es:'Cambiar'})}</button>
+          <button data-wp="remove" data-date="${sd}" class="btn btn-danger" style="flex:1;font-size:13px;">🗑 ${tt({pl:'Usuń',en:'Remove',de:'Entfernen',es:'Eliminar'})}</button>
+        </div>`;
+    }else{
+      // ── Add / edit view ──
+      const tplBtns=S.templates.length
+        ?S.templates.map(tp=>`<button data-wp="assign-tpl" data-date="${sd}" data-tpl-id="${tp.id}" class="btn btn-ghost" style="text-align:left;font-size:13px;">💪 ${tp.name||'?'}</button>`).join('')
+        :`<div style="font-size:13px;color:var(--text3);text-align:center;padding:8px;">${tt({pl:'Brak szablonów',en:'No templates',de:'Keine Vorlagen',es:'Sin plantillas'})}</div>`;
+      const progBtn=S.programs?.length?`<button data-wp="program" class="btn btn-ghost" style="text-align:left;font-size:13px;">📅 ${tt({pl:'Z programu',en:'From program',de:'Aus Programm',es:'De programa'})}</button>`:'';
+      const backBtn=plan?`<button data-wp="cancel-edit" class="btn btn-ghost" style="font-size:13px;color:var(--text3);">← ${tt({pl:'Anuluj',en:'Cancel',de:'Abbrechen',es:'Cancelar'})}</button>`:'';
+      html+=`<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">${tt({pl:'Dodaj / Zmień trening',en:'Add / Change workout',de:'Training hinzufügen',es:'Añadir / cambiar'})}</div>
         <div style="display:flex;flex-direction:column;gap:7px;">
-          <button class="btn btn-ghost" style="text-align:left;font-size:13px;" onclick="planAddCustom('${sd}')">✏️ ${tt({pl:'Własny (z ćwiczeniami)',en:'Custom workout',de:'Eigenes Training',es:'Entrenamiento personalizado'})}</button>
+          <button data-wp="custom" data-date="${sd}" class="btn btn-ghost" style="text-align:left;font-size:13px;">✏️ ${tt({pl:'Własny (z ćwiczeniami)',en:'Custom workout',de:'Eigenes Training',es:'Entrenamiento personalizado'})}</button>
           ${tplBtns}
           ${progBtn}
-          ${removeBtn}
-        </div>
-      </div>`;
+          ${backBtn}
+        </div>`;
+    }
+    html+=`</div>`;
   }
 
-  el.innerHTML=`
-    ${plannerBanner}
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-      <button onclick="_planWeekOffset--;renderWeekPlan();" style="background:none;border:none;cursor:pointer;color:var(--text2);padding:6px;">◀</button>
-      <div style="font-size:13px;font-weight:600;">${weekLabel}</div>
-      <button onclick="_planWeekOffset++;renderWeekPlan();" style="background:none;border:none;cursor:pointer;color:var(--text2);padding:6px;">▶</button>
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:14px;">${dayCards}</div>
-    ${actionPanel}
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button class="btn btn-ghost" style="font-size:13px;" onclick="clearWeekPlan()">🗑 ${tt({pl:'Wyczyść tydzień',en:'Clear week',de:'Woche leeren',es:'Limpiar semana'})}</button>
-    </div>`;
+  // ── Clear week — bottom ──
+  html+=`<div style="margin-top:12px;"><button data-wp="clear" class="btn btn-ghost" style="font-size:13px;width:100%;">🗑 ${tt({pl:'Wyczyść tydzień',en:'Clear week',de:'Woche leeren',es:'Limpiar semana'})}</button></div>`;
+
+  el.innerHTML=html;
+
+  // ── Attach event listeners (no inline onclick → closures work correctly) ──
+  el.querySelectorAll('[data-wp]').forEach(btn=>{
+    btn.addEventListener('click',e=>{
+      e.stopPropagation();
+      const wp=btn.dataset.wp;
+      const date=btn.dataset.date||_selectedPlanDate;
+      const tplId=btn.dataset.tplId?+btn.dataset.tplId:null;
+      switch(wp){
+        case 'prev':_planWeekOffset--;renderWeekPlan();break;
+        case 'next':_planWeekOffset++;renderWeekPlan();break;
+        case 'cancel-prog':_planningProgram=null;renderWeekPlan();break;
+        case 'day':planDayClick(btn.dataset.date);break;
+        case 'deselect':_selectedPlanDate=null;_planEditMode=false;renderWeekPlan();break;
+        case 'cancel-edit':_planEditMode=false;renderWeekPlan();break;
+        case 'change-plan':_planEditMode=true;renderWeekPlan();break;
+        case 'assign-tpl':{
+          const tp=S.templates.find(t=>+t.id===tplId);
+          if(!tp)return;
+          if(!S.weekPlan)S.weekPlan={};
+          S.weekPlan[date]={type:'template',templateId:tp.id,name:tp.name};
+          saveAll();_selectedPlanDate=null;_planEditMode=false;renderWeekPlan();break;
+        }
+        case 'custom':planAddCustom(btn.dataset.date||_selectedPlanDate);break;
+        case 'program':planPickProgram();break;
+        case 'remove':{
+          if(S.weekPlan)delete S.weekPlan[date];
+          saveAll();_selectedPlanDate=null;_planEditMode=false;renderWeekPlan();break;
+        }
+        case 'view-detail':showPlanDetailModal(btn.dataset.date);break;
+        case 'clear':clearWeekPlan();break;
+      }
+    });
+  });
 }
+
+function showPlanDetailModal(date){
+  const plan=S.weekPlan?.[date];
+  if(!plan)return;
+  closeModal();
+  const [y,m,d]=date.split('-');
+  let bodyHtml='';
+  if(plan.type==='template'){
+    const tp=S.templates.find(t=>+t.id===plan.templateId);
+    bodyHtml=tp
+      ?tp.exercises.map(e=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+          <span style="font-size:14px;">${exName(e)}</span>
+          <span style="font-size:12px;color:var(--text3);">${e.sets||3} × ${e.reps||10}</span>
+        </div>`).join('')
+      :`<div style="color:var(--text3);font-size:13px;">${tt({pl:'Szablon usunięty',en:'Template deleted',de:'Vorlage gelöscht',es:'Plantilla eliminada'})}</div>`;
+  }else if(plan.type==='custom'&&plan.exercises?.length){
+    bodyHtml=plan.exercises.map(e=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+        <span style="font-size:14px;">${e.name||'?'}</span>
+        <span style="font-size:12px;color:var(--text3);">${e.sets||3} × ${e.reps||10}</span>
+      </div>`).join('');
+  }
+  const ov=document.createElement('div');ov.className='modal-overlay';
+  ov.innerHTML=`<div class="modal">
+    <div class="modal-handle"></div>
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px;">
+      <div>
+        <div style="font-size:19px;font-weight:700;">${plan.type==='template'?'📋':'✏️'} ${plan.name}</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px;">📅 ${d}.${m}.${y}</div>
+      </div>
+      <button onclick="closeModal()" style="background:none;border:none;color:var(--text3);font-size:24px;cursor:pointer;padding:0 4px;line-height:1;">×</button>
+    </div>
+    <div style="max-height:62vh;overflow-y:auto;margin-top:10px;">${bodyHtml||`<div style="color:var(--text3);font-size:13px;text-align:center;padding:20px;">${tt({pl:'Brak ćwiczeń',en:'No exercises',de:'Keine Übungen',es:'Sin ejercicios'})}</div>`}</div>
+  </div>`;
+  document.body.appendChild(ov);S.modal=ov;
+}
+window.showPlanDetailModal=showPlanDetailModal;
 
 function planDayClick(date){
   if(_planningProgram){
-    // Program assignment mode — click assigns next workout
     const day=_planningProgram.days[_planningProgram.currentDayIdx];
     if(!S.weekPlan)S.weekPlan={};
     const name=typeof day.name==='object'?(day.name[lang]||day.name.en||day.name.pl||''):day.name||'';
@@ -5227,8 +5326,8 @@ function planDayClick(date){
     renderWeekPlan();
     return;
   }
-  // Toggle selection — clicking same day deselects
-  _selectedPlanDate=(_selectedPlanDate===date)?null:date;
+  if(_selectedPlanDate===date){_selectedPlanDate=null;_planEditMode=false;}
+  else{_selectedPlanDate=date;_planEditMode=false;}
   renderWeekPlan();
 }
 
