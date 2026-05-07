@@ -1240,9 +1240,12 @@ function renderProgress(){
 
   const isPL=lang==='pl';
   const tabsHtml=`<div style="display:flex;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:4px;margin-bottom:16px;">
-    <button onclick="setProgressTab('lifts')" style="flex:1;padding:11px 12px;border-radius:9px;border:none;background:${_progressTab==='lifts'?'var(--accent)':'none'};color:${_progressTab==='lifts'?'var(--btn-text)':'var(--text2)'};font-weight:700;font-size:14px;cursor:pointer;font-family:inherit;">${tt({pl:'Twoje wyniki',en:'Your Lifts',de:'Deine Leistung',es:'Tu Rendimiento'})}</button>
-    <button onclick="setProgressTab('templates')" style="flex:1;padding:11px 12px;border-radius:9px;border:none;background:${_progressTab==='templates'?'var(--accent)':'none'};color:${_progressTab==='templates'?'var(--btn-text)':'var(--text2)'};font-weight:700;font-size:14px;cursor:pointer;font-family:inherit;">${t('templates')}</button>
+    <button onclick="setProgressTab('lifts')" style="flex:1;padding:10px 8px;border-radius:9px;border:none;background:${_progressTab==='lifts'?'var(--accent)':'none'};color:${_progressTab==='lifts'?'var(--btn-text)':'var(--text2)'};font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">${tt({pl:'Wyniki',en:'Your Lifts',de:'Leistung',es:'Rendimiento'})}</button>
+    <button onclick="setProgressTab('templates')" style="flex:1;padding:10px 8px;border-radius:9px;border:none;background:${_progressTab==='templates'?'var(--accent)':'none'};color:${_progressTab==='templates'?'var(--btn-text)':'var(--text2)'};font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">${t('templates')}</button>
+    <button onclick="setProgressTab('records')" style="flex:1;padding:10px 8px;border-radius:9px;border:none;background:${_progressTab==='records'?'var(--accent)':'none'};color:${_progressTab==='records'?'var(--btn-text)':'var(--text2)'};font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">${tt({pl:'Rekordy',en:'Records',de:'Rekorde',es:'Récords'})}</button>
   </div>`;
+
+  if(_progressTab==='records'){renderRecordsTab(el,tabsHtml);return;}
 
   if(_progressTab==='templates'){
     if(!S.templates.length){el.innerHTML=tabsHtml+`<div class="empty-state">${t('noData')}</div>`;return;}
@@ -1352,7 +1355,110 @@ function renderProgress(){
   },100);
 }
 
-window.setProgressTab=tab=>{_progressTab=tab;renderProgress();};
+// ===== RECORDS / PERSONAL BESTS =====
+let _recordsFilter='';
+
+function renderRecordsTab(el,tabsHtml){
+  // Collect all sets from workout history, grouped by exercise name
+  const exMap={};
+  for(const [wk,w] of Object.entries(S.workouts)){
+    const dateStr=w.date||wk.split('_')[0]||wk;
+    for(const ex of (w.exercises||[])){
+      const nm=exName(ex).trim();
+      if(!nm)continue;
+      if(!exMap[nm])exMap[nm]=[];
+      for(const s of (ex.sets||[])){
+        const wt=+(s.weight||0),r=+(s.reps||0);
+        if(wt<=0||r<=0)continue;
+        exMap[nm].push({weight:wt,reps:r,e1RM:epleyEst1RM(wt,r),date:dateStr});
+      }
+    }
+  }
+  if(!Object.keys(exMap).length){
+    el.innerHTML=tabsHtml+`<div class="empty-state">${tt({pl:'Brak danych. Zrób kilka treningów.',en:'No data yet. Complete some workouts.',de:'Noch keine Daten.',es:'Sin datos aún.'})}</div>`;
+    return;
+  }
+  let records=Object.entries(exMap).map(([name,sets])=>{
+    const sorted=sets.slice().sort((a,b)=>b.e1RM-a.e1RM);
+    const bestE1RM=sorted[0].e1RM;
+    const bestSet=sets.reduce((b,s)=>(s.weight>b.weight||(s.weight===b.weight&&s.reps>b.reps))?s:b,sets[0]);
+    const rm=reps=>Math.round(bestE1RM/(1+reps/30)*2)/2;
+    return{name,sets:sorted,bestE1RM,bestSet,rm3:rm(3),rm5:rm(5),rm8:rm(8)};
+  });
+  const f=_recordsFilter.toLowerCase();
+  if(f)records=records.filter(r=>r.name.toLowerCase().includes(f));
+  records.sort((a,b)=>a.name.localeCompare(b.name));
+
+  const safeName=n=>n.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+  const cards=records.map(r=>`
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px;cursor:pointer;transition:border-color 0.12s;" onclick="showRecordDetail('${safeName(r.name)}')" onmouseenter="this.style.borderColor='var(--border2)'" onmouseleave="this.style.borderColor='var(--border)'">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:15px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.name}</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:3px;">e1RM <span style="color:var(--accent);font-weight:700;">${dispW(r.bestE1RM)}${unitW()}</span>&nbsp;·&nbsp;${tt({pl:'Najlepsza seria',en:'Best',de:'Bester Satz',es:'Mejor serie'})}: <strong>${dispW(r.bestSet.weight)}${unitW()} × ${r.bestSet.reps}</strong></div>
+        </div>
+        <span style="color:var(--text3);font-size:20px;margin-left:8px;flex-shrink:0;">›</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+        ${[{l:'3RM',v:r.rm3,rp:3},{l:'5RM',v:r.rm5,rp:5},{l:'8RM',v:r.rm8,rp:8}].map(rm=>`
+          <div style="background:var(--bg3);border-radius:10px;padding:10px 8px;text-align:center;">
+            <div style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:0.5px;margin-bottom:5px;">${rm.l}</div>
+            <div style="font-size:13px;font-weight:700;">${dispW(rm.v)}${unitW()}</div>
+            <div style="font-size:11px;color:var(--text3);">× ${rm.rp}</div>
+          </div>`).join('')}
+      </div>
+    </div>`).join('');
+
+  el.innerHTML=tabsHtml+`
+    <div style="font-size:22px;font-weight:800;letter-spacing:-0.5px;margin-bottom:2px;">${tt({pl:'Rekordy',en:'Records',de:'Rekorde',es:'Récords'})}</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:14px;">${tt({pl:'Twoje najlepsze serie i szacowane 1RM',en:'Your best sets and estimated 1RM',de:'Beste Sätze und geschätztes 1RM',es:'Tus mejores series y 1RM estimado'})}</div>
+    <input type="text" id="recordsSearch" value="${_recordsFilter.replace(/"/g,'&quot;')}" placeholder="${t('search')}" oninput="window._recordsFilter=this.value;_recordsFilter=this.value;renderProgress();" style="margin-bottom:16px;"/>
+    ${records.length?cards:`<div class="empty-state">${tt({pl:'Brak wyników',en:'No results',de:'Keine Ergebnisse',es:'Sin resultados'})}</div>`}`;
+}
+
+window.showRecordDetail=function(name){
+  const sets={};
+  for(const [wk,w] of Object.entries(S.workouts)){
+    const dateStr=w.date||wk.split('_')[0]||wk;
+    for(const ex of (w.exercises||[])){
+      if(exName(ex).trim()!==name)continue;
+      for(const s of (ex.sets||[])){
+        const wt=+(s.weight||0),r=+(s.reps||0);
+        if(wt<=0||r<=0)continue;
+        const key=`${dateStr}|${wt}|${r}`;
+        if(!sets[key])sets[key]={weight:wt,reps:r,e1RM:epleyEst1RM(wt,r),date:dateStr};
+      }
+    }
+  }
+  const sorted=Object.values(sets).sort((a,b)=>b.e1RM-a.e1RM);
+  const ov=document.createElement('div');ov.className='modal-overlay';
+  ov.innerHTML=`<div class="modal">
+    <div class="modal-handle"></div>
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px;">
+      <div>
+        <div style="font-size:18px;font-weight:700;">${tt({pl:'Rekordy',en:'Records',de:'Rekorde',es:'Récords'})}</div>
+        <div style="font-size:13px;color:var(--text2);margin-top:2px;">${name}</div>
+      </div>
+      <button onclick="closeModal();" style="background:none;border:none;color:var(--text3);font-size:24px;cursor:pointer;padding:0 4px;line-height:1;">×</button>
+    </div>
+    <div style="max-height:62vh;overflow-y:auto;margin-top:12px;">
+      ${sorted.map((s,i)=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);${i===0?'background:var(--accent-dim);margin:0 -4px;padding:12px 4px;border-radius:8px;margin-bottom:4px;':''}">
+        <div>
+          <div style="font-size:15px;font-weight:700;">${dispW(s.weight)}${unitW()} × ${s.reps}${i===0?` <span style="font-size:10px;background:var(--accent);color:var(--btn-text);padding:2px 6px;border-radius:4px;font-weight:700;vertical-align:middle;">PR</span>`:''}
+          </div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px;">${s.date}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:11px;color:var(--text3);">e1RM</div>
+          <div style="font-size:17px;font-weight:700;color:var(--accent);">${dispW(s.e1RM)}${unitW()}</div>
+        </div>
+      </div>`).join('')}
+    </div>
+  </div>`;
+  document.body.appendChild(ov);S.modal=ov;
+};
+
+window.setProgressTab=tab=>{_progressTab=tab;renderProgress()};
 window.setProgressGk=gk=>{_progressGk=gk;renderProgress();};
 window.toggleProgressEquip=eq=>{
   if(eq==='__all__'){_progressEquip.clear();}
@@ -5034,7 +5140,7 @@ function renderWeekPlan(){
         <div style="font-size:13px;font-weight:700;color:var(--accent);">${tt({pl:'Kliknij dzień dla treningu',en:'Click a day for workout',de:'Tag für Training klicken',es:'Haz clic en un día'})} ${_planningProgram.currentDayIdx+1}/${_planningProgram.days.length}</div>
         <div style="font-size:12px;color:var(--text2);margin-top:2px;">${(()=>{const n=_planningProgram.days[_planningProgram.currentDayIdx]?.name;return typeof n==='object'?(n[lang]||n.en||n.pl||''):n||'';})()}</div>
       </div>
-      <button onclick="_planningProgram=null;renderWeekPlan();" style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:0;">✕</button>
+      <button onclick="planCancelProgram()" style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:0;">✕</button>
     </div>`:'';
 
   const weekLabel=`${dates[0].slice(8)} — ${dates[6].slice(8)}.${dates[6].slice(5,7)}.${dates[6].slice(0,4)}`;
@@ -5054,7 +5160,9 @@ function renderWeekPlan(){
     }
     const border=isSelected?'border:2px solid var(--accent);':_planningProgram?'border:2px dashed var(--accent);':'border:1px solid var(--border);';
     const bg=isSelected?'var(--accent-dim2)':isToday?'var(--accent-dim)':'var(--bg2)';
-    return`<div onclick="planDayClick('${date}')" style="${border}border-radius:12px;padding:10px 8px;background:${bg};${isPast?'opacity:0.65;':''}text-align:center;min-height:80px;cursor:pointer;transition:all 0.12s;user-select:none;" onmouseenter="if('${date}'!==_selectedPlanDate)this.style.background='var(--bg3)'" onmouseleave="if('${date}'!==_selectedPlanDate)this.style.background='${bg}'">
+    // Hover only on non-selected cards
+    const hover=isSelected?'':` onmouseenter="this.style.background='var(--bg3)'" onmouseleave="this.style.background='${bg}'"`;
+    return`<div onclick="planDayClick('${date}')" style="${border}border-radius:12px;padding:10px 8px;background:${bg};${isPast?'opacity:0.65;':''}text-align:center;min-height:80px;cursor:pointer;transition:all 0.12s;user-select:none;"${hover}>
       <div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;">${dayNames[i]}</div>
       <div style="font-size:18px;font-weight:700;${isToday||isSelected?'color:var(--accent)':''}">${date.slice(8)}</div>
       ${content}
@@ -5066,21 +5174,22 @@ function renderWeekPlan(){
   if(_selectedPlanDate&&!_planningProgram){
     const [y,m,d]=_selectedPlanDate.split('-');
     const hasPlan=!!(S.weekPlan?.[_selectedPlanDate]);
+    const sd=_selectedPlanDate;
     const tplBtns=S.templates.length
-      ?S.templates.map(tp=>`<button class="btn btn-ghost" style="text-align:left;font-size:13px;" onclick="assignPlanDay('${_selectedPlanDate}','template',${tp.id},'${(tp.name||'').replace(/'/g,"\\'")}');_selectedPlanDate=null;renderWeekPlan();">💪 ${tp.name||'?'}</button>`).join('')
+      ?S.templates.map(tp=>`<button class="btn btn-ghost" style="text-align:left;font-size:13px;" onclick="planAssignTpl('${sd}',${tp.id},'${(tp.name||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')">💪 ${tp.name||'?'}</button>`).join('')
       :`<div style="font-size:13px;color:var(--text3);text-align:center;padding:8px;">${tt({pl:'Brak szablonów',en:'No templates',de:'Keine Vorlagen',es:'Sin plantillas'})}</div>`;
     const progBtn=S.programs&&S.programs.length
       ?`<button class="btn btn-ghost" style="text-align:left;font-size:13px;" onclick="planPickProgram()">📅 ${tt({pl:'Z programu',en:'From program',de:'Aus Programm',es:'De programa'})}</button>`:'';
-    const removeBtn=hasPlan?`<button class="btn btn-danger" style="font-size:13px;margin-top:4px;" onclick="removePlanDay('${_selectedPlanDate}');_selectedPlanDate=null;renderWeekPlan();">🗑 ${tt({pl:'Usuń dzień',en:'Remove',de:'Entfernen',es:'Eliminar'})}</button>`:'';
+    const removeBtn=hasPlan?`<button class="btn btn-danger" style="font-size:13px;margin-top:4px;" onclick="planRemoveDay('${sd}')">🗑 ${tt({pl:'Usuń dzień',en:'Remove',de:'Entfernen',es:'Eliminar'})}</button>`:'';
     actionPanel=`
       <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:14px;margin-bottom:14px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
           <span style="font-size:13px;font-weight:700;color:var(--accent);">📅 ${d}.${m}.${y}</span>
-          <button onclick="_selectedPlanDate=null;renderWeekPlan();" style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:2px 6px;line-height:1;">✕</button>
+          <button onclick="planDeselect()" style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:2px 6px;line-height:1;">✕</button>
         </div>
         <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">${tt({pl:'Dodaj trening',en:'Add workout',de:'Training hinzufügen',es:'Añadir entrenamiento'})}</div>
         <div style="display:flex;flex-direction:column;gap:7px;">
-          <button class="btn btn-ghost" style="text-align:left;font-size:13px;" onclick="planAddCustom('${_selectedPlanDate}')">✏️ ${tt({pl:'Własny (wpisz nazwę)',en:'Custom workout',de:'Eigenes Training',es:'Entrenamiento personalizado'})}</button>
+          <button class="btn btn-ghost" style="text-align:left;font-size:13px;" onclick="planAddCustom('${sd}')">✏️ ${tt({pl:'Własny (z ćwiczeniami)',en:'Custom workout',de:'Eigenes Training',es:'Entrenamiento personalizado'})}</button>
           ${tplBtns}
           ${progBtn}
           ${removeBtn}
@@ -5124,19 +5233,54 @@ function planDayClick(date){
 }
 
 function planAddCustom(date){
-  closeModal();
-  const ov=document.createElement('div');ov.className='modal-overlay';
-  ov.innerHTML=`<div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title" style="margin-bottom:16px;">✏️ ${tt({pl:'Własny trening',en:'Custom workout',de:'Eigenes Training',es:'Entrenamiento personalizado'})}</div>
-    <input type="text" id="customWoName" placeholder="${tt({pl:'Np. Bieganie, Cardio, Rozciąganie...',en:'E.g. Running, Cardio, Stretching...',de:'Z.B. Laufen, Cardio, Dehnen...',es:'Ej. Carrera, Cardio, Estiramiento...'})}" style="margin-bottom:14px;" autofocus/>
-    <div style="display:flex;gap:8px;">
-      <button class="btn btn-primary" style="flex:1;" onclick="(function(){const n=document.getElementById('customWoName').value.trim();if(!n)return;if(!S.weekPlan)S.weekPlan={};S.weekPlan['${date}']={type:'custom',name:n};saveAll();_selectedPlanDate=null;closeModal();renderWeekPlan();})();">${tt({pl:'Dodaj',en:'Add',de:'Hinzufügen',es:'Añadir'})}</button>
-      <button class="btn btn-ghost" style="flex:1;" onclick="closeModal();">${tt({pl:'Anuluj',en:'Cancel',de:'Abbrechen',es:'Cancelar'})}</button>
-    </div>
-  </div>`;
-  document.body.appendChild(ov);S.modal=ov;
-  setTimeout(()=>document.getElementById('customWoName')?.focus(),100);
+  let _cExs=[];
+  function openCustomModal(savedName){
+    if(S.modal){S.modal.remove();S.modal=null;}
+    const ov=document.createElement('div');ov.className='modal-overlay';
+    const exsHtml=_cExs.length
+      ?_cExs.map((e,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);">
+          <div style="flex:1;font-size:14px;">${e.name||'?'}</div>
+          <button onclick="window._planCRemoveEx(${i})" style="background:none;border:none;color:var(--red);font-size:20px;cursor:pointer;line-height:1;padding:0 4px;">×</button>
+        </div>`).join('')
+      :`<div style="font-size:12px;color:var(--text3);padding:8px 0;">${tt({pl:'Brak ćwiczeń (opcjonalnie)',en:'No exercises yet (optional)',de:'Keine Übungen (optional)',es:'Sin ejercicios (opcional)'})}</div>`;
+    ov.innerHTML=`<div class="modal">
+      <div class="modal-handle"></div>
+      <div class="modal-title" style="margin-bottom:14px;">✏️ ${tt({pl:'Własny trening',en:'Custom workout',de:'Eigenes Training',es:'Entrenamiento personalizado'})}</div>
+      <input type="text" id="planCName" value="${(savedName||'').replace(/"/g,'&quot;')}" placeholder="${tt({pl:'Np. Cardio, Bieganie...',en:'E.g. Cardio, Running...',de:'Z.B. Cardio, Laufen...',es:'Ej. Cardio, Carrera...'})}" style="margin-bottom:14px;"/>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div style="font-size:13px;font-weight:600;">${tt({pl:'Ćwiczenia',en:'Exercises',de:'Übungen',es:'Ejercicios'})} <span style="color:var(--text3);">(${_cExs.length})</span></div>
+        <button class="btn-new" style="font-size:12px;padding:7px 12px;" onclick="window._planCPickEx()">+ ${tt({pl:'Dodaj',en:'Add',de:'Hinzufügen',es:'Añadir'})}</button>
+      </div>
+      <div style="max-height:32vh;overflow-y:auto;margin-bottom:14px;">${exsHtml}</div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-primary" style="flex:1;" onclick="window._planCSave('${date}')">${tt({pl:'Zapisz',en:'Save',de:'Speichern',es:'Guardar'})}</button>
+        <button class="btn btn-ghost" style="flex:1;" onclick="closeModal()">${tt({pl:'Anuluj',en:'Cancel',de:'Abbrechen',es:'Cancelar'})}</button>
+      </div>
+    </div>`;
+    document.body.appendChild(ov);S.modal=ov;
+    setTimeout(()=>{if(!savedName)document.getElementById('planCName')?.focus();},60);
+  }
+  window._planCPickEx=()=>{
+    const nm=document.getElementById('planCName')?.value||'';
+    if(S.modal){S.modal.remove();S.modal=null;}
+    showExPicker(_cExs,picked=>{
+      _cExs=picked.map(e=>({id:e.id,name:exName(e),pl:e.pl,en:e.en,gk:e.gk}));
+      openCustomModal(nm);
+    });
+  };
+  window._planCRemoveEx=idx=>{
+    const nm=document.getElementById('planCName')?.value||'';
+    _cExs.splice(idx,1);
+    openCustomModal(nm);
+  };
+  window._planCSave=d=>{
+    const n=(document.getElementById('planCName')?.value||'').trim();
+    if(!n){document.getElementById('planCName')?.focus();return;}
+    if(!S.weekPlan)S.weekPlan={};
+    S.weekPlan[d]={type:'custom',name:n,exercises:_cExs.map(e=>({id:e.id,name:e.name,pl:e.pl,en:e.en,gk:e.gk}))};
+    saveAll();_selectedPlanDate=null;closeModal();renderWeekPlan();
+  };
+  openCustomModal('');
 }
 window.planAddCustom=planAddCustom;
 
@@ -5194,6 +5338,12 @@ window.assignPlanDay=assignPlanDay;
 window.removePlanDay=removePlanDay;
 window.clearWeekPlan=clearWeekPlan;
 window.planDayClick=planDayClick;
+window.renderWeekPlan=renderWeekPlan;
+// Window helpers for inline onclick (let variables not accessible from inline handlers)
+window.planDeselect=()=>{_selectedPlanDate=null;renderWeekPlan();};
+window.planCancelProgram=()=>{_planningProgram=null;renderWeekPlan();};
+window.planAssignTpl=(date,id,name)=>{assignPlanDay(date,'template',id,name);_selectedPlanDate=null;renderWeekPlan();};
+window.planRemoveDay=date=>{if(S.weekPlan)delete S.weekPlan[date];saveAll();_selectedPlanDate=null;renderWeekPlan();};
 window.switchCalTab=switchCalTab;
 
 loadData();
