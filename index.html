@@ -254,6 +254,11 @@ body.light #screen-dashboard::before{background:url('./light_logo.png') center/c
 .onb-option-icon{font-size:26px;flex-shrink:0;}
 .onb-option-label{font-size:14px;font-weight:600;color:var(--text);}
 .onb-option.selected .onb-option-label{color:var(--accent);}
+/* ── Toggle Switch ── */
+.toggle-switch{width:44px;height:24px;border-radius:12px;background:var(--bg4);border:1px solid var(--border2);cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0;}
+.toggle-switch.on{background:var(--accent);}
+.toggle-knob{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform 0.2s;}
+.toggle-switch.on .toggle-knob{transform:translateX(20px);}
 /* ── Coach Mode ── */
 .coach-nav-item{display:none;}
 .invite-banner{background:var(--bg2);border:1px solid var(--accent);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px;display:flex;align-items:flex-start;gap:12px;}
@@ -291,6 +296,7 @@ body.light #screen-dashboard::before{background:url('./light_logo.png') center/c
       <div class="nav-item" onclick="showScreen('progress')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span data-key="progress">Progres</span></div>
       <div class="nav-item" onclick="showScreen('templates')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg><span data-key="templates">Szablony</span></div>
       <div class="nav-item coach-nav-item" data-screen="clients" onclick="showScreen('clients')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span data-key="clients">Klienci</span></div>
+      <div class="nav-item admin-nav-item" onclick="showScreen('admin')" style="display:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span>Admin</span></div>
     </div>
     <div class="sidebar-bottom">
       <div class="nav-item" onclick="showScreen('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span data-key="settings">Settings</span></div>
@@ -317,13 +323,22 @@ body.light #screen-dashboard::before{background:url('./light_logo.png') center/c
     <div id="screen-workouts" class="screen"><div id="workoutContent"></div></div>
     <div id="screen-calendar" class="screen">
       <div class="screen-header"><div class="screen-title" data-key="calendar">Kalendarz</div></div>
-      <div class="cal-header">
-        <button class="cal-nav-btn" onclick="changeMonth(-1)" aria-label="Previous month"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
-        <span id="calLabel"></span>
-        <button class="cal-nav-btn" onclick="changeMonth(1)" aria-label="Next month"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
+      <div style="display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid var(--border);">
+        <button id="calTabCal" onclick="switchCalTab('calendar')" style="flex:1;padding:10px;background:none;border:none;font-size:14px;font-weight:600;cursor:pointer;color:var(--accent);border-bottom:2px solid var(--accent);margin-bottom:-2px;font-family:inherit;">Kalendarz</button>
+        <button id="calTabPlan" onclick="switchCalTab('plan')" style="flex:1;padding:10px;background:none;border:none;font-size:14px;font-weight:600;cursor:pointer;color:var(--text3);border-bottom:2px solid transparent;margin-bottom:-2px;font-family:inherit;">Plan tygodnia</button>
       </div>
-      <div class="cal-stats" id="calStats"></div>
-      <div class="cal-grid" id="calGrid"></div><div id="calDetail"></div>
+      <div id="calTabCalContent">
+        <div class="cal-header">
+          <button class="cal-nav-btn" onclick="changeMonth(-1)" aria-label="Previous month"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+          <span id="calLabel"></span>
+          <button class="cal-nav-btn" onclick="changeMonth(1)" aria-label="Next month"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
+        </div>
+        <div class="cal-stats" id="calStats"></div>
+        <div class="cal-grid" id="calGrid"></div><div id="calDetail"></div>
+      </div>
+      <div id="calTabPlanContent" style="display:none;">
+        <div id="weekPlanContent"></div>
+      </div>
     </div>
     <div id="screen-exercises" class="screen">
       <div class="screen-header"><div class="screen-title" data-key="exercises">Ćwiczenia</div></div>
@@ -348,6 +363,10 @@ body.light #screen-dashboard::before{background:url('./light_logo.png') center/c
       <div class="screen-header"><div><div class="screen-title" id="settingsTitle">Settings</div></div></div>
       <div id="settingsContent"></div>
     </div>
+    <div id="screen-admin" class="screen">
+      <div class="screen-header"><div class="screen-title">Admin</div></div>
+      <div id="adminContent"></div>
+    </div>
     <div id="screen-clients" class="screen">
       <div class="screen-header">
         <div class="screen-title" data-key="clients">Klienci</div>
@@ -368,6 +387,7 @@ body.light #screen-dashboard::before{background:url('./light_logo.png') center/c
     <div class="mobile-nav-item" data-screen="templates" onclick="showScreen('templates')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg><span class="nav-label" data-key="templates">Templates</span></div>
     <div class="mobile-nav-item coach-nav-item" data-screen="clients" onclick="showScreen('clients')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="nav-label" data-key="clients">Klienci</span></div>
     <div class="mobile-nav-item" data-screen="settings" onclick="showScreen('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span class="nav-label" data-key="settings">Settings</span></div>
+    <div class="mobile-nav-item admin-nav-item" data-screen="admin" onclick="showScreen('admin')" style="display:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span class="nav-label">Admin</span></div>
   </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
@@ -524,7 +544,15 @@ const T={
   }
 };
 
-let lang=localStorage.getItem('bs-lang')||'en';
+let lang=(()=>{
+  const saved=localStorage.getItem('bs-lang');
+  if(saved)return saved;
+  const bl=(navigator.language||'en').toLowerCase().slice(0,2);
+  const sup=['pl','en','de','es'];
+  const detected=sup.includes(bl)?bl:'en';
+  localStorage.setItem('bs-lang',detected);
+  return detected;
+})();
 function t(k){return T[lang][k]||k;}
 // Inline 4-language picker for ad-hoc strings (cleaner than nested ternary)
 function tt(o){return (o&&typeof o==='object')?(o[lang]||o.en||o.pl||''):o;}
@@ -920,6 +948,9 @@ function isCoachAllowed(){
   return COACH_WHITELIST.map(e=>e.toLowerCase().trim()).includes(email);
 }
 
+const ADMIN_EMAILS=['beestrong@beestrongapp.com','deka.dsz@gmail.com'];
+function isAdmin(){return S.user&&ADMIN_EMAILS.includes(S.user.email);}
+
 // ===== SUPABASE CONFIG =====
 // Anon key is public-by-design — RLS policies in DB protect user data.
 // (NEVER paste service_role keys here — those bypass RLS and would leak data.)
@@ -927,7 +958,7 @@ const SUPABASE_URL='https://gtaskzdyoyscbgsqdvnk.supabase.co';
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd0YXNremR5b3lzY2Jnc3Fkdm5rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5OTU4MTIsImV4cCI6MjA5MzU3MTgxMn0.EPBUyLflxYSsr7BNdzVSZM4Q-M1oRAsBI9sIXhUDOH8';
 let sb=null; // Supabase client, initialized after DOM ready (see initSupabase)
 
-let S={month:new Date().getMonth(),year:new Date().getFullYear(),selectedDate:null,templates:[],workouts:{},measurements:{},activeWorkout:null,timerSecs:0,timerInterval:null,modal:null,loaded:false,isPro:false,coachMode:false,programs:[],clients:[],pendingInvites:[],user:null,defaultRest:90,units:'metric',goal:localStorage.getItem('bs-goal-v1')||'strength',level:localStorage.getItem('bs-level-v1')||'beginner'};
+let S={month:new Date().getMonth(),year:new Date().getFullYear(),selectedDate:null,templates:[],workouts:{},measurements:{},activeWorkout:null,timerSecs:0,timerInterval:null,modal:null,loaded:false,isPro:false,coachMode:false,programs:[],clients:[],pendingInvites:[],user:null,defaultRest:90,units:'metric',goal:localStorage.getItem('bs-goal-v1')||'strength',level:localStorage.getItem('bs-level-v1')||'beginner',weekPlan:{}};
 let progressChart=null;
 
 function exName(e){return e[lang]||e.pl||e.name||'';}
@@ -958,8 +989,9 @@ function loadData(){
   S.clients=ld('bs-clients-v1',[]);
   S.defaultRest=+ld('bs-default-rest-v1',90)||90;
   S.units=ld('bs-units-v1','metric');
+  S.weekPlan=ld('bs-week-plan-v1',{});
   S.loaded=true;
-  applyLang();applyTheme();updateCoachNav();
+  applyLang();applyTheme();updateCoachNav();updateAdminNav();
   renderCalendar();renderDashboard();renderTemplates();renderWorkout();renderProgress();renderSettings();
 
   // Set username in sidebar
@@ -1009,7 +1041,7 @@ function showNamePrompt(){
 }
 
 function saveAll(){
-  sv('bs-tpl-v4',S.templates);sv('bs-wo-v4',S.workouts);sv('bs-meas-v1',S.measurements);sv('bs-ispro-v1',S.isPro);sv('bs-coach-v1',S.coachMode);sv('bs-programs-v1',S.programs);sv('bs-clients-v1',S.clients);sv('bs-default-rest-v1',S.defaultRest);sv('bs-units-v1',S.units);if(S.goal)localStorage.setItem('bs-goal-v1',S.goal);if(S.level)localStorage.setItem('bs-level-v1',S.level);
+  sv('bs-tpl-v4',S.templates);sv('bs-wo-v4',S.workouts);sv('bs-meas-v1',S.measurements);sv('bs-ispro-v1',S.isPro);sv('bs-coach-v1',S.coachMode);sv('bs-programs-v1',S.programs);sv('bs-clients-v1',S.clients);sv('bs-default-rest-v1',S.defaultRest);sv('bs-units-v1',S.units);sv('bs-week-plan-v1',S.weekPlan||{});if(S.goal)localStorage.setItem('bs-goal-v1',S.goal);if(S.level)localStorage.setItem('bs-level-v1',S.level);
   const p=document.getElementById('savePill');p.classList.add('show');setTimeout(()=>p.classList.remove('show'),1800);
 }
 
@@ -1037,6 +1069,7 @@ function showScreen(name){
   // Profile screen removed — its content lives in Settings now (renderSettings handles measurements + Pro card)
   if(name==='settings')renderSettings();
   if(name==='clients')renderClients();
+  if(name==='admin')renderAdmin();
 }
 
 function typeTagHtml(types){
@@ -3428,8 +3461,32 @@ function renderSettings(){
 
   const proCard=proCardHtml();
   const rowsHtml=`<div style="border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border);margin-bottom:8px;">
-    ${settingsRows.map((row,i)=>`
-      <div onclick="${row.action}()" style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--bg2);cursor:pointer;transition:background 0.12s;${i>0?'border-top:1px solid var(--border);':''}"
+    ${settingsRows.map((row,i)=>{
+      const isUnits=row.key==='units';
+      const isTheme=row.key==='theme';
+      if(isUnits){
+        const isOn=S.units==='imperial';
+        return`<div style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--bg2);transition:background 0.12s;${i>0?'border-top:1px solid var(--border);':''}">
+          <div style="width:36px;height:36px;border-radius:10px;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;color:var(--accent);flex-shrink:0;">${row.icon}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:14px;font-weight:600;">${row.label}</div>
+            <div style="font-size:12px;color:var(--text2);margin-top:2px;">${isOn?'Imperial':'Metric'}</div>
+          </div>
+          <div class="toggle-switch ${isOn?'on':''}" onclick="event.stopPropagation();toggleUnitsInline()"><div class="toggle-knob"></div></div>
+        </div>`;
+      }
+      if(isTheme){
+        const isOn=!isDark;
+        return`<div style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--bg2);transition:background 0.12s;${i>0?'border-top:1px solid var(--border);':''}">
+          <div style="width:36px;height:36px;border-radius:10px;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;color:var(--accent);flex-shrink:0;">${row.icon}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:14px;font-weight:600;">${row.label}</div>
+            <div style="font-size:12px;color:var(--text2);margin-top:2px;">${isDark?'Dark':'Light'}</div>
+          </div>
+          <div class="toggle-switch ${isOn?'on':''}" onclick="event.stopPropagation();toggleThemeInline()"><div class="toggle-knob"></div></div>
+        </div>`;
+      }
+      return`<div onclick="${row.action}()" style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--bg2);cursor:pointer;transition:background 0.12s;${i>0?'border-top:1px solid var(--border);':''}"
         onmouseenter="this.style.background='var(--bg3)'" onmouseleave="this.style.background='var(--bg2)'"
         ontouchstart="this.style.background='var(--bg3)'" ontouchend="this.style.background='var(--bg2)'">
         <div style="width:36px;height:36px;border-radius:10px;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;color:var(--accent);flex-shrink:0;">${row.icon}</div>
@@ -3438,12 +3495,26 @@ function renderSettings(){
           <div style="font-size:12px;color:var(--text2);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${row.value}</div>
         </div>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="color:var(--text3);flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
-      </div>`).join('')}
+      </div>`;
+    }).join('')}
   </div>`;
 
   const versionLbl=`<div style="margin:24px 0 40px;padding:12px;text-align:center;font-size:11px;color:var(--text3);">BeeStrong Gym Tracker · v1.0</div>`;
 
   el.innerHTML=proCard+rowsHtml+versionLbl;
+}
+
+function toggleUnitsInline(){
+  S.units=S.units==='imperial'?'metric':'imperial';
+  localStorage.setItem('bs-units-v1',S.units);
+  renderSettings();
+  renderWorkout();
+}
+function toggleThemeInline(){
+  isDark=!isDark;
+  localStorage.setItem('bs-theme',isDark?'dark':'light');
+  document.body.classList.toggle('light',!isDark);
+  renderSettings();
 }
 
 function openSettingsName(){
@@ -3659,7 +3730,7 @@ window.openSettingsCoachMode=openSettingsCoachMode;
 window.setCoachMode=function(on){
   S.coachMode=!!on;
   saveAll();
-  renderSettings();renderPrograms();applyLang();updateCoachNav();
+  renderSettings();renderPrograms();applyLang();updateCoachNav();updateAdminNav();
 };
 
 // ===== MUSCLE GROUP MAPPING =====
@@ -3904,7 +3975,7 @@ function initSupabase(){
         S.pendingInvites=[];
       }
       if(typeof renderSettings==='function')renderSettings();
-      updateCoachNav();
+      updateCoachNav();updateAdminNav();
     });
   }catch(e){
     console.error('Supabase init error',e);
@@ -4830,6 +4901,233 @@ function setupRealtimeSubscriptions(){
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='visible')autoSyncFromCloud();
 });
+
+// ===== ADMIN PANEL =====
+
+function updateAdminNav(){
+  const show=isAdmin();
+  document.querySelectorAll('.admin-nav-item').forEach(el=>el.style.display=show?'flex':'none');
+}
+
+async function renderAdmin(){
+  const el=document.getElementById('adminContent');
+  if(!el)return;
+  if(!isAdmin()){el.innerHTML='<div style="color:var(--red);padding:20px;">Access denied.</div>';return;}
+  el.innerHTML=`<div style="margin-bottom:14px;"><input type="text" id="adminSearch" placeholder="${tt({pl:'Szukaj po imieniu lub mailu...',en:'Search by name or email...',de:'Nach Name oder E-Mail suchen...',es:'Buscar por nombre o email...'})}" oninput="filterAdminUsers()" style="font-size:14px;"/></div><div id="adminUserList"><div class="spinner" style="margin:32px auto;"></div></div>`;
+  if(!sb){el.querySelector('#adminUserList').innerHTML='<div style="color:var(--text3);text-align:center;padding:20px;">Supabase not available</div>';return;}
+  const {data,error}=await sb.from('profiles').select('id,email,display_name,is_pro,is_coach').order('created_at',{ascending:false});
+  if(error){el.querySelector('#adminUserList').innerHTML=`<div style="color:var(--red);padding:12px;">${error.message}</div>`;return;}
+  window._adminUsers=data||[];
+  renderAdminUserList(window._adminUsers);
+}
+
+function filterAdminUsers(){
+  const q=(document.getElementById('adminSearch')?.value||'').toLowerCase();
+  const filtered=(window._adminUsers||[]).filter(u=>(u.email||'').toLowerCase().includes(q)||(u.display_name||'').toLowerCase().includes(q));
+  renderAdminUserList(filtered);
+}
+
+function renderAdminUserList(users){
+  const el=document.getElementById('adminUserList');
+  if(!el)return;
+  if(!users.length){el.innerHTML=`<div style="text-align:center;color:var(--text3);padding:32px;">${tt({pl:'Brak użytkowników',en:'No users found',de:'Keine Benutzer',es:'Sin usuarios'})}</div>`;return;}
+  el.innerHTML=users.map(u=>`
+    <div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--bg2);border-radius:12px;margin-bottom:8px;">
+      <div style="width:40px;height:40px;border-radius:50%;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--accent);flex-shrink:0;">${(u.display_name||u.email||'?')[0].toUpperCase()}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${u.display_name||'—'}</div>
+        <div style="font-size:12px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${u.email||'—'}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;color:var(--text2);">
+          Pro <div class="toggle-switch ${u.is_pro?'on':''}" onclick="adminToggle('${u.id}','is_pro',${!u.is_pro})"><div class="toggle-knob"></div></div>
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;color:var(--text2);">
+          Coach <div class="toggle-switch ${u.is_coach?'on':''}" onclick="adminToggle('${u.id}','is_coach',${!u.is_coach})"><div class="toggle-knob"></div></div>
+        </label>
+      </div>
+    </div>`).join('');
+}
+
+async function adminToggle(userId,field,value){
+  if(!sb||!isAdmin())return;
+  const {error}=await sb.from('profiles').update({[field]:value}).eq('id',userId);
+  if(error){showSyncToast(error.message,'error');return;}
+  const u=window._adminUsers?.find(x=>x.id===userId);
+  if(u)u[field]=value;
+  renderAdminUserList(window._adminUsers||[]);
+  showSyncToast(tt({pl:'Zaktualizowano',en:'Updated',de:'Aktualisiert',es:'Actualizado'}),'success');
+}
+window.adminToggle=adminToggle;
+window.filterAdminUsers=filterAdminUsers;
+
+// ===== PLAN YOUR WEEK =====
+
+let _calTab='calendar';
+function switchCalTab(tab){
+  _calTab=tab;
+  document.getElementById('calTabCalContent').style.display=tab==='calendar'?'':'none';
+  document.getElementById('calTabPlanContent').style.display=tab==='plan'?'':'none';
+  const btnCal=document.getElementById('calTabCal');
+  const btnPlan=document.getElementById('calTabPlan');
+  if(btnCal){btnCal.style.color=tab==='calendar'?'var(--accent)':'var(--text3)';btnCal.style.borderBottom=tab==='calendar'?'2px solid var(--accent)':'2px solid transparent';}
+  if(btnPlan){btnPlan.style.color=tab==='plan'?'var(--accent)':'var(--text3)';btnPlan.style.borderBottom=tab==='plan'?'2px solid var(--accent)':'2px solid transparent';}
+  if(tab==='plan')renderWeekPlan();
+}
+
+let _planningProgram=null;
+
+function getWeekDates(offsetWeeks=0){
+  const now=new Date();
+  const day=now.getDay();
+  const diffToMon=day===0?-6:1-day;
+  const mon=new Date(now);
+  mon.setDate(now.getDate()+diffToMon+offsetWeeks*7);
+  return Array.from({length:7},(_,i)=>{
+    const d=new Date(mon);d.setDate(mon.getDate()+i);
+    return d.toISOString().slice(0,10);
+  });
+}
+
+let _planWeekOffset=0;
+
+function renderWeekPlan(){
+  const el=document.getElementById('weekPlanContent');
+  if(!el)return;
+  const dates=getWeekDates(_planWeekOffset);
+  const dayNames=lang==='pl'?['Pon','Wt','Śr','Czw','Pt','Sob','Nd']:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const today_=today();
+
+  const plannerBanner=_planningProgram?`
+    <div style="background:var(--accent-dim);border:1px solid var(--accent);border-radius:12px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px;">
+      <div style="font-size:20px;">📅</div>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:700;color:var(--accent);">${tt({pl:'Kliknij dzień dla treningu',en:'Click a day for workout',de:'Tag für Training klicken',es:'Haz clic en un día'})} ${_planningProgram.currentDayIdx+1}/${_planningProgram.days.length}</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px;">${_planningProgram.days[_planningProgram.currentDayIdx]?.name||''}</div>
+      </div>
+      <button onclick="_planningProgram=null;renderWeekPlan();" style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:0;">✕</button>
+    </div>`:'';
+
+  const weekLabel=`${dates[0].slice(8)} — ${dates[6].slice(8)}.${dates[6].slice(5,7)}.${dates[6].slice(0,4)}`;
+
+  const dayCards=dates.map((date,i)=>{
+    const plan=S.weekPlan?.[date];
+    const isToday=date===today_;
+    const isPast=date<today_;
+    let content='';
+    if(plan&&plan.type==='template'){
+      content=`<div style="background:var(--accent-dim);border-radius:8px;padding:6px 8px;font-size:12px;font-weight:600;color:var(--accent);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${plan.name}</div>`;
+    } else {
+      content=`<div style="font-size:11px;color:var(--text3);margin-top:4px;">${tt({pl:'Rest',en:'Rest',de:'Rest',es:'Rest'})}</div>`;
+    }
+    const activeBorder=_planningProgram?'border:2px solid var(--accent);cursor:pointer;':'border:1px solid var(--border);cursor:pointer;';
+    return`<div onclick="planDayClick('${date}')" style="${activeBorder}border-radius:12px;padding:10px 8px;background:${isToday?'var(--accent-dim)':'var(--bg2)'};${isPast?'opacity:0.6;':''}text-align:center;min-height:80px;transition:background 0.12s;" onmouseenter="this.style.background='var(--bg3)'" onmouseleave="this.style.background='${isToday?'var(--accent-dim)':'var(--bg2)'}'">
+      <div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;">${dayNames[i]}</div>
+      <div style="font-size:18px;font-weight:700;${isToday?'color:var(--accent)':''}">${date.slice(8)}</div>
+      ${content}
+    </div>`;
+  }).join('');
+
+  const addProgramBtn=S.programs&&S.programs.length?`<button class="btn btn-ghost" style="font-size:13px;" onclick="startPlanProgram()">${tt({pl:'📋 Dodaj program',en:'📋 Assign Program',de:'📋 Programm hinzufügen',es:'📋 Añadir programa'})}</button>`:'';
+
+  el.innerHTML=`
+    ${plannerBanner}
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <button onclick="_planWeekOffset--;renderWeekPlan();" style="background:none;border:none;cursor:pointer;color:var(--text2);padding:6px;">◀</button>
+      <div style="font-size:13px;font-weight:600;">${weekLabel}</div>
+      <button onclick="_planWeekOffset++;renderWeekPlan();" style="background:none;border:none;cursor:pointer;color:var(--text2);padding:6px;">▶</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:16px;">${dayCards}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      ${addProgramBtn}
+      <button class="btn btn-ghost" style="font-size:13px;" onclick="clearWeekPlan()">${tt({pl:'🗑 Wyczyść tydzień',en:'🗑 Clear week',de:'🗑 Woche leeren',es:'🗑 Limpiar semana'})}</button>
+    </div>`;
+}
+
+function planDayClick(date){
+  if(_planningProgram){
+    const day=_planningProgram.days[_planningProgram.currentDayIdx];
+    if(!S.weekPlan)S.weekPlan={};
+    S.weekPlan[date]={type:'template',templateId:day.id,name:day.name};
+    saveAll();
+    _planningProgram.currentDayIdx++;
+    if(_planningProgram.currentDayIdx>=_planningProgram.days.length){
+      _planningProgram=null;
+      showSyncToast(tt({pl:'Program przypisany do tygodnia ✓',en:'Program assigned to week ✓',de:'Programm der Woche zugewiesen ✓',es:'Programa asignado a la semana ✓'}),'success');
+    }
+    renderWeekPlan();
+    return;
+  }
+  showPlanDayOptions(date);
+}
+
+function showPlanDayOptions(date){
+  closeModal();
+  const current=S.weekPlan?.[date];
+  const [y,m,d]=date.split('-');
+  const ov=document.createElement('div');ov.className='modal-overlay';
+  const tplButtons=S.templates.map(tp=>`<button class="btn btn-ghost" style="text-align:left;font-size:13px;" onclick="assignPlanDay('${date}','template',${tp.id},'${tp.name.replace(/'/g,"\\'")}');closeModal();">💪 ${tp.name}</button>`).join('');
+  ov.innerHTML=`<div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" style="margin-bottom:16px;">📅 ${d}.${m}.${y}</div>
+    <div style="display:flex;flex-direction:column;gap:8px;max-height:60vh;overflow-y:auto;">
+      ${tplButtons}
+      <button class="btn btn-ghost" style="text-align:left;font-size:13px;" onclick="assignPlanDay('${date}','rest',null,'Rest');closeModal();">😴 Rest</button>
+      ${current?`<button class="btn btn-danger" style="text-align:left;font-size:13px;" onclick="removePlanDay('${date}');closeModal();">${tt({pl:'Usuń',en:'Remove',de:'Entfernen',es:'Eliminar'})}</button>`:''}
+    </div>
+  </div>`;
+  document.body.appendChild(ov);S.modal=ov;
+}
+
+function assignPlanDay(date,type,templateId,name){
+  if(!S.weekPlan)S.weekPlan={};
+  S.weekPlan[date]={type,templateId,name};
+  saveAll();
+  renderWeekPlan();
+}
+
+function removePlanDay(date){
+  if(S.weekPlan)delete S.weekPlan[date];
+  saveAll();
+  renderWeekPlan();
+}
+
+function clearWeekPlan(){
+  const dates=getWeekDates(_planWeekOffset);
+  if(!S.weekPlan)return;
+  dates.forEach(d=>delete S.weekPlan[d]);
+  saveAll();
+  renderWeekPlan();
+}
+
+function startPlanProgram(){
+  closeModal();
+  if(!S.programs||!S.programs.length)return;
+  const ov=document.createElement('div');ov.className='modal-overlay';
+  ov.innerHTML=`<div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" style="margin-bottom:16px;">${tt({pl:'Wybierz program',en:'Select Program',de:'Programm wählen',es:'Seleccionar programa'})}</div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      ${S.programs.map(p=>`<button class="btn btn-ghost" style="text-align:left;" onclick="selectPlanProgram(${p.id});closeModal();">📋 ${p.name}</button>`).join('')}
+    </div>
+  </div>`;
+  document.body.appendChild(ov);S.modal=ov;
+}
+window.selectPlanProgram=function(programId){
+  const prog=S.programs.find(p=>p.id===programId);
+  if(!prog||!prog.templates||!prog.templates.length)return;
+  _planningProgram={
+    days:prog.templates.map(t=>({id:t.id,name:t.name||tt({pl:'Trening',en:'Workout',de:'Training',es:'Entrenamiento'})})),
+    currentDayIdx:0
+  };
+  renderWeekPlan();
+};
+window.startPlanProgram=startPlanProgram;
+window.assignPlanDay=assignPlanDay;
+window.removePlanDay=removePlanDay;
+window.clearWeekPlan=clearWeekPlan;
+window.planDayClick=planDayClick;
+window.switchCalTab=switchCalTab;
 
 loadData();
 initSupabase();
