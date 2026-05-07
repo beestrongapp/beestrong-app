@@ -325,8 +325,8 @@ body.light #screen-dashboard::before{background:url('./light_logo.png') center/c
     <div id="screen-calendar" class="screen">
       <div class="screen-header"><div class="screen-title" data-key="calendar">Kalendarz</div></div>
       <div style="display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid var(--border);">
-        <button id="calTabCal" onclick="switchCalTab('calendar')" style="flex:1;padding:10px;background:none;border:none;font-size:14px;font-weight:600;cursor:pointer;color:var(--accent);border-bottom:2px solid var(--accent);margin-bottom:-2px;font-family:inherit;">Kalendarz</button>
-        <button id="calTabPlan" onclick="switchCalTab('plan')" style="flex:1;padding:10px;background:none;border:none;font-size:14px;font-weight:600;cursor:pointer;color:var(--text3);border-bottom:2px solid transparent;margin-bottom:-2px;font-family:inherit;">Plan tygodnia</button>
+        <button id="calTabCal" onclick="switchCalTab('calendar')" style="flex:1;padding:10px;background:none;border:none;font-size:14px;font-weight:600;cursor:pointer;color:var(--accent);border-bottom:2px solid var(--accent);margin-bottom:-2px;font-family:inherit;" data-key="calendar"></button>
+        <button id="calTabPlan" onclick="switchCalTab('plan')" style="flex:1;padding:10px;background:none;border:none;font-size:14px;font-weight:600;cursor:pointer;color:var(--text3);border-bottom:2px solid transparent;margin-bottom:-2px;font-family:inherit;" data-key="weekPlanTab"></button>
       </div>
       <div id="calTabCalContent">
         <div class="cal-header">
@@ -410,7 +410,8 @@ const T={
     exercises:'Ćwiczenia',addExercise:'Dodaj ćwiczenie',
     sets:'Serie',reps:'Powt.',kg:'Kg',superset:'Superseria',
     summary:'Podsumowanie',volume:'Objętość',time:'Czas',
-    firstWorkout:'Pierwszy trening z tego szablonu 💪',
+    firstWorkout:'Zrobione. Mocniejszy niż wczoraj. 🔥',
+    weekPlanTab:'Plan tygodnia',
     prevWorkout:'Poprzedni:',vsLast:'vs poprzedni',firstEver:'pierwszy trening',
     upper:'Upper',lower:'Lower',fbw:'FBW',chest:'Klatka',back:'Plecy',
     biceps:'Biceps',triceps:'Triceps',legs:'Nogi',glutes:'Pośladki',abs:'Brzuch',other:'Inne',
@@ -446,7 +447,8 @@ const T={
     exercises:'Exercises',addExercise:'Add exercise',
     sets:'Sets',reps:'Reps',kg:'Kg',superset:'Superset',
     summary:'Summary',volume:'Volume',time:'Time',
-    firstWorkout:'First workout with this template 💪',
+    firstWorkout:'Done. Stronger than yesterday. 🔥',
+    weekPlanTab:'Week plan',
     prevWorkout:'Previous:',vsLast:'vs previous',firstEver:'first workout',
     upper:'Upper',lower:'Lower',fbw:'FBW',chest:'Chest',back:'Back',
     biceps:'Biceps',triceps:'Triceps',legs:'Legs',glutes:'Glutes',abs:'Abs',other:'Other',
@@ -483,7 +485,8 @@ const T={
     exercises:'Übungen',addExercise:'Übung hinzufügen',
     sets:'Sätze',reps:'Wdh.',kg:'Kg',superset:'Supersatz',
     summary:'Zusammenfassung',volume:'Volumen',time:'Zeit',
-    firstWorkout:'Erstes Training mit dieser Vorlage 💪',
+    firstWorkout:'Geschafft. Stärker als gestern. 🔥',
+    weekPlanTab:'Wochenplan',
     prevWorkout:'Vorheriges:',vsLast:'vs. letztes',firstEver:'erstes Training',
     upper:'Oberkörper',lower:'Unterkörper',fbw:'Ganzkörper',chest:'Brust',back:'Rücken',
     biceps:'Bizeps',triceps:'Trizeps',legs:'Beine',glutes:'Gesäß',abs:'Bauch',other:'Andere',
@@ -520,7 +523,8 @@ const T={
     exercises:'Ejercicios',addExercise:'Añadir ejercicio',
     sets:'Series',reps:'Reps',kg:'Kg',superset:'Superserie',
     summary:'Resumen',volume:'Volumen',time:'Tiempo',
-    firstWorkout:'Primer entrenamiento con esta plantilla 💪',
+    firstWorkout:'Hecho. Más fuerte que ayer. 🔥',
+    weekPlanTab:'Plan semanal',
     prevWorkout:'Anterior:',vsLast:'vs. anterior',firstEver:'primer entrenamiento',
     upper:'Tren superior',lower:'Tren inferior',fbw:'Cuerpo completo',chest:'Pecho',back:'Espalda',
     biceps:'Bíceps',triceps:'Tríceps',legs:'Piernas',glutes:'Glúteos',abs:'Abdomen',other:'Otro',
@@ -5018,7 +5022,7 @@ function renderWeekPlan(){
   const el=document.getElementById('weekPlanContent');
   if(!el)return;
   const dates=getWeekDates(_planWeekOffset);
-  const dayNames=lang==='pl'?['Pon','Wt','Śr','Czw','Pt','Sob','Nd']:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const dayNames=T[lang]?.days||T.en.days;
   const today_=today();
 
   const plannerBanner=_planningProgram?`
@@ -5131,7 +5135,7 @@ function startPlanProgram(){
     <div class="modal-handle"></div>
     <div class="modal-title" style="margin-bottom:16px;">${tt({pl:'Wybierz program',en:'Select Program',de:'Programm wählen',es:'Seleccionar programa'})}</div>
     <div style="display:flex;flex-direction:column;gap:8px;">
-      ${S.programs.map(p=>`<button class="btn btn-ghost" style="text-align:left;" onclick="selectPlanProgram(${p.id});closeModal();">📋 ${p.name}</button>`).join('')}
+      ${S.programs.map(p=>`<button class="btn btn-ghost" style="text-align:left;" onclick="selectPlanProgram(${p.id});closeModal();">📋 ${localizedField(p,'name')||p.name?.en||p.name?.pl||p.name||'?'}</button>`).join('')}
     </div>
   </div>`;
   document.body.appendChild(ov);S.modal=ov;
