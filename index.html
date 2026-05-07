@@ -5176,7 +5176,7 @@ function renderWeekPlan(){
     const hasPlan=!!(S.weekPlan?.[_selectedPlanDate]);
     const sd=_selectedPlanDate;
     const tplBtns=S.templates.length
-      ?S.templates.map(tp=>`<button class="btn btn-ghost" style="text-align:left;font-size:13px;" onclick="planAssignTpl('${sd}',${tp.id},'${(tp.name||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')">💪 ${tp.name||'?'}</button>`).join('')
+      ?S.templates.map(tp=>`<button class="btn btn-ghost" style="text-align:left;font-size:13px;" onclick="planAssignTpl('${sd}',${tp.id})">💪 ${tp.name||'?'}</button>`).join('')
       :`<div style="font-size:13px;color:var(--text3);text-align:center;padding:8px;">${tt({pl:'Brak szablonów',en:'No templates',de:'Keine Vorlagen',es:'Sin plantillas'})}</div>`;
     const progBtn=S.programs&&S.programs.length
       ?`<button class="btn btn-ghost" style="text-align:left;font-size:13px;" onclick="planPickProgram()">📅 ${tt({pl:'Z programu',en:'From program',de:'Aus Programm',es:'De programa'})}</button>`:'';
@@ -5234,24 +5234,44 @@ function planDayClick(date){
 
 function planAddCustom(date){
   let _cExs=[];
+  // Sync sets/reps inputs → _cExs before any re-render
+  function syncInputs(){
+    _cExs.forEach((e,i)=>{
+      const s=document.getElementById(`planCS_${i}`);
+      const r=document.getElementById(`planCR_${i}`);
+      if(s)e.sets=Math.max(1,+s.value||1);
+      if(r)e.reps=Math.max(1,+r.value||1);
+    });
+  }
   function openCustomModal(savedName){
     if(S.modal){S.modal.remove();S.modal=null;}
     const ov=document.createElement('div');ov.className='modal-overlay';
-    const exsHtml=_cExs.length
-      ?_cExs.map((e,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);">
-          <div style="flex:1;font-size:14px;">${e.name||'?'}</div>
-          <button onclick="window._planCRemoveEx(${i})" style="background:none;border:none;color:var(--red);font-size:20px;cursor:pointer;line-height:1;padding:0 4px;">×</button>
+    const hasExs=_cExs.length>0;
+    const exsHtml=hasExs
+      ?`<div style="display:grid;grid-template-columns:1fr 44px 8px 44px 28px;gap:4px;align-items:center;padding:4px 0 6px;border-bottom:1px solid var(--border2);">
+          <div style="font-size:11px;color:var(--text3);font-weight:700;">${tt({pl:'Ćwiczenie',en:'Exercise',de:'Übung',es:'Ejercicio'})}</div>
+          <div style="font-size:11px;color:var(--text3);font-weight:700;text-align:center;">${tt({pl:'Serie',en:'Sets',de:'Sätze',es:'Series'})}</div>
+          <div></div>
+          <div style="font-size:11px;color:var(--text3);font-weight:700;text-align:center;">${tt({pl:'Powt.',en:'Reps',de:'Wdh.',es:'Reps'})}</div>
+          <div></div>
+        </div>`+
+        _cExs.map((e,i)=>`<div style="display:grid;grid-template-columns:1fr 44px 8px 44px 28px;gap:4px;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);">
+          <div style="font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.name||'?'}</div>
+          <input id="planCS_${i}" type="number" min="1" max="20" value="${e.sets||3}" style="padding:5px 4px;text-align:center;border-radius:7px;font-size:13px;"/>
+          <div style="text-align:center;color:var(--text3);font-size:13px;">×</div>
+          <input id="planCR_${i}" type="number" min="1" max="100" value="${e.reps||10}" style="padding:5px 4px;text-align:center;border-radius:7px;font-size:13px;"/>
+          <button onclick="window._planCRemoveEx(${i})" style="background:none;border:none;color:var(--red);font-size:18px;cursor:pointer;line-height:1;padding:0;">×</button>
         </div>`).join('')
-      :`<div style="font-size:12px;color:var(--text3);padding:8px 0;">${tt({pl:'Brak ćwiczeń (opcjonalnie)',en:'No exercises yet (optional)',de:'Keine Übungen (optional)',es:'Sin ejercicios (opcional)'})}</div>`;
+      :`<div style="font-size:12px;color:var(--text3);padding:10px 0;text-align:center;">${tt({pl:'Brak ćwiczeń (opcjonalnie)',en:'No exercises yet (optional)',de:'Keine Übungen (optional)',es:'Sin ejercicios (opcional)'})}</div>`;
     ov.innerHTML=`<div class="modal">
       <div class="modal-handle"></div>
       <div class="modal-title" style="margin-bottom:14px;">✏️ ${tt({pl:'Własny trening',en:'Custom workout',de:'Eigenes Training',es:'Entrenamiento personalizado'})}</div>
-      <input type="text" id="planCName" value="${(savedName||'').replace(/"/g,'&quot;')}" placeholder="${tt({pl:'Np. Cardio, Bieganie...',en:'E.g. Cardio, Running...',de:'Z.B. Cardio, Laufen...',es:'Ej. Cardio, Carrera...'})}" style="margin-bottom:14px;"/>
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <input type="text" id="planCName" value="${(savedName||'').replace(/"/g,'&quot;')}" placeholder="${tt({pl:'Np. Cardio, Bieganie...',en:'E.g. Cardio, Running...',de:'Z.B. Cardio, Laufen...',es:'Ej. Cardio, Carrera...'})}" style="margin-bottom:12px;"/>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
         <div style="font-size:13px;font-weight:600;">${tt({pl:'Ćwiczenia',en:'Exercises',de:'Übungen',es:'Ejercicios'})} <span style="color:var(--text3);">(${_cExs.length})</span></div>
-        <button class="btn-new" style="font-size:12px;padding:7px 12px;" onclick="window._planCPickEx()">+ ${tt({pl:'Dodaj',en:'Add',de:'Hinzufügen',es:'Añadir'})}</button>
+        <button class="btn-new" style="font-size:12px;padding:6px 11px;" onclick="window._planCPickEx()">+ ${tt({pl:'Dodaj',en:'Add',de:'Hinzufügen',es:'Añadir'})}</button>
       </div>
-      <div style="max-height:32vh;overflow-y:auto;margin-bottom:14px;">${exsHtml}</div>
+      <div style="max-height:38vh;overflow-y:auto;margin-bottom:14px;">${exsHtml}</div>
       <div style="display:flex;gap:8px;">
         <button class="btn btn-primary" style="flex:1;" onclick="window._planCSave('${date}')">${tt({pl:'Zapisz',en:'Save',de:'Speichern',es:'Guardar'})}</button>
         <button class="btn btn-ghost" style="flex:1;" onclick="closeModal()">${tt({pl:'Anuluj',en:'Cancel',de:'Abbrechen',es:'Cancelar'})}</button>
@@ -5261,23 +5281,28 @@ function planAddCustom(date){
     setTimeout(()=>{if(!savedName)document.getElementById('planCName')?.focus();},60);
   }
   window._planCPickEx=()=>{
+    syncInputs();
     const nm=document.getElementById('planCName')?.value||'';
     if(S.modal){S.modal.remove();S.modal=null;}
     showExPicker(_cExs,picked=>{
-      _cExs=picked.map(e=>({id:e.id,name:exName(e),pl:e.pl,en:e.en,gk:e.gk}));
+      // Merge: keep sets/reps for existing, add defaults for new
+      const existing=new Map(_cExs.map(e=>[e.id,e]));
+      _cExs=picked.map(e=>({id:e.id,name:exName(e),pl:e.pl,en:e.en,gk:e.gk,sets:existing.get(e.id)?.sets||3,reps:existing.get(e.id)?.reps||10}));
       openCustomModal(nm);
     });
   };
   window._planCRemoveEx=idx=>{
+    syncInputs();
     const nm=document.getElementById('planCName')?.value||'';
     _cExs.splice(idx,1);
     openCustomModal(nm);
   };
   window._planCSave=d=>{
+    syncInputs();
     const n=(document.getElementById('planCName')?.value||'').trim();
     if(!n){document.getElementById('planCName')?.focus();return;}
     if(!S.weekPlan)S.weekPlan={};
-    S.weekPlan[d]={type:'custom',name:n,exercises:_cExs.map(e=>({id:e.id,name:e.name,pl:e.pl,en:e.en,gk:e.gk}))};
+    S.weekPlan[d]={type:'custom',name:n,exercises:_cExs.map(e=>({id:e.id,name:e.name,pl:e.pl,en:e.en,gk:e.gk,sets:e.sets||3,reps:e.reps||10}))};
     saveAll();_selectedPlanDate=null;closeModal();renderWeekPlan();
   };
   openCustomModal('');
@@ -5342,7 +5367,14 @@ window.renderWeekPlan=renderWeekPlan;
 // Window helpers for inline onclick (let variables not accessible from inline handlers)
 window.planDeselect=()=>{_selectedPlanDate=null;renderWeekPlan();};
 window.planCancelProgram=()=>{_planningProgram=null;renderWeekPlan();};
-window.planAssignTpl=(date,id,name)=>{assignPlanDay(date,'template',id,name);_selectedPlanDate=null;renderWeekPlan();};
+window.planAssignTpl=(date,id)=>{
+  const tp=S.templates.find(t=>+t.id===+id);
+  if(!tp)return;
+  _selectedPlanDate=null;
+  if(!S.weekPlan)S.weekPlan={};
+  S.weekPlan[date]={type:'template',templateId:tp.id,name:tp.name};
+  saveAll();renderWeekPlan();
+};
 window.planRemoveDay=date=>{if(S.weekPlan)delete S.weekPlan[date];saveAll();_selectedPlanDate=null;renderWeekPlan();};
 window.switchCalTab=switchCalTab;
 
