@@ -227,7 +227,8 @@ body.light #screen-dashboard::before{background:url('./light_logo.png') center/c
 /* ── Mobile brand header (hidden on desktop, visible on mobile dashboard) ── */
 .mobile-brand{display:none;align-items:center;gap:10px;padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:16px;}
 .mobile-brand-logo{width:36px;height:36px;border-radius:10px;object-fit:cover;flex-shrink:0;}
-.mobile-brand-name{font-size:18px;font-weight:800;color:var(--accent);letter-spacing:-0.3px;}
+.mobile-brand-name{font-size:18px;font-weight:800;color:var(--accent);letter-spacing:-0.3px;display:block;line-height:1.15;}
+.mobile-brand-sub{font-size:11px;font-weight:400;color:var(--text3);letter-spacing:0.2px;display:block;}
 @media(max-width:600px){.mobile-brand{display:flex;}}
 /* ── Quick Access grid ── */
 .quick-access-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:24px;}
@@ -307,7 +308,7 @@ body.light #screen-dashboard::before{background:url('./light_logo.png') center/c
     <div id="screen-dashboard" class="screen active">
       <div class="mobile-brand">
         <img class="mobile-brand-logo" src="./logo.jpg" alt="BeeStrong"/>
-        <span class="mobile-brand-name">BeeStrong</span>
+        <div><span class="mobile-brand-name">BeeStrong</span><span class="mobile-brand-sub">Gym Tracker</span></div>
       </div>
       <div class="screen-header">
         <div><div class="screen-title" id="dashTitle">Dashboard</div><div class="screen-sub" id="dashWeekLabel"></div></div>
@@ -4939,8 +4940,8 @@ function renderAdminUserList(users){
     <div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--bg2);border-radius:12px;margin-bottom:8px;">
       <div style="width:40px;height:40px;border-radius:50%;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--accent);flex-shrink:0;">${(u.display_name||u.email||'?')[0].toUpperCase()}</div>
       <div style="flex:1;min-width:0;">
-        <div style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${u.display_name||'—'}</div>
-        <div style="font-size:12px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${u.email||'—'}</div>
+        <div style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${u.display_name||u.email||'—'}</div>
+        <div style="font-size:12px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${u.display_name?u.email:''}</div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">
         <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;color:var(--text2);">
@@ -4967,7 +4968,7 @@ async function adminToggle(userId,field,value){
     if(field==='is_pro'){
       S.isPro=!!value;
       saveAll();
-      renderDashboard();renderSettings();renderTemplates();renderProgress();
+      applyLang();renderDashboard();renderSettings();renderTemplates();renderProgress();
     }
     if(field==='is_coach'){
       S.coachMode=!!value;
