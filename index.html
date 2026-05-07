@@ -2412,7 +2412,6 @@ function showPaywall(featureKey){
       <button class="btn btn-primary" onclick="buyPro()">${tt({pl:'Kup Pro',en:'Get Pro',de:'Pro kaufen',es:'Obtener Pro'})} — ${PRO_PRICE}</button>
       <button class="btn btn-ghost" onclick="restorePurchase()" style="font-size:13px;">${tt({pl:'Przywróć zakup',en:'Restore purchase',de:'Kauf wiederherstellen',es:'Restaurar compra'})}</button>
       <button class="btn btn-ghost" onclick="closeModal()" style="font-size:13px;color:var(--text3);">${tt({pl:'Może później',en:'Maybe later',de:'Vielleicht später',es:'Quizás más tarde'})}</button>
-      <button class="btn btn-ghost" onclick="devTogglePro()" style="font-size:11px;color:var(--text3);opacity:0.7;border:1px dashed var(--border2);margin-top:4px;">[dev] Pro: ${S.isPro?'ON':'OFF'} — ${tt({pl:'kliknij aby przełączyć',en:'click to toggle',de:'klicken zum Umschalten',es:'haz clic para alternar'})}</button>
     </div>
   </div>`;
   document.body.appendChild(ov);S.modal=ov;
@@ -2424,12 +2423,6 @@ window.buyPro=function(){
 };
 window.restorePurchase=function(){
   alert(lang==='pl'?'IAP nie jest jeszcze podłączone.':'IAP not wired up yet.');
-};
-window.devTogglePro=function(){
-  S.isPro=!S.isPro;
-  saveAll();
-  closeModal();
-  renderTemplates();renderProgress();renderSettings();applyLang();
 };
 
 // Cleanup legacy plate calculator config from localStorage (feature removed)
@@ -4964,10 +4957,28 @@ async function adminToggle(userId,field,value){
   if(!sb||!isAdmin())return;
   const {error}=await sb.from('profiles').update({[field]:value}).eq('id',userId);
   if(error){showSyncToast(error.message,'error');return;}
+  // Update local list
   const u=window._adminUsers?.find(x=>x.id===userId);
   if(u)u[field]=value;
   renderAdminUserList(window._adminUsers||[]);
   showSyncToast(tt({pl:'Zaktualizowano',en:'Updated',de:'Aktualisiert',es:'Actualizado'}),'success');
+  // If toggling current user — apply immediately without requiring re-login
+  if(S.user&&S.user.id===userId){
+    if(field==='is_pro'){
+      S.isPro=!!value;
+      saveAll();
+      renderDashboard();renderSettings();renderTemplates();renderProgress();
+    }
+    if(field==='is_coach'){
+      S.coachMode=!!value;
+      if(value){
+        const email=(S.user.email||'').toLowerCase().trim();
+        if(!COACH_WHITELIST.map(e=>e.toLowerCase()).includes(email))COACH_WHITELIST.push(S.user.email);
+      }
+      saveAll();
+      updateCoachNav();renderSettings();renderClients();
+    }
+  }
 }
 window.adminToggle=adminToggle;
 window.filterAdminUsers=filterAdminUsers;
