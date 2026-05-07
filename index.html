@@ -5003,6 +5003,7 @@ function switchCalTab(tab){
 }
 
 let _planningProgram=null;
+let _selectedPlanDate=null;
 
 function getWeekDates(offsetWeeks=0){
   const now=new Date();
@@ -5025,12 +5026,13 @@ function renderWeekPlan(){
   const dayNames=T[lang]?.days||T.en.days;
   const today_=today();
 
+  // Banner shown while assigning program days
   const plannerBanner=_planningProgram?`
     <div style="background:var(--accent-dim);border:1px solid var(--accent);border-radius:12px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px;">
       <div style="font-size:20px;">📅</div>
       <div style="flex:1;">
         <div style="font-size:13px;font-weight:700;color:var(--accent);">${tt({pl:'Kliknij dzień dla treningu',en:'Click a day for workout',de:'Tag für Training klicken',es:'Haz clic en un día'})} ${_planningProgram.currentDayIdx+1}/${_planningProgram.days.length}</div>
-        <div style="font-size:12px;color:var(--text2);margin-top:2px;">${_planningProgram.days[_planningProgram.currentDayIdx]?.name||''}</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px;">${(()=>{const n=_planningProgram.days[_planningProgram.currentDayIdx]?.name;return typeof n==='object'?(n[lang]||n.en||n.pl||''):n||'';})()}</div>
       </div>
       <button onclick="_planningProgram=null;renderWeekPlan();" style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:0;">✕</button>
     </div>`:'';
@@ -5041,21 +5043,50 @@ function renderWeekPlan(){
     const plan=S.weekPlan?.[date];
     const isToday=date===today_;
     const isPast=date<today_;
+    const isSelected=date===_selectedPlanDate;
     let content='';
-    if(plan&&plan.type==='template'){
-      content=`<div style="background:var(--accent-dim);border-radius:8px;padding:6px 8px;font-size:12px;font-weight:600;color:var(--accent);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${plan.name}</div>`;
+    if(plan&&plan.type==='custom'){
+      content=`<div style="background:rgba(100,200,255,0.12);border-radius:8px;padding:4px 6px;font-size:11px;font-weight:600;color:#64c8ff;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${plan.name}</div>`;
+    } else if(plan&&plan.type==='template'){
+      content=`<div style="background:var(--accent-dim);border-radius:8px;padding:4px 6px;font-size:11px;font-weight:600;color:var(--accent);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${plan.name}</div>`;
     } else {
-      content=`<div style="font-size:11px;color:var(--text3);margin-top:4px;">${tt({pl:'Rest',en:'Rest',de:'Rest',es:'Rest'})}</div>`;
+      content=`<div style="font-size:11px;color:var(--text3);margin-top:4px;">Rest</div>`;
     }
-    const activeBorder=_planningProgram?'border:2px solid var(--accent);cursor:pointer;':'border:1px solid var(--border);cursor:pointer;';
-    return`<div onclick="planDayClick('${date}')" style="${activeBorder}border-radius:12px;padding:10px 8px;background:${isToday?'var(--accent-dim)':'var(--bg2)'};${isPast?'opacity:0.6;':''}text-align:center;min-height:80px;transition:background 0.12s;" onmouseenter="this.style.background='var(--bg3)'" onmouseleave="this.style.background='${isToday?'var(--accent-dim)':'var(--bg2)'}'">
+    const border=isSelected?'border:2px solid var(--accent);':_planningProgram?'border:2px dashed var(--accent);':'border:1px solid var(--border);';
+    const bg=isSelected?'var(--accent-dim2)':isToday?'var(--accent-dim)':'var(--bg2)';
+    return`<div onclick="planDayClick('${date}')" style="${border}border-radius:12px;padding:10px 8px;background:${bg};${isPast?'opacity:0.65;':''}text-align:center;min-height:80px;cursor:pointer;transition:all 0.12s;user-select:none;" onmouseenter="if('${date}'!==_selectedPlanDate)this.style.background='var(--bg3)'" onmouseleave="if('${date}'!==_selectedPlanDate)this.style.background='${bg}'">
       <div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;">${dayNames[i]}</div>
-      <div style="font-size:18px;font-weight:700;${isToday?'color:var(--accent)':''}">${date.slice(8)}</div>
+      <div style="font-size:18px;font-weight:700;${isToday||isSelected?'color:var(--accent)':''}">${date.slice(8)}</div>
       ${content}
     </div>`;
   }).join('');
 
-  const addProgramBtn=S.programs&&S.programs.length?`<button class="btn btn-ghost" style="font-size:13px;" onclick="startPlanProgram()">${tt({pl:'📋 Dodaj program',en:'📋 Assign Program',de:'📋 Programm hinzufügen',es:'📋 Añadir programa'})}</button>`:'';
+  // Action panel shown when a day is selected
+  let actionPanel='';
+  if(_selectedPlanDate&&!_planningProgram){
+    const [y,m,d]=_selectedPlanDate.split('-');
+    const hasPlan=!!(S.weekPlan?.[_selectedPlanDate]);
+    const tplBtns=S.templates.length
+      ?S.templates.map(tp=>`<button class="btn btn-ghost" style="text-align:left;font-size:13px;" onclick="assignPlanDay('${_selectedPlanDate}','template',${tp.id},'${(tp.name||'').replace(/'/g,"\\'")}');_selectedPlanDate=null;renderWeekPlan();">💪 ${tp.name||'?'}</button>`).join('')
+      :`<div style="font-size:13px;color:var(--text3);text-align:center;padding:8px;">${tt({pl:'Brak szablonów',en:'No templates',de:'Keine Vorlagen',es:'Sin plantillas'})}</div>`;
+    const progBtn=S.programs&&S.programs.length
+      ?`<button class="btn btn-ghost" style="text-align:left;font-size:13px;" onclick="planPickProgram()">📅 ${tt({pl:'Z programu',en:'From program',de:'Aus Programm',es:'De programa'})}</button>`:'';
+    const removeBtn=hasPlan?`<button class="btn btn-danger" style="font-size:13px;margin-top:4px;" onclick="removePlanDay('${_selectedPlanDate}');_selectedPlanDate=null;renderWeekPlan();">🗑 ${tt({pl:'Usuń dzień',en:'Remove',de:'Entfernen',es:'Eliminar'})}</button>`:'';
+    actionPanel=`
+      <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:14px;margin-bottom:14px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <span style="font-size:13px;font-weight:700;color:var(--accent);">📅 ${d}.${m}.${y}</span>
+          <button onclick="_selectedPlanDate=null;renderWeekPlan();" style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:2px 6px;line-height:1;">✕</button>
+        </div>
+        <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">${tt({pl:'Dodaj trening',en:'Add workout',de:'Training hinzufügen',es:'Añadir entrenamiento'})}</div>
+        <div style="display:flex;flex-direction:column;gap:7px;">
+          <button class="btn btn-ghost" style="text-align:left;font-size:13px;" onclick="planAddCustom('${_selectedPlanDate}')">✏️ ${tt({pl:'Własny (wpisz nazwę)',en:'Custom workout',de:'Eigenes Training',es:'Entrenamiento personalizado'})}</button>
+          ${tplBtns}
+          ${progBtn}
+          ${removeBtn}
+        </div>
+      </div>`;
+  }
 
   el.innerHTML=`
     ${plannerBanner}
@@ -5064,47 +5095,66 @@ function renderWeekPlan(){
       <div style="font-size:13px;font-weight:600;">${weekLabel}</div>
       <button onclick="_planWeekOffset++;renderWeekPlan();" style="background:none;border:none;cursor:pointer;color:var(--text2);padding:6px;">▶</button>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:16px;">${dayCards}</div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:14px;">${dayCards}</div>
+    ${actionPanel}
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      ${addProgramBtn}
-      <button class="btn btn-ghost" style="font-size:13px;" onclick="clearWeekPlan()">${tt({pl:'🗑 Wyczyść tydzień',en:'🗑 Clear week',de:'🗑 Woche leeren',es:'🗑 Limpiar semana'})}</button>
+      <button class="btn btn-ghost" style="font-size:13px;" onclick="clearWeekPlan()">🗑 ${tt({pl:'Wyczyść tydzień',en:'Clear week',de:'Woche leeren',es:'Limpiar semana'})}</button>
     </div>`;
 }
 
 function planDayClick(date){
   if(_planningProgram){
+    // Program assignment mode — click assigns next workout
     const day=_planningProgram.days[_planningProgram.currentDayIdx];
     if(!S.weekPlan)S.weekPlan={};
-    S.weekPlan[date]={type:'template',templateId:day.id,name:day.name};
+    const name=typeof day.name==='object'?(day.name[lang]||day.name.en||day.name.pl||''):day.name||'';
+    S.weekPlan[date]={type:'template',templateId:day.id,name};
     saveAll();
     _planningProgram.currentDayIdx++;
     if(_planningProgram.currentDayIdx>=_planningProgram.days.length){
       _planningProgram=null;
-      showSyncToast(tt({pl:'Program przypisany do tygodnia ✓',en:'Program assigned to week ✓',de:'Programm der Woche zugewiesen ✓',es:'Programa asignado a la semana ✓'}),'success');
+      showSyncToast(tt({pl:'Program przypisany ✓',en:'Program assigned ✓',de:'Programm zugewiesen ✓',es:'Programa asignado ✓'}),'success');
     }
     renderWeekPlan();
     return;
   }
-  showPlanDayOptions(date);
+  // Toggle selection — clicking same day deselects
+  _selectedPlanDate=(_selectedPlanDate===date)?null:date;
+  renderWeekPlan();
 }
 
-function showPlanDayOptions(date){
+function planAddCustom(date){
   closeModal();
-  const current=S.weekPlan?.[date];
-  const [y,m,d]=date.split('-');
   const ov=document.createElement('div');ov.className='modal-overlay';
-  const tplButtons=S.templates.map(tp=>`<button class="btn btn-ghost" style="text-align:left;font-size:13px;" onclick="assignPlanDay('${date}','template',${tp.id},'${tp.name.replace(/'/g,"\\'")}');closeModal();">💪 ${tp.name}</button>`).join('');
   ov.innerHTML=`<div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-title" style="margin-bottom:16px;">📅 ${d}.${m}.${y}</div>
-    <div style="display:flex;flex-direction:column;gap:8px;max-height:60vh;overflow-y:auto;">
-      ${tplButtons}
-      <button class="btn btn-ghost" style="text-align:left;font-size:13px;" onclick="assignPlanDay('${date}','rest',null,'Rest');closeModal();">😴 Rest</button>
-      ${current?`<button class="btn btn-danger" style="text-align:left;font-size:13px;" onclick="removePlanDay('${date}');closeModal();">${tt({pl:'Usuń',en:'Remove',de:'Entfernen',es:'Eliminar'})}</button>`:''}
+    <div class="modal-title" style="margin-bottom:16px;">✏️ ${tt({pl:'Własny trening',en:'Custom workout',de:'Eigenes Training',es:'Entrenamiento personalizado'})}</div>
+    <input type="text" id="customWoName" placeholder="${tt({pl:'Np. Bieganie, Cardio, Rozciąganie...',en:'E.g. Running, Cardio, Stretching...',de:'Z.B. Laufen, Cardio, Dehnen...',es:'Ej. Carrera, Cardio, Estiramiento...'})}" style="margin-bottom:14px;" autofocus/>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-primary" style="flex:1;" onclick="(function(){const n=document.getElementById('customWoName').value.trim();if(!n)return;if(!S.weekPlan)S.weekPlan={};S.weekPlan['${date}']={type:'custom',name:n};saveAll();_selectedPlanDate=null;closeModal();renderWeekPlan();})();">${tt({pl:'Dodaj',en:'Add',de:'Hinzufügen',es:'Añadir'})}</button>
+      <button class="btn btn-ghost" style="flex:1;" onclick="closeModal();">${tt({pl:'Anuluj',en:'Cancel',de:'Abbrechen',es:'Cancelar'})}</button>
     </div>
   </div>`;
   document.body.appendChild(ov);S.modal=ov;
+  setTimeout(()=>document.getElementById('customWoName')?.focus(),100);
 }
+window.planAddCustom=planAddCustom;
+
+function planPickProgram(){
+  closeModal();
+  if(!S.programs||!S.programs.length)return;
+  const ov=document.createElement('div');ov.className='modal-overlay';
+  ov.innerHTML=`<div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" style="margin-bottom:16px;">📅 ${tt({pl:'Wybierz program',en:'Select Program',de:'Programm wählen',es:'Seleccionar programa'})}</div>
+    <div style="display:flex;flex-direction:column;gap:8px;max-height:55vh;overflow-y:auto;margin-bottom:12px;">
+      ${S.programs.map(p=>`<button class="btn btn-ghost" style="text-align:left;" onclick="selectPlanProgram(${p.id});closeModal();">📋 ${localizedField(p,'name')||p.name?.en||p.name?.pl||p.name||'?'}</button>`).join('')}
+    </div>
+    <button class="btn btn-ghost" onclick="closeModal();">${tt({pl:'Zamknij',en:'Close',de:'Schließen',es:'Cerrar'})}</button>
+  </div>`;
+  document.body.appendChild(ov);S.modal=ov;
+}
+window.planPickProgram=planPickProgram;
 
 function assignPlanDay(date,type,templateId,name){
   if(!S.weekPlan)S.weekPlan={};
@@ -5127,29 +5177,19 @@ function clearWeekPlan(){
   renderWeekPlan();
 }
 
-function startPlanProgram(){
-  closeModal();
-  if(!S.programs||!S.programs.length)return;
-  const ov=document.createElement('div');ov.className='modal-overlay';
-  ov.innerHTML=`<div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title" style="margin-bottom:16px;">${tt({pl:'Wybierz program',en:'Select Program',de:'Programm wählen',es:'Seleccionar programa'})}</div>
-    <div style="display:flex;flex-direction:column;gap:8px;">
-      ${S.programs.map(p=>`<button class="btn btn-ghost" style="text-align:left;" onclick="selectPlanProgram(${p.id});closeModal();">📋 ${localizedField(p,'name')||p.name?.en||p.name?.pl||p.name||'?'}</button>`).join('')}
-    </div>
-  </div>`;
-  document.body.appendChild(ov);S.modal=ov;
-}
 window.selectPlanProgram=function(programId){
   const prog=S.programs.find(p=>p.id===programId);
-  if(!prog||!prog.templates||!prog.templates.length)return;
+  if(!prog||!prog.templates||!prog.templates.length){
+    showSyncToast(tt({pl:'Program nie ma treningów',en:'Program has no workouts',de:'Programm hat keine Trainings',es:'El programa no tiene entrenamientos'}),'error');
+    return;
+  }
   _planningProgram={
     days:prog.templates.map(t=>({id:t.id,name:t.name||tt({pl:'Trening',en:'Workout',de:'Training',es:'Entrenamiento'})})),
     currentDayIdx:0
   };
+  _selectedPlanDate=null;
   renderWeekPlan();
 };
-window.startPlanProgram=startPlanProgram;
 window.assignPlanDay=assignPlanDay;
 window.removePlanDay=removePlanDay;
 window.clearWeekPlan=clearWeekPlan;
