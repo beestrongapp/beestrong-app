@@ -946,7 +946,7 @@ const DEFAULT_TEMPLATES=[
 ];
 
 // When false: all Pro gates disabled (everyone has full access). Flip to true when wiring IAP for release.
-const PAYWALL_ACTIVE=false;
+const PAYWALL_ACTIVE=true;
 const PRO_PRICE='£4.99';
 
 // Emails that may enable Coach Mode. Add/remove here as needed.
@@ -1045,8 +1045,9 @@ function showNamePrompt(){
     localStorage.setItem('bs-username',name);
     const unEl=document.getElementById('sidebarUserName');
     if(unEl)unEl.textContent=name;
+    if(S.user)upsertProfile();
     ov.remove();S.modal=null;
-    applyLang(); // refresh greeting
+    applyLang();
     if(!localStorage.getItem('bs-onboarded-v1'))setTimeout(showOnboarding,300);
   };
 }
@@ -3662,6 +3663,7 @@ function openSettingsName(){
     localStorage.setItem('bs-username',name);
     const unEl=document.getElementById('sidebarUserName');
     if(unEl)unEl.textContent=name;
+    if(S.user)upsertProfile();
     closeModal();renderSettings();
   };
   document.body.appendChild(ov);S.modal=ov;
