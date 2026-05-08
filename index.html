@@ -3029,12 +3029,13 @@ function proCardHtml(){
 
   // Logged in, no PRO
   if(!isPro()){
-    return `<div style="display:flex;align-items:center;gap:12px;background:rgba(201,169,110,0.10);border:1px solid rgba(201,169,110,0.40);border-radius:12px;padding:12px 14px;margin-bottom:14px;cursor:pointer;" onclick="showPaywall()">
+    return `<div style="position:relative;display:flex;align-items:center;gap:12px;background:rgba(201,169,110,0.10);border:1px solid rgba(201,169,110,0.40);border-radius:12px;padding:12px 14px;margin-bottom:14px;cursor:pointer;" onclick="showPaywall()">
       ${logoImg}
-      <div style="flex:1;">
+      <div style="flex:1;min-width:0;">
         <div style="font-size:14px;font-weight:700;color:var(--accent);">BeeStrong Pro</div>
         <div style="font-size:12px;color:var(--text2);">${tt({pl:'Zdobądź konto PRO',en:'Get PRO account',de:'PRO-Konto holen',es:'Obtén cuenta PRO'})}</div>
       </div>
+      <span style="display:inline-block;transform:rotate(-8deg);background:rgba(201,169,110,0.18);border:1.5px solid rgba(201,169,110,0.70);color:var(--accent);font-size:9px;font-weight:800;letter-spacing:1.2px;padding:3px 11px;border-radius:5px;text-transform:uppercase;white-space:nowrap;flex-shrink:0;margin:0 4px;">GET PRO</span>
       <button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();showPaywall()" style="font-size:11px;padding:6px 10px;flex-shrink:0;border-color:rgba(201,169,110,0.45);color:var(--accent);">${tt({pl:'Podgląd',en:'Preview',de:'Vorschau',es:'Vista previa'})}</button>
     </div>`;
   }
@@ -4499,6 +4500,7 @@ function showAuthModal(){
       }
       busy=true;error='';render();
       try{
+        if(isSignUp&&name)localStorage.setItem('bs-pending-name',name);
         const fn=isSignUp?bsSignUp:bsSignIn;
         const{data,error:err}=await fn(email,password,isSignUp?name:undefined);
         if(err){
@@ -4598,7 +4600,9 @@ async function upsertProfile(){
   if(!sb||!S.user)return;
   const metaName=(S.user.name||'').trim();
   const localName=(localStorage.getItem('bs-username')||'').trim();
-  const name=metaName||localName||null;
+  const pendingName=(localStorage.getItem('bs-pending-name')||'').trim();
+  if(pendingName)localStorage.removeItem('bs-pending-name');
+  const name=metaName||localName||pendingName||null;
   if(name){
     localStorage.setItem('bs-username',name);
     const unEl=document.getElementById('sidebarUserName');if(unEl)unEl.textContent=name;
