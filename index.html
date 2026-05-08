@@ -225,10 +225,14 @@ body.light #screen-dashboard::before{background:url('./light_logo.png') center/c
 #autoSyncDot.syncing{opacity:1;animation:syncPulse 1s ease-in-out infinite;}
 @keyframes syncPulse{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.5);opacity:0.5;}}
 /* ── Mobile brand header (hidden on desktop, visible on mobile dashboard) ── */
-.mobile-brand{display:none;align-items:center;gap:10px;padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:16px;}
+.mobile-brand{display:none;align-items:center;gap:10px;padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:16px;justify-content:space-between;}
 .mobile-brand-logo{width:36px;height:36px;border-radius:10px;object-fit:cover;flex-shrink:0;}
 .mobile-brand-name{font-size:18px;font-weight:800;color:var(--accent);letter-spacing:-0.3px;display:block;line-height:1.15;}
 .mobile-brand-sub{font-size:11px;font-weight:400;color:var(--text3);letter-spacing:0.2px;display:block;}
+.mobile-header-actions{display:flex;align-items:center;gap:6px;margin-left:auto;}
+.mobile-header-btn{width:36px;height:36px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--text2);cursor:pointer;flex-shrink:0;transition:background 0.15s,color 0.15s;-webkit-tap-highlight-color:transparent;}
+.mobile-header-btn:active{background:var(--bg4);}
+.mobile-header-btn.active{background:var(--accent-dim);color:var(--accent);}
 @media(max-width:600px){.mobile-brand{display:flex;}}
 /* ── Quick Access grid ── */
 .quick-access-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:24px;}
@@ -309,6 +313,11 @@ body.light #screen-dashboard::before{background:url('./light_logo.png') center/c
       <div class="mobile-brand">
         <img class="mobile-brand-logo" src="./logo.jpg" alt="BeeStrong"/>
         <div><span class="mobile-brand-name">BeeStrong</span><span class="mobile-brand-sub">Gym Tracker</span></div>
+        <div class="mobile-header-actions">
+          <div class="mobile-header-btn admin-nav-item" id="mobileAdminBtn" onclick="showScreen('admin')" style="display:none;" title="Admin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18" height="18"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+          <div class="mobile-header-btn coach-nav-item" id="mobileClientsBtn" onclick="showScreen('clients')" title="Klienci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18" height="18"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+          <div class="mobile-header-btn" id="mobileSettingsBtn" onclick="showScreen('settings')" title="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18" height="18"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+        </div>
       </div>
       <div class="screen-header">
         <div><div class="screen-title" id="dashTitle">Dashboard</div><div class="screen-sub" id="dashWeekLabel"></div></div>
@@ -386,9 +395,6 @@ body.light #screen-dashboard::before{background:url('./light_logo.png') center/c
     <div class="mobile-nav-item" data-screen="programs" onclick="showScreen('programs')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 3v18"/></svg><span class="nav-label" data-key="programs">Programs</span></div>
     <div class="mobile-nav-item" data-screen="progress" onclick="showScreen('progress')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span class="nav-label" data-key="progress">Progress</span></div>
     <div class="mobile-nav-item" data-screen="templates" onclick="showScreen('templates')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg><span class="nav-label" data-key="templates">Templates</span></div>
-    <div class="mobile-nav-item coach-nav-item" data-screen="clients" onclick="showScreen('clients')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="nav-label" data-key="clients">Klienci</span></div>
-    <div class="mobile-nav-item" data-screen="settings" onclick="showScreen('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span class="nav-label" data-key="settings">Settings</span></div>
-    <div class="mobile-nav-item admin-nav-item" data-screen="admin" onclick="showScreen('admin')" style="display:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span class="nav-label">Admin</span></div>
   </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
@@ -1048,12 +1054,14 @@ function showNamePrompt(){
 function saveAll(){
   sv('bs-tpl-v4',S.templates);sv('bs-wo-v4',S.workouts);sv('bs-meas-v1',S.measurements);sv('bs-ispro-v1',S.isPro);sv('bs-coach-v1',S.coachMode);sv('bs-programs-v1',S.programs);sv('bs-clients-v1',S.clients);sv('bs-default-rest-v1',S.defaultRest);sv('bs-units-v1',S.units);sv('bs-week-plan-v1',S.weekPlan||{});if(S.goal)localStorage.setItem('bs-goal-v1',S.goal);if(S.level)localStorage.setItem('bs-level-v1',S.level);
   const p=document.getElementById('savePill');p.classList.add('show');setTimeout(()=>p.classList.remove('show'),1800);
+  if(S.user&&sb)pushAllToCloud().catch(e=>console.warn('auto-push failed',e));
 }
 
 function showScreen(name){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('.mobile-nav-item[data-screen]').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.mobile-header-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('screen-'+name).classList.add('active');
   const screens=['dashboard','workouts','calendar','exercises','programs','progress','templates','settings'];
   const idx=screens.indexOf(name);
@@ -1064,6 +1072,9 @@ function showScreen(name){
   }
   const mBtn=document.querySelector(`.mobile-nav-item[data-screen="${name}"]`);
   if(mBtn)mBtn.classList.add('active');
+  if(name==='settings')document.getElementById('mobileSettingsBtn')?.classList.add('active');
+  if(name==='clients')document.getElementById('mobileClientsBtn')?.classList.add('active');
+  if(name==='admin')document.getElementById('mobileAdminBtn')?.classList.add('active');
   if(name==='dashboard')renderDashboard();
   if(name==='calendar')renderCalendar();
   if(name==='exercises')renderExercises();
@@ -3002,23 +3013,39 @@ const MEASURE_TYPES=[
 function proCardHtml(){
   const logoSrc=isDark?'./logo.jpg':'./light_logo.png';
   const logoImg=`<img src="${logoSrc}" alt="BeeStrong" style="width:34px;height:34px;object-fit:contain;border-radius:8px;flex-shrink:0;"/>`;
-  if(isPro()){
-    return `<div style="display:flex;align-items:center;gap:12px;background:var(--accent-dim);border:1px solid var(--accent);border-radius:12px;padding:12px 14px;margin-bottom:14px;">
+
+  // Not logged in
+  if(!S.user){
+    return `<div style="display:flex;align-items:center;gap:12px;background:rgba(255,92,92,0.10);border:1px solid rgba(255,92,92,0.35);border-radius:12px;padding:12px 14px;margin-bottom:14px;cursor:pointer;" onclick="showAuthModal()">
+      ${logoImg}
+      <div style="flex:1;">
+        <div style="font-size:14px;font-weight:700;color:#ff5c5c;">BeeStrong Pro</div>
+        <div style="font-size:12px;color:rgba(255,92,92,0.75);">${tt({pl:'Zaloguj się, aby zobaczyć szczegóły',en:'Log in to see details',de:'Einloggen für Details',es:'Inicia sesión para ver detalles'})}</div>
+      </div>
+      <span style="display:inline-flex;align-items:center;padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;background:rgba(255,92,92,0.15);color:#ff5c5c;border:1px solid rgba(255,92,92,0.40);white-space:nowrap;flex-shrink:0;">${tt({pl:'Zaloguj',en:'Log in',de:'Einloggen',es:'Entrar'})}</span>
+    </div>`;
+  }
+
+  // Logged in, no PRO
+  if(!isPro()){
+    return `<div style="display:flex;align-items:center;gap:12px;background:rgba(201,169,110,0.10);border:1px solid rgba(201,169,110,0.40);border-radius:12px;padding:12px 14px;margin-bottom:14px;cursor:pointer;" onclick="showPaywall()">
       ${logoImg}
       <div style="flex:1;">
         <div style="font-size:14px;font-weight:700;color:var(--accent);">BeeStrong Pro</div>
-        <div style="font-size:12px;color:var(--text2);">${tt({pl:'Aktywne — dziękujemy!',en:'Active — thank you!',de:'Aktiv — danke!',es:'Activo — ¡gracias!'})}</div>
+        <div style="font-size:12px;color:var(--text2);">${tt({pl:'Zdobądź konto PRO',en:'Get PRO account',de:'PRO-Konto holen',es:'Obtén cuenta PRO'})}</div>
       </div>
-      ${PAYWALL_ACTIVE?'':`<button class="btn btn-sm btn-ghost" onclick="showPaywall()" style="font-size:11px;padding:6px 10px;flex-shrink:0;">${tt({pl:'Podgląd',en:'Preview',de:'Vorschau',es:'Vista previa'})}</button>`}
+      <button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();showPaywall()" style="font-size:11px;padding:6px 10px;flex-shrink:0;border-color:rgba(201,169,110,0.45);color:var(--accent);">${tt({pl:'Podgląd',en:'Preview',de:'Vorschau',es:'Vista previa'})}</button>
     </div>`;
   }
-  return `<div style="display:flex;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:14px;cursor:pointer;" onclick="showPaywall()">
+
+  // PRO active
+  return `<div style="display:flex;align-items:center;gap:12px;background:var(--accent-dim);border:1px solid var(--accent);border-radius:12px;padding:12px 14px;margin-bottom:14px;">
     ${logoImg}
     <div style="flex:1;">
-      <div style="font-size:14px;font-weight:700;">${tt({pl:'Odblokuj BeeStrong Pro',en:'Unlock BeeStrong Pro',de:'BeeStrong Pro freischalten',es:'Desbloquea BeeStrong Pro'})}</div>
-      <div style="font-size:12px;color:var(--text2);">${tt({pl:'Nieograniczone szablony, pełna analiza, eksport',en:'Unlimited templates, full analytics, export',de:'Unbegrenzte Vorlagen, volle Analyse, Export',es:'Plantillas ilimitadas, análisis completo, exportación'})} — ${PRO_PRICE}</div>
+      <div style="font-size:14px;font-weight:700;color:var(--accent);">BeeStrong Pro</div>
+      <div style="font-size:12px;color:var(--text2);">${tt({pl:'Aktywne — dziękujemy!',en:'Active — thank you!',de:'Aktiv — danke!',es:'Activo — ¡gracias!'})}</div>
     </div>
-    <div style="font-size:18px;color:var(--text3);flex-shrink:0;">›</div>
+    ${PAYWALL_ACTIVE?'':`<button class="btn btn-sm btn-ghost" onclick="showPaywall()" style="font-size:11px;padding:6px 10px;flex-shrink:0;">${tt({pl:'Podgląd',en:'Preview',de:'Vorschau',es:'Vista previa'})}</button>`}
   </div>`;
 }
 
@@ -4031,6 +4058,20 @@ function getExerciseProgress(key){
 // is wired in the next iteration. For now, signing in associates the device with a user
 // so future syncs can attach data to their account.
 
+function clearLocalUserData(){
+  S.workouts={};S.templates=[];S.measurements={};
+  S.isPro=false;S.coachMode=false;S.clients=[];
+  S.programs=(S.programs||[]).filter(p=>p.builtin);
+  ['bs-wo-v4','bs-tpl-v4','bs-meas-v1','bs-ispro-v1','bs-coach-v1','bs-clients-v1','bs-username'].forEach(k=>localStorage.removeItem(k));
+  const unEl=document.getElementById('sidebarUserName');if(unEl)unEl.textContent='';
+  updateCoachNav();updateAdminNav();
+  if(typeof renderDashboard==='function')renderDashboard();
+  if(typeof renderTemplates==='function')renderTemplates();
+  if(typeof renderWorkout==='function')renderWorkout();
+  if(typeof renderProgress==='function')renderProgress();
+  if(typeof renderSettings==='function')renderSettings();
+}
+
 function initSupabase(){
   if(!window.supabase){
     console.warn('Supabase SDK not loaded — running offline-only mode');
@@ -4048,7 +4089,7 @@ function initSupabase(){
     // Restore session on page load
     sb.auth.getSession().then(({data})=>{
       if(data?.session?.user){
-        S.user={id:data.session.user.id,email:data.session.user.email};
+        S.user={id:data.session.user.id,email:data.session.user.email,name:(data.session.user.user_metadata?.display_name||'').trim()};
         if(S.coachMode&&!isCoachAllowed()){S.coachMode=false;saveAll();}
         if(typeof renderSettings==='function')renderSettings();
       }
@@ -4059,17 +4100,16 @@ function initSupabase(){
     sb.auth.onAuthStateChange((event,session)=>{
       const wasLoggedIn=!!S.user;
       if(session?.user){
-        S.user={id:session.user.id,email:session.user.email};
+        S.user={id:session.user.id,email:session.user.email,name:(session.user.user_metadata?.display_name||'').trim()};
         if(S.coachMode&&!isCoachAllowed()){S.coachMode=false;saveAll();}
-        // Trigger sync flow on FRESH sign-in (not on session refresh / page reload)
         if(!wasLoggedIn&&(event==='SIGNED_IN'||event==='INITIAL_SESSION')){
-          // Small delay so renderSettings finishes first; only on explicit sign-in
-          if(event==='SIGNED_IN')setTimeout(()=>{postLoginSyncFlow();upsertProfile();syncProfileFlags();checkPendingInvitations();setupRealtimeSubscriptions();},400);
+          if(event==='SIGNED_IN'){clearLocalUserData();setTimeout(()=>{postLoginSyncFlow();upsertProfile();syncProfileFlags();checkPendingInvitations();setupRealtimeSubscriptions();},400);}
           if(event==='INITIAL_SESSION')setTimeout(()=>{upsertProfile();syncProfileFlags();checkPendingInvitations();setupRealtimeSubscriptions();autoSyncFromCloud();},600);
         }
       } else {
         S.user=null;
         S.pendingInvites=[];
+        clearLocalUserData();
       }
       if(typeof renderSettings==='function')renderSettings();
       updateCoachNav();updateAdminNav();
@@ -4079,9 +4119,9 @@ function initSupabase(){
   }
 }
 
-async function bsSignUp(email,password){
+async function bsSignUp(email,password,name){
   if(!sb)return{error:{message:'Auth unavailable (offline?)'}};
-  return await sb.auth.signUp({email,password});
+  return await sb.auth.signUp({email,password,options:{data:{display_name:(name||'').trim()||undefined}}});
 }
 async function bsSignIn(email,password){
   if(!sb)return{error:{message:'Auth unavailable (offline?)'}};
@@ -4391,6 +4431,7 @@ function showAuthModal(){
   let mode='signin'; // 'signin' or 'signup'
   let email='';
   let password='';
+  let name='';
   let error='';
   let busy=false;
   const ov=document.createElement('div');ov.className='modal-overlay';
@@ -4419,6 +4460,7 @@ function showAuthModal(){
         <img src="${isDark?'./logo.jpg':'./light_logo.png'}" alt="BeeStrong" style="width:48px;height:48px;object-fit:contain;border-radius:10px;display:block;margin:0 auto 10px;"/>
         <div style="font-size:20px;font-weight:800;letter-spacing:-0.4px;">${title}</div>
       </div>
+      ${isSignUp?`<label class="form-label">${tt({pl:'Imię',en:'Name',de:'Name',es:'Nombre'})}</label><input type="text" id="authName" autocomplete="given-name" value="${name}" placeholder="${tt({pl:'np. Dariusz',en:'e.g. John',de:'z.B. Max',es:'p.ej. Juan'})}" style="margin-bottom:12px;"/>`:''}
       <label class="form-label">${lblEmail}</label>
       <input type="email" id="authEmail" autocomplete="email" value="${email}" style="margin-bottom:12px;"/>
       <label class="form-label">${lblPass} <span style="color:var(--text3);font-weight:400;">${passHint}</span></label>
@@ -4436,12 +4478,15 @@ function showAuthModal(){
     const switchEl=document.getElementById('authSwitch');
     if(emailEl){emailEl.oninput=e=>{email=e.target.value;};}
     if(passEl){passEl.oninput=e=>{password=e.target.value;};}
+    const nameEl=document.getElementById('authName');
+    if(nameEl){nameEl.oninput=e=>{name=e.target.value;};}
     if(switchEl){switchEl.onclick=()=>{mode=isSignUp?'signin':'signup';error='';render();};}
     if(submitEl){submitEl.onclick=async()=>{
       if(busy)return;
       // Read latest values directly from inputs (in case user typed quickly)
       email=(document.getElementById('authEmail')?.value||'').trim();
       password=document.getElementById('authPass')?.value||'';
+      if(isSignUp)name=(document.getElementById('authName')?.value||'').trim();
       if(!email||!password){
         error=tt({pl:'Wypełnij oba pola.',en:'Fill in both fields.',de:'Bitte beide Felder ausfüllen.',es:'Rellena ambos campos.'});
         render();return;
@@ -4453,7 +4498,7 @@ function showAuthModal(){
       busy=true;error='';render();
       try{
         const fn=isSignUp?bsSignUp:bsSignIn;
-        const{data,error:err}=await fn(email,password);
+        const{data,error:err}=await fn(email,password,isSignUp?name:undefined);
         if(err){
           error=err.message||tt({pl:'Coś poszło nie tak.',en:'Something went wrong.',de:'Etwas ist schiefgelaufen.',es:'Algo salió mal.'});
           busy=false;render();return;
@@ -4549,28 +4594,31 @@ function updateCoachNav(){
 
 async function upsertProfile(){
   if(!sb||!S.user)return;
-  const name=(localStorage.getItem('bs-username')||'').trim()||null;
-  await sb.from('profiles').upsert({
-    id:S.user.id,
-    email:S.user.email,
-    display_name:name,
-  },{onConflict:'id'});
+  const metaName=(S.user.name||'').trim();
+  const localName=(localStorage.getItem('bs-username')||'').trim();
+  const name=metaName||localName||null;
+  if(name){
+    localStorage.setItem('bs-username',name);
+    const unEl=document.getElementById('sidebarUserName');if(unEl)unEl.textContent=name;
+  }
+  await sb.from('profiles').upsert({id:S.user.id,email:S.user.email,display_name:name},{onConflict:'id'});
 }
 
-// Sync is_pro / is_coach flags set by admin from Supabase profiles
 async function syncProfileFlags(){
   if(!sb||!S.user)return;
-  const {data,error}=await sb.from('profiles').select('is_pro,is_coach').eq('id',S.user.id).single();
+  const {data,error}=await sb.from('profiles').select('is_pro,is_coach,display_name').eq('id',S.user.id).single();
   if(error||!data)return;
   let changed=false;
-  if(data.is_pro&&!S.isPro){S.isPro=true;changed=true;}
+  const newIsPro=!!data.is_pro;
+  if(newIsPro!==S.isPro){S.isPro=newIsPro;changed=true;}
   if(data.is_coach){
-    // Dynamically add to whitelist so isCoachAllowed() returns true
     const email=(S.user.email||'').toLowerCase().trim();
-    if(!COACH_WHITELIST.map(e=>e.toLowerCase()).includes(email)){
-      COACH_WHITELIST.push(S.user.email);
-    }
+    if(!COACH_WHITELIST.map(e=>e.toLowerCase()).includes(email)){COACH_WHITELIST.push(S.user.email);}
     if(!S.coachMode){S.coachMode=true;changed=true;}
+  }
+  if(data.display_name&&!localStorage.getItem('bs-username')){
+    localStorage.setItem('bs-username',data.display_name);
+    const unEl=document.getElementById('sidebarUserName');if(unEl)unEl.textContent=data.display_name;
   }
   if(changed){saveAll();updateCoachNav();updateAdminNav();renderDashboard();renderSettings();}
 }
