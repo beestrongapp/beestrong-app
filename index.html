@@ -1010,10 +1010,7 @@ function loadData(){
   const unEl=document.getElementById('sidebarUserName');
   if(unEl)unEl.textContent=uname;
 
-  // First launch — ask for name, then onboarding
-  if(!uname){
-    showNamePrompt();
-  } else if(!localStorage.getItem('bs-onboarded-v1')){
+  if(!localStorage.getItem('bs-onboarded-v1')){
     setTimeout(showOnboarding,400);
   }
 }
@@ -2498,6 +2495,37 @@ function requirePro(featureKey){
   showPaywall(featureKey);
   return false;
 }
+function showCoachModeInfo(){
+  closeModal();
+  const ov=document.createElement('div');ov.className='modal-overlay';
+  const logoSrc=isDark?'./logo.jpg':'./light_logo.png';
+  ov.innerHTML=`<div class="modal" style="max-height:92dvh;overflow-y:auto;">
+    <div class="modal-handle"></div>
+    <div style="text-align:center;margin-bottom:18px;">
+      <img src="${logoSrc}" alt="BeeStrong" style="width:52px;height:52px;object-fit:contain;border-radius:12px;display:block;margin:0 auto 10px;"/>
+      <div style="font-size:20px;font-weight:800;letter-spacing:-0.4px;">Coach Mode</div>
+      <div style="font-size:13px;color:var(--text2);margin-top:4px;">${tt({pl:'Zarządzaj klientami jak profesjonalista',en:'Manage your clients like a pro',de:'Verwalte deine Klienten professionell',es:'Gestiona tus clientes como un profesional'})}</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
+      ${[
+        {icon:'👥',t:{pl:'Lista klientów',en:'Client list',de:'Kundenliste',es:'Lista de clientes'},d:{pl:'Zapraszaj klientów i śledź ich postępy',en:'Invite clients and track their progress',de:'Lade Klienten ein und verfolge ihre Fortschritte',es:'Invita clientes y sigue su progreso'}},
+        {icon:'📋',t:{pl:'Przypisywanie programów',en:'Program assignment',de:'Programmzuweisung',es:'Asignación de programas'},d:{pl:'Wysyłaj spersonalizowane plany treningowe',en:'Send personalised training plans to clients',de:'Sende personalisierte Trainingspläne',es:'Envía planes de entrenamiento personalizados'}},
+        {icon:'🔔',t:{pl:'Powiadomienia w czasie rzeczywistym',en:'Real-time notifications',de:'Echtzeit-Benachrichtigungen',es:'Notificaciones en tiempo real'},d:{pl:'Klienci otrzymują plan natychmiast',en:'Clients receive their plan instantly',de:'Klienten erhalten ihren Plan sofort',es:'Los clientes reciben su plan al instante'}},
+      ].map(f=>`<div style="display:flex;align-items:flex-start;gap:12px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;">
+        <span style="font-size:22px;flex-shrink:0;">${f.icon}</span>
+        <div><div style="font-size:13px;font-weight:600;margin-bottom:2px;">${tt(f.t)}</div><div style="font-size:12px;color:var(--text2);">${tt(f.d)}</div></div>
+      </div>`).join('')}
+    </div>
+    <div style="background:rgba(0,200,83,0.08);border:1px solid rgba(0,200,83,0.30);border-radius:10px;padding:12px 14px;margin-bottom:18px;font-size:12px;color:var(--text2);line-height:1.5;">
+      ${tt({pl:'Coach Mode jest dostępny dla wybranych trenerów. Skontaktuj się z nami pod adresem',en:'Coach Mode is available for selected trainers. Contact us at',de:'Coach Mode ist für ausgewählte Trainer verfügbar. Kontaktiere uns unter',es:'El modo Coach está disponible para entrenadores seleccionados. Contáctanos en'})}
+      <strong style="color:#00e676;">beestrong@beestrongapp.com</strong>
+    </div>
+    <button class="btn btn-ghost" onclick="closeModal()">${tt({pl:'Zamknij',en:'Close',de:'Schließen',es:'Cerrar'})}</button>
+  </div>`;
+  document.body.appendChild(ov);S.modal=ov;
+}
+window.showCoachModeInfo=showCoachModeInfo;
+
 function showPaywall(featureKey){
   closeModal();
   const leadIns={
@@ -3041,13 +3069,14 @@ function proCardHtml(){
   }
 
   // PRO active
-  return `<div style="display:flex;align-items:center;gap:12px;background:var(--accent-dim);border:1px solid var(--accent);border-radius:12px;padding:12px 14px;margin-bottom:14px;">
+  const coachBtn=S.coachMode?'':` <button class="btn btn-sm" onclick="showCoachModeInfo()" style="font-size:10px;padding:5px 10px;flex-shrink:0;background:rgba(0,200,83,0.12);color:#00e676;border:1px solid rgba(0,200,83,0.38);font-weight:700;letter-spacing:0.3px;">Get Coach Mode</button>`;
+  return `<div style="display:flex;align-items:center;gap:10px;background:rgba(0,200,83,0.08);border:1px solid rgba(0,200,83,0.35);border-radius:12px;padding:12px 14px;margin-bottom:14px;">
     ${logoImg}
-    <div style="flex:1;">
-      <div style="font-size:14px;font-weight:700;color:var(--accent);">BeeStrong Pro</div>
+    <div style="flex:1;min-width:0;">
+      <div style="font-size:14px;font-weight:700;color:#00e676;">BeeStrong Pro</div>
       <div style="font-size:12px;color:var(--text2);">${tt({pl:'Aktywne — dziękujemy!',en:'Active — thank you!',de:'Aktiv — danke!',es:'Activo — ¡gracias!'})}</div>
     </div>
-    ${PAYWALL_ACTIVE?'':`<button class="btn btn-sm btn-ghost" onclick="showPaywall()" style="font-size:11px;padding:6px 10px;flex-shrink:0;">${tt({pl:'Podgląd',en:'Preview',de:'Vorschau',es:'Vista previa'})}</button>`}
+    ${coachBtn}
   </div>`;
 }
 
@@ -4507,9 +4536,14 @@ function showAuthModal(){
           error=err.message||tt({pl:'Coś poszło nie tak.',en:'Something went wrong.',de:'Etwas ist schiefgelaufen.',es:'Algo salió mal.'});
           busy=false;render();return;
         }
+        // Push name to Supabase immediately on signup (most reliable approach)
+        if(isSignUp&&name&&sb&&data?.session?.user){
+          const uid=data.session.user.id;
+          sb.from('profiles').upsert({id:uid,email:data.session.user.email,display_name:name},{onConflict:'id'}).catch(e=>console.warn('profile name upsert failed',e));
+          localStorage.setItem('bs-username',name);
+        }
         // Success
         if(isSignUp&&!data?.session){
-          // Email confirmation required — show success message
           ov.innerHTML=`<div class="modal" style="text-align:center;padding:32px 24px;">
             <div style="font-size:48px;margin-bottom:14px;">📬</div>
             <div style="font-size:17px;font-weight:700;margin-bottom:10px;">${tt({pl:'Sprawdź email',en:'Check your email',de:'E-Mail prüfen',es:'Revisa tu email'})}</div>
@@ -4518,7 +4552,6 @@ function showAuthModal(){
           </div>`;
           return;
         }
-        // Logged in successfully — close modal (auth listener updates UI)
         closeModal();
       }catch(e){
         error=e.message||'Network error';
