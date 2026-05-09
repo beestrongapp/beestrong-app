@@ -1653,18 +1653,26 @@ function confirmExitApp(){
   closeModal();
   _allowAppExit=true;
   setTimeout(()=>{_allowAppExit=false;},1200);
-  history.back();
+  history.go(-999);
 }
 
 window.confirmExitApp=confirmExitApp;
 
 let _lastBackOnWorkouts=0;
-function ensureBackTrap(){
-  try{history.pushState({bs:true,trap:true},'','');}catch(e){}
+let _backTrapSeq=0;
+function backTrapUrl(){
+  _backTrapSeq+=1;
+  return `${location.pathname}${location.search}#bs-back-${Date.now()}-${_backTrapSeq}`;
 }
 
+function ensureBackTrap(extra){
+  if(_allowAppExit)return;
+  try{history.pushState({bs:true,trap:true,...(extra||{})},'',backTrapUrl());}catch(e){}
+}
+window.ensureBackTrap=ensureBackTrap;
+
 function setupBackButton(){
-  history.replaceState({bs:true,sentinel:true},'','');
+  try{history.replaceState({bs:true,sentinel:true},'',`${location.pathname}${location.search}#bs-root`);}catch(e){}
   ensureBackTrap();
   window._bsHistoryReady=true;
   window.addEventListener('popstate',()=>{

@@ -1146,7 +1146,8 @@ async function openChatFromNotification(invId){
   document.body.appendChild(ov);
   S.modal=ov;
   if(window._bsHistoryReady&&!window._bsHandlingBack){
-    history.pushState({bs:true,modal:'notification-chat'},'','');
+    if(typeof ensureBackTrap==='function')ensureBackTrap({modal:'notification-chat'});
+    else history.pushState({bs:true,modal:'notification-chat'},'','');
   }
   const{data:inv,error}=await sb.from('coach_invitations').select('*').eq('id',invId).single();
   if(error||!inv){

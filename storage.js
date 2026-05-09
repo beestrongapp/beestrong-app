@@ -98,7 +98,8 @@ function saveAll(){
 
 function showScreen(name){
   if(window._bsHistoryReady&&!window._bsHandlingBack&&name!=='dashboard'){
-    history.pushState({bs:true,screen:name},'','');
+    if(typeof ensureBackTrap==='function')ensureBackTrap({screen:name});
+    else history.pushState({bs:true,screen:name},'','');
   }
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
