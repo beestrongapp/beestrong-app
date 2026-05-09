@@ -1488,26 +1488,42 @@ function showBackToast(msg){
   clearTimeout(_backToastEl._fadeT);
   _backToastEl._fadeT=setTimeout(()=>{if(_backToastEl)_backToastEl.style.opacity='0';},2300);
 }
+let _lastBackOnWorkouts=0;
 function setupBackButton(){
-  // Sentinel state so first popstate fires within the app instead of exiting
   history.replaceState({bs:true,sentinel:true},'','');
   history.pushState({bs:true},'','');
   window.addEventListener('popstate',()=>{
-    // 1) Close detail modal first if open
+    // 1) Close detail modal
     if(S.detailModal){closeDetailModal();history.pushState({bs:true},'','');return;}
-    // 2) Close any other modal
+    // 2) Close any modal/popup
     if(S.modal){closeModal();history.pushState({bs:true},'','');return;}
-    // 3) If not on dashboard, navigate there
+
     const active=document.querySelector('.screen.active')?.id?.replace('screen-','');
+
+    // 3) Active workout — double-back asks for confirmation
+    if(active==='workouts'&&S.activeWorkout){
+      const now=Date.now();
+      if(now-_lastBackOnWorkouts<2500){
+        showWorkoutBackConfirm();
+        history.pushState({bs:true},'','');
+        return;
+      }
+      _lastBackOnWorkouts=now;
+      showBackToast(tt({pl:'Wciśnij Wstecz ponownie, aby anulować trening',en:'Press Back again to cancel workout',de:'Erneut Zurück zum Abbrechen',es:'Presiona Atrás de nuevo para cancelar'}));
+      history.pushState({bs:true},'','');
+      return;
+    }
+
+    // 4) Any screen other than dashboard → go home
     if(active!=='dashboard'){
       showScreen('dashboard');
       history.pushState({bs:true},'','');
       return;
     }
-    // 4) On dashboard — double-press to exit
+
+    // 5) On dashboard — double-press to exit app
     const now=Date.now();
     if(now-_lastBackOnDash<2500){
-      // Allow exit: don't push another state; browser pops past sentinel and closes
       return;
     }
     _lastBackOnDash=now;

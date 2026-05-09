@@ -68,7 +68,7 @@ async function adminToggle(userId,field,value){
         if(!COACH_WHITELIST.map(e=>e.toLowerCase()).includes(email))COACH_WHITELIST.push(S.user.email);
       }
       saveAll();
-      updateCoachNav();renderSettings();renderClients();
+      applyLang();updateCoachNav();renderDashboard();renderSettings();renderClients();
     }
   }
 }
