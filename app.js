@@ -1243,6 +1243,13 @@ function renderNotifications(){
   const el=document.getElementById('notificationsContent');
   if(!el)return;
   const items=[];
+  const chatItems=ld('bs-notifications-v1',[]);
+  chatItems.forEach(n=>items.push({
+    title:n.title||tt({pl:'Nowa wiadomość',en:'New message',de:'Neue Nachricht',es:'Nuevo mensaje'}),
+    body:n.body||'',
+    at:n.at,
+    action:n.action||'',
+  }));
   if(S.pendingInvites&&S.pendingInvites.length){
     S.pendingInvites.forEach(inv=>items.push({
       title:tt({pl:'Zaproszenie od trenera',en:'Coach invitation',de:'Trainer-Einladung',es:'Invitación del entrenador'}),
@@ -1283,11 +1290,19 @@ function addAdminChangelogEntry(type,message){
   sv('bs-admin-changelog-v1',entries.slice(0,30));
 }
 
+function addAppNotification(entry){
+  const entries=ld('bs-notifications-v1',[]);
+  entries.unshift({...entry,at:entry.at||new Date().toISOString()});
+  sv('bs-notifications-v1',entries.slice(0,50));
+  if(document.getElementById('screen-notifications')?.classList.contains('active'))renderNotifications();
+}
+
 function adminChangelogHtml(){
   const entries=ld('bs-admin-changelog-v1',[]);
   const fmt=iso=>{
-    try{return new Date(iso).toLocaleString();}catch(e){return iso||'';}
+    try{return iso?new Date(iso).toLocaleString():'';}catch(e){return iso||'';}
   };
+  const last=entries[0]?.at?fmt(entries[0].at):tt({pl:'Brak',en:'None',de:'Keine',es:'Ninguna'});
   const rows=entries.length?entries.map(e=>`
     <div style="padding:12px 14px;border-top:1px solid var(--border);background:var(--bg2);">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
@@ -1304,7 +1319,7 @@ function adminChangelogHtml(){
         </div>
         <div style="flex:1;min-width:0;">
           <div style="font-size:14px;font-weight:700;">Auto updates</div>
-          <div style="font-size:12px;color:var(--text2);margin-top:2px;">${tt({pl:'Widoczne tylko dla admina.',en:'Visible only to admin.',de:'Nur für Admin sichtbar.',es:'Visible solo para admin.'})}</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:2px;">${tt({pl:'Ostatni update',en:'Last update',de:'Letztes Update',es:'Última actualización'})}: ${last}</div>
         </div>
       </div>
       ${rows}

@@ -568,6 +568,18 @@ function setupRealtimeSubscriptions(){
       ()=>{ _lastAutoSync=0; autoSyncFromCloud(); })
     .subscribe();
   _realtimeChannels.push(assignCh);
+
+  const chatSentCh=sb.channel('bs-chat-sent-'+S.user.id)
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'coach_messages',filter:`coach_id=eq.${S.user.id}`},
+      payload=>{ if(typeof rememberChatMessageNotification==='function')rememberChatMessageNotification(payload); })
+    .subscribe();
+  _realtimeChannels.push(chatSentCh);
+
+  const chatReceivedCh=sb.channel('bs-chat-received-'+S.user.id)
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'coach_messages',filter:`client_user_id=eq.${S.user.id}`},
+      payload=>{ if(typeof rememberChatMessageNotification==='function')rememberChatMessageNotification(payload); })
+    .subscribe();
+  _realtimeChannels.push(chatReceivedCh);
 }
 
 // Auto-sync when tab becomes visible

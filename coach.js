@@ -999,6 +999,7 @@ window.renderClientChatPlaceholder=renderClientChatPlaceholder;
 
 let _coachChatChannel=null;
 let _coachChatContext=null;
+let _lastSeenChatMessageAt=ld('bs-chat-last-seen-v1',{});
 
 function stopCoachChatRealtime(){
   if(_coachChatChannel&&sb){
@@ -1068,6 +1069,10 @@ async function loadCoachChatMessages(){
     </div>`;
   }).join('');
   list.scrollTop=list.scrollHeight;
+  if(ctx.inv?.id){
+    _lastSeenChatMessageAt[ctx.inv.id]=messages[messages.length-1]?.created_at||new Date().toISOString();
+    sv('bs-chat-last-seen-v1',_lastSeenChatMessageAt);
+  }
 }
 
 async function sendCoachChatMessage(inputId){
@@ -1129,6 +1134,27 @@ async function renderUserCoachChat(invId){
 
 window.renderUserCoachChat=renderUserCoachChat;
 window.sendCoachChatMessage=sendCoachChatMessage;
+
+function rememberChatMessageNotification(payload){
+  const m=payload?.new;
+  if(!m||!S.user||m.sender_id===S.user.id)return;
+  const currentInv=_coachChatContext?.inv?.id;
+  if(currentInv===m.invitation_id)return;
+  const lastSeen=_lastSeenChatMessageAt[m.invitation_id];
+  if(lastSeen&&new Date(m.created_at)<=new Date(lastSeen))return;
+  _lastSeenChatMessageAt[m.invitation_id]=m.created_at||new Date().toISOString();
+  sv('bs-chat-last-seen-v1',_lastSeenChatMessageAt);
+  addAppNotification({
+    type:'chat_message',
+    title:tt({pl:'Nowa wiadomość na czacie',en:'New chat message',de:'Neue Chat-Nachricht',es:'Nuevo mensaje de chat'}),
+    body:chatEsc((m.message||'').slice(0,120)),
+    at:m.created_at,
+    action:"showScreen('notifications')",
+  });
+  showSyncToast(tt({pl:'Nowa wiadomość na czacie',en:'New chat message',de:'Neue Chat-Nachricht',es:'Nuevo mensaje de chat'}),'success');
+}
+
+window.rememberChatMessageNotification=rememberChatMessageNotification;
 
 // ── INVITATION BANNERS (client side) ──────────────────────
 
