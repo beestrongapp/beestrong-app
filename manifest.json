@@ -2,7 +2,7 @@
   "name": "BeeStrong Gym Tracker",
   "short_name": "BeeStrong Gym Tracker",
   "description": "Gym Tracker for professional athletes",
-  "start_url": "./index.html",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#0f0f0f",
   "theme_color": "#0f0f0f",
