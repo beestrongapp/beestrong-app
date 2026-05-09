@@ -1245,6 +1245,8 @@ function renderNotifications(){
   const items=[];
   const chatItems=ld('bs-notifications-v1',[]);
   chatItems.forEach(n=>items.push({
+    id:n.id||'',
+    type:n.type||'',
     title:n.title||tt({pl:'Nowa wiadomość',en:'New message',de:'Neue Nachricht',es:'Nuevo mensaje'}),
     body:n.body||'',
     at:n.at,
@@ -1269,6 +1271,7 @@ function renderNotifications(){
   }
   if(!items.length){
     el.innerHTML=`<div class="empty-state">${tt({pl:'Brak powiadomień.',en:'No notifications.',de:'Keine Benachrichtigungen.',es:'Sin notificaciones.'})}</div>`;
+    markLocalNotificationsRead(chatItems);
     return;
   }
   const fmt=iso=>{try{return iso?new Date(iso).toLocaleString():'';}catch(e){return '';}};
@@ -1277,24 +1280,51 @@ function renderNotifications(){
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" width="18" height="18"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
     </div>
     <div class="client-card-info">
-      <div class="client-card-name">${item.title}</div>
-      <div class="client-card-meta">${item.body}</div>
+      <div class="client-card-name">${chatEsc(item.title)}</div>
+      <div class="client-card-meta">${chatEsc(item.body)}</div>
       ${item.at?`<div class="client-card-meta" style="margin-top:3px;color:var(--text3);">${fmt(item.at)}</div>`:''}
     </div>
   </div>`).join('');
+  markLocalNotificationsRead(chatItems);
 }
 
 function addAdminChangelogEntry(type,message){
   const entries=ld('bs-admin-changelog-v1',[]);
   entries.unshift({type,message,at:new Date().toISOString()});
   sv('bs-admin-changelog-v1',entries.slice(0,30));
+  updateNotificationBadge();
 }
 
 function addAppNotification(entry){
   const entries=ld('bs-notifications-v1',[]);
-  entries.unshift({...entry,at:entry.at||new Date().toISOString()});
+  const id=entry.id||`n_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+  entries.unshift({...entry,id,read:entry.read===true,at:entry.at||new Date().toISOString()});
   sv('bs-notifications-v1',entries.slice(0,50));
   if(document.getElementById('screen-notifications')?.classList.contains('active'))renderNotifications();
+  updateNotificationBadge();
+}
+
+function markLocalNotificationsRead(items){
+  if(!items?.length){
+    updateNotificationBadge();
+    return;
+  }
+  if(items.some(n=>!n.read)){
+    sv('bs-notifications-v1',items.map(n=>({...n,read:true})));
+  }
+  updateNotificationBadge();
+}
+
+function getUnreadNotificationCount(){
+  const local=ld('bs-notifications-v1',[]).filter(n=>!n.read).length;
+  const pending=(S.pendingInvites||[]).length;
+  return local+pending;
+}
+
+function updateNotificationBadge(){
+  const btn=document.getElementById('mobileNotificationsBtn');
+  if(!btn)return;
+  btn.classList.toggle('has-notifications',getUnreadNotificationCount()>0);
 }
 
 function adminChangelogHtml(){
@@ -1630,9 +1660,11 @@ function setupBackButton(){
   });
 }
 setupBackButton();
+setTimeout(updateNotificationBadge,0);
 
 if(sessionStorage.getItem('bs-updated')==='1'){
   sessionStorage.removeItem('bs-updated');
   addAdminChangelogEntry('auto_update',tt({pl:'Auto update wykonany',en:'Auto update completed',de:'Auto update abgeschlossen',es:'Auto update completado'}));
+  if(document.getElementById('screen-settings')?.classList.contains('active'))renderSettings();
   setTimeout(()=>showSyncToast(tt({pl:'Aplikacja została zaktualizowana.',en:'App has been updated.',de:'App wurde aktualisiert.',es:'La app se ha actualizado.'}),'success'),700);
 }

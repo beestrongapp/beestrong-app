@@ -219,9 +219,11 @@ body.light #screen-dashboard::before{background:url('./light_logo.png') center/c
 .mobile-brand-name{font-size:18px;font-weight:800;color:var(--accent);letter-spacing:-0.3px;display:block;line-height:1.15;}
 .mobile-brand-sub{font-size:11px;font-weight:400;color:var(--text3);letter-spacing:0.2px;display:block;}
 .mobile-header-actions{display:flex;align-items:center;gap:6px;margin-left:auto;}
-.mobile-header-btn{width:36px;height:36px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--text2);cursor:pointer;flex-shrink:0;transition:background 0.15s,color 0.15s;-webkit-tap-highlight-color:transparent;}
+.mobile-header-btn{width:36px;height:36px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--text2);cursor:pointer;flex-shrink:0;transition:background 0.15s,color 0.15s;-webkit-tap-highlight-color:transparent;position:relative;}
 .mobile-header-btn:active{background:var(--bg4);}
 .mobile-header-btn.active{background:var(--accent-dim);color:var(--accent);}
+.notification-dot{display:none;position:absolute;right:7px;bottom:6px;width:8px;height:8px;border-radius:50%;background:#ff3b30;border:1.5px solid var(--bg3);}
+.mobile-header-btn.has-notifications .notification-dot{display:block;}
 @media(max-width:600px){.mobile-brand{display:flex;}}
 /* ── Quick Access grid ── */
 .quick-access-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:24px;}

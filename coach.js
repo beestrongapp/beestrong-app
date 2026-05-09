@@ -1135,6 +1135,44 @@ async function renderUserCoachChat(invId){
 window.renderUserCoachChat=renderUserCoachChat;
 window.sendCoachChatMessage=sendCoachChatMessage;
 
+async function openChatFromNotification(invId){
+  if(!invId||!sb)return showScreen('notifications');
+  closeModal();
+  const ov=document.createElement('div');
+  ov.className='modal-overlay client-detail-overlay';
+  ov.innerHTML=`<div class="modal client-detail-modal"><div id="notificationChatContent" style="display:flex;justify-content:center;padding:40px 0;"><div class="spinner"></div></div></div>`;
+  ov._cleanup=()=>stopCoachChatRealtime();
+  document.body.appendChild(ov);
+  S.modal=ov;
+  const{data:inv,error}=await sb.from('coach_invitations').select('*').eq('id',invId).single();
+  if(error||!inv){
+    document.getElementById('notificationChatContent').innerHTML=`<div style="color:var(--red);padding:16px;">${chatEsc(error?.message||'Chat unavailable')}</div>`;
+    return;
+  }
+  const otherName=S.user?.id===inv.coach_id
+    ? (inv.client_name||inv.client_email||'Client')
+    : (inv.coach_name||inv.coach_email||'Coach');
+  const header=`<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:16px;">
+    <div>
+      <button class="modal-back" onclick="closeModal();showScreen('notifications')" style="margin-bottom:8px;">${t('backBtn')}</button>
+      <div class="modal-title" style="margin-bottom:4px;">Chat</div>
+      <div style="font-size:12px;color:var(--text2);">${chatEsc(otherName)}</div>
+    </div>
+    <button class="rm-btn" onclick="closeModal()" style="width:34px;height:34px;font-size:18px;">✕</button>
+  </div>`;
+  renderCoachChat({
+    inv,
+    containerId:'notificationChatContent',
+    title:'Chat',
+    subtitle:otherName,
+    backHtml:header,
+    inputId:'notificationChatInput',
+    listId:'notificationChatMessages',
+  });
+}
+
+window.openChatFromNotification=openChatFromNotification;
+
 function rememberChatMessageNotification(payload){
   const m=payload?.new;
   if(!m||!S.user||m.sender_id===S.user.id)return;
@@ -1147,9 +1185,10 @@ function rememberChatMessageNotification(payload){
   addAppNotification({
     type:'chat_message',
     title:tt({pl:'Nowa wiadomość na czacie',en:'New chat message',de:'Neue Chat-Nachricht',es:'Nuevo mensaje de chat'}),
-    body:chatEsc((m.message||'').slice(0,120)),
+    body:(m.message||'').slice(0,120),
     at:m.created_at,
-    action:"showScreen('notifications')",
+    invitationId:m.invitation_id,
+    action:`openChatFromNotification('${chatEsc(m.invitation_id)}')`,
   });
   showSyncToast(tt({pl:'Nowa wiadomość na czacie',en:'New chat message',de:'Neue Chat-Nachricht',es:'Nuevo mensaje de chat'}),'success');
 }
@@ -1176,6 +1215,7 @@ async function checkPendingInvitations(){
         .is('client_user_id',null);
     }
     renderInvitationBanners();
+    if(typeof updateNotificationBadge==='function')updateNotificationBadge();
   }catch(e){
     console.warn('checkPendingInvitations',e);
   }
@@ -1184,7 +1224,11 @@ async function checkPendingInvitations(){
 function renderInvitationBanners(){
   const el=document.getElementById('inviteBanners');
   if(!el)return;
-  if(!S.pendingInvites||!S.pendingInvites.length){el.innerHTML='';return;}
+  if(!S.pendingInvites||!S.pendingInvites.length){
+    el.innerHTML='';
+    if(typeof updateNotificationBadge==='function')updateNotificationBadge();
+    return;
+  }
   el.innerHTML=S.pendingInvites.map(inv=>`
     <div class="invite-banner">
       <div class="invite-banner-icon">🏋️</div>
@@ -1197,6 +1241,7 @@ function renderInvitationBanners(){
         </div>
       </div>
     </div>`).join('');
+  if(typeof updateNotificationBadge==='function')updateNotificationBadge();
 }
 
 async function acceptInvitation(invId){
@@ -1209,6 +1254,7 @@ async function acceptInvitation(invId){
     }).eq('id',invId);
     S.pendingInvites=S.pendingInvites.filter(i=>i.id!==invId);
     renderInvitationBanners();
+    if(typeof updateNotificationBadge==='function')updateNotificationBadge();
     showSyncToast(tt({pl:'Zaproszenie zaakceptowane ✓',en:'Invitation accepted ✓',de:'Einladung angenommen ✓',es:'Invitación aceptada ✓'}),'success');
   }catch(e){
     showSyncToast(tt({pl:'Błąd: ',en:'Error: ',de:'Fehler: ',es:'Error: '})+(e.message||''),'error');
@@ -1226,6 +1272,7 @@ async function declineInvitation(invId){
     }).eq('id',invId);
     S.pendingInvites=S.pendingInvites.filter(i=>i.id!==invId);
     renderInvitationBanners();
+    if(typeof updateNotificationBadge==='function')updateNotificationBadge();
   }catch(e){
     showSyncToast(tt({pl:'Błąd: ',en:'Error: ',de:'Fehler: ',es:'Error: '})+(e.message||''),'error');
   }
