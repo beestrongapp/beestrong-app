@@ -1640,11 +1640,11 @@ function openExitConfirmModal(){
     <div class="modal-title" style="margin-bottom:8px;">${tt({pl:'Wyjść z aplikacji?',en:'Exit app?',de:'App beenden?',es:'¿Salir de la app?'})}</div>
     <div style="font-size:13px;color:var(--text2);line-height:1.45;margin-bottom:18px;">${tt({pl:'Czy na pewno chcesz wyjść?',en:'Are you sure you want to exit?',de:'Möchtest du die App wirklich beenden?',es:'¿Seguro que quieres salir?'})}</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-      <button class="btn btn-ghost" onclick="closeModal();history.pushState({bs:true},'','');">${tt({pl:'Nie',en:'No',de:'Nein',es:'No'})}</button>
+      <button class="btn btn-ghost" onclick="closeModal();ensureBackTrap();">${tt({pl:'Nie',en:'No',de:'Nein',es:'No'})}</button>
       <button class="btn btn-primary" onclick="confirmExitApp()">${tt({pl:'Tak',en:'Yes',de:'Ja',es:'Sí'})}</button>
     </div>
   </div>`;
-  ov.addEventListener('click',e=>{if(e.target===ov){closeModal();history.pushState({bs:true},'','');}});
+  ov.addEventListener('click',e=>{if(e.target===ov){closeModal();ensureBackTrap();}});
   document.body.appendChild(ov);
   S.modal=ov;
 }
@@ -1659,18 +1659,22 @@ function confirmExitApp(){
 window.confirmExitApp=confirmExitApp;
 
 let _lastBackOnWorkouts=0;
+function ensureBackTrap(){
+  try{history.pushState({bs:true,trap:true},'','');}catch(e){}
+}
+
 function setupBackButton(){
   history.replaceState({bs:true,sentinel:true},'','');
-  history.pushState({bs:true},'','');
+  ensureBackTrap();
   window._bsHistoryReady=true;
   window.addEventListener('popstate',()=>{
     if(_allowAppExit)return;
+    ensureBackTrap();
     // 1) Close detail modal
-    if(S.detailModal){closeDetailModal();history.pushState({bs:true},'','');return;}
+    if(S.detailModal){closeDetailModal();return;}
     // 2) Client detail subview -> return to client hub before closing the full-screen client card
     if(S.modal&&window._clientDetailData&&window._clientDetailView&&window._clientDetailView!=='hub'){
       renderClientHub();
-      history.pushState({bs:true},'','');
       return;
     }
     // 3) Close any modal/popup
@@ -1682,7 +1686,6 @@ function setupBackButton(){
         showScreen(returnScreen);
         window._bsHandlingBack=false;
       }
-      history.pushState({bs:true},'','');
       return;
     }
 
@@ -1693,12 +1696,10 @@ function setupBackButton(){
       const now=Date.now();
       if(now-_lastBackOnWorkouts<2500){
         showWorkoutBackConfirm();
-        history.pushState({bs:true},'','');
         return;
       }
       _lastBackOnWorkouts=now;
       showBackToast(tt({pl:'Wciśnij Wstecz ponownie, aby anulować trening',en:'Press Back again to cancel workout',de:'Erneut Zurück zum Abbrechen',es:'Presiona Atrás de nuevo para cancelar'}));
-      history.pushState({bs:true},'','');
       return;
     }
 
@@ -1707,7 +1708,6 @@ function setupBackButton(){
       window._bsHandlingBack=true;
       showScreen('dashboard');
       window._bsHandlingBack=false;
-      history.pushState({bs:true},'','');
       return;
     }
 
@@ -1715,12 +1715,10 @@ function setupBackButton(){
     const now=Date.now();
     if(now-_lastBackOnDash<2500){
       openExitConfirmModal();
-      history.pushState({bs:true},'','');
       return;
     }
     _lastBackOnDash=now;
     showBackToast(tt({pl:'Wciśnij Wstecz ponownie, aby wyjść',en:'Press Back again to exit',de:'Erneut Zurück drücken zum Beenden',es:'Presiona Atrás otra vez para salir'}));
-    history.pushState({bs:true},'','');
   });
 }
 setupBackButton();
