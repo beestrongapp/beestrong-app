@@ -48,7 +48,7 @@ function initSupabase(){
         S.user={id:session.user.id,email:session.user.email,name:(session.user.user_metadata?.display_name||'').trim()};
         if(S.coachMode&&!isCoachAllowed()){S.coachMode=false;saveAll();}
         if(!wasLoggedIn&&(event==='SIGNED_IN'||event==='INITIAL_SESSION')){
-          if(event==='SIGNED_IN'){clearLocalUserData();setTimeout(()=>{postLoginSyncFlow();upsertProfile();syncProfileFlags();checkPendingInvitations();setupRealtimeSubscriptions();},400);}
+          if(event==='SIGNED_IN'){setTimeout(()=>{postLoginSyncFlow();upsertProfile();syncProfileFlags();checkPendingInvitations();setupRealtimeSubscriptions();},400);}
           if(event==='INITIAL_SESSION')setTimeout(()=>{upsertProfile();syncProfileFlags();checkPendingInvitations();setupRealtimeSubscriptions();autoSyncFromCloud();},600);
         }
       } else {
