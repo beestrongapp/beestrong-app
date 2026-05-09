@@ -1,4 +1,4 @@
-﻿// ===== AUTH (Supabase) =====
+// ===== AUTH (Supabase) =====
 // Phase 1: account-only (login/signup/logout). Cloud sync of templates/workouts/programs
 // is wired in the next iteration. For now, signing in associates the device with a user
 // so future syncs can attach data to their account.
@@ -452,7 +452,8 @@ function showAuthModal(){
         // Push name to Supabase immediately on signup (most reliable approach)
         if(isSignUp&&name&&sb&&data?.session?.user){
           const uid=data.session.user.id;
-          sb.from('profiles').upsert({id:uid,email:data.session.user.email,display_name:name},{onConflict:'id'}).catch(e=>console.warn('profile name upsert failed',e));
+          const{error:profileErr}=await sb.from('profiles').upsert({id:uid,email:data.session.user.email,display_name:name},{onConflict:'id'});
+          if(profileErr)console.warn('profile name upsert failed',profileErr);
           localStorage.setItem('bs-username',name);
         }
         // Success
