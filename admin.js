@@ -59,7 +59,7 @@ async function adminToggle(userId,field,value){
     if(field==='is_pro'){
       S.isPro=!!value;
       saveAll();
-      applyLang();renderDashboard();renderSettings();renderTemplates();renderProgress();
+      renderAccountBadge();renderSettings();renderTemplates();renderProgress();
     }
     if(field==='is_coach'){
       S.coachMode=!!value;
@@ -68,7 +68,7 @@ async function adminToggle(userId,field,value){
         if(!COACH_WHITELIST.map(e=>e.toLowerCase()).includes(email))COACH_WHITELIST.push(S.user.email);
       }
       saveAll();
-      applyLang();updateCoachNav();renderDashboard();renderSettings();renderClients();
+      renderAccountBadge();updateCoachNav();renderSettings();renderClients();
     }
   }
 }

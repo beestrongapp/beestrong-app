@@ -437,7 +437,7 @@ async function syncProfileFlags(){
     const unEl=document.getElementById('sidebarUserName');if(unEl)unEl.textContent=data.display_name;
     applyLang();
   }
-  if(changed){saveAll();updateCoachNav();updateAdminNav();applyLang();renderDashboard();renderSettings();}
+  if(changed){saveAll();updateCoachNav();updateAdminNav();renderAccountBadge();renderSettings();}
 }
 
 // ── CLIENT SCREEN ──────────────────────────────────────────
