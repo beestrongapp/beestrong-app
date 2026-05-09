@@ -1538,3 +1538,8 @@ function setupBackButton(){
   });
 }
 setupBackButton();
+
+if(sessionStorage.getItem('bs-updated')==='1'){
+  sessionStorage.removeItem('bs-updated');
+  setTimeout(()=>showSyncToast(tt({pl:'Aplikacja została zaktualizowana.',en:'App has been updated.',de:'App wurde aktualisiert.',es:'La app se ha actualizado.'}),'success'),700);
+}
