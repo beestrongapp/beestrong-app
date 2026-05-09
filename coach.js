@@ -1,4 +1,4 @@
-﻿// ===== COACH MODE: Custom Programs Editor + Share/Import =====
+// ===== COACH MODE: Custom Programs Editor + Share/Import =====
 
 // Generate a short, URL-safe random code (8 chars). Collisions theoretically possible
 // but for ~36^8 = 2.8 trillion combinations, fine for our scale.
@@ -460,25 +460,47 @@ function renderClients(){
       el.innerHTML=`<div class="empty-state">${tt({pl:'Brak klientów. Zaproś pierwszego klikając +.',en:'No clients yet. Invite one by tapping +.',de:'Noch keine Klienten. Tippe + um einzuladen.',es:'Sin clientes aún. Pulsa + para invitar.'})}</div>`;
       return;
     }
-    const pending=invitations.filter(i=>i.status==='pending');
-    const accepted=invitations.filter(i=>i.status==='accepted');
-    const declined=invitations.filter(i=>i.status==='declined');
-    let html='';
-    const sectionHdr=(lbl)=>`<div class="section-label" style="margin-top:16px;">${lbl}</div>`;
-    if(accepted.length){
-      html+=sectionHdr(tt({pl:'Aktywni',en:'Active',de:'Aktiv',es:'Activos'}));
-      html+=accepted.map(inv=>clientCardHtml(inv)).join('');
-    }
-    if(pending.length){
-      html+=sectionHdr(tt({pl:'Oczekujące zaproszenia',en:'Pending invitations',de:'Ausstehende Einladungen',es:'Invitaciones pendientes'}));
-      html+=pending.map(inv=>clientCardHtml(inv)).join('');
-    }
-    if(declined.length){
-      html+=sectionHdr(tt({pl:'Odrzucone',en:'Declined',de:'Abgelehnt',es:'Rechazados'}));
-      html+=declined.map(inv=>clientCardHtml(inv)).join('');
-    }
-    el.innerHTML=html;
+    window._clientInvitations=invitations;
+    el.innerHTML=`<div style="margin-bottom:14px;"><input type="text" id="clientSearch" placeholder="${tt({pl:'Szukaj po imieniu lub mailu...',en:'Search by name or email...',de:'Nach Name oder E-Mail suchen...',es:'Buscar por nombre o email...'})}" oninput="filterClients()" style="font-size:14px;"/></div><div id="clientList"></div>`;
+    renderClientList(window._clientInvitations);
   });
+}
+
+function filterClients(){
+  const q=(document.getElementById('clientSearch')?.value||'').toLowerCase().trim();
+  const filtered=(window._clientInvitations||[]).filter(inv=>{
+    const name=(inv.client_display_name||'').toLowerCase();
+    const email=(inv.client_email||'').toLowerCase();
+    return name.includes(q)||email.includes(q);
+  });
+  renderClientList(filtered);
+}
+
+function renderClientList(invitations){
+  const el=document.getElementById('clientList');
+  if(!el)return;
+  if(!invitations.length){
+    el.innerHTML=`<div style="text-align:center;color:var(--text3);padding:32px;">${tt({pl:'Brak klientów',en:'No clients found',de:'Keine Klienten',es:'Sin clientes'})}</div>`;
+    return;
+  }
+  const pending=invitations.filter(i=>i.status==='pending');
+  const accepted=invitations.filter(i=>i.status==='accepted');
+  const declined=invitations.filter(i=>i.status==='declined');
+  let html='';
+  const sectionHdr=(lbl)=>`<div class="section-label" style="margin-top:16px;">${lbl}</div>`;
+  if(accepted.length){
+    html+=sectionHdr(tt({pl:'Aktywni',en:'Active',de:'Aktiv',es:'Activos'}));
+    html+=accepted.map(inv=>clientCardHtml(inv)).join('');
+  }
+  if(pending.length){
+    html+=sectionHdr(tt({pl:'Oczekujące zaproszenia',en:'Pending invitations',de:'Ausstehende Einladungen',es:'Invitaciones pendientes'}));
+    html+=pending.map(inv=>clientCardHtml(inv)).join('');
+  }
+  if(declined.length){
+    html+=sectionHdr(tt({pl:'Odrzucone',en:'Declined',de:'Abgelehnt',es:'Rechazados'}));
+    html+=declined.map(inv=>clientCardHtml(inv)).join('');
+  }
+  el.innerHTML=html;
 }
 
 function clientCardHtml(inv){
@@ -488,11 +510,15 @@ function clientCardHtml(inv){
     declined:tt({pl:'Odrzucono',en:'Declined',de:'Abgelehnt',es:'Rechazado'}),
   }[inv.status]||inv.status;
   const clickable=inv.status==='accepted';
+  const name=inv.client_display_name||inv.client_email||'—';
+  const meta=inv.client_display_name&&inv.client_email
+    ? inv.client_email
+    : `${tt({pl:'Zaproszono',en:'Invited',de:'Eingeladen',es:'Invitado'})}: ${inv.created_at?new Date(inv.created_at).toLocaleDateString():''}`;
   return `<div class="client-card" onclick="${clickable?`openClientDetail('${inv.id}')`:''}" style="${clickable?'':'cursor:default;'}">
-    <div style="width:38px;height:38px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--btn-text);flex-shrink:0;">${(inv.client_email||'?')[0].toUpperCase()}</div>
+    <div style="width:38px;height:38px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--btn-text);flex-shrink:0;">${(name||'?')[0].toUpperCase()}</div>
     <div class="client-card-info">
-      <div class="client-card-name">${inv.client_email||'—'}</div>
-      <div class="client-card-meta">${tt({pl:'Zaproszono',en:'Invited',de:'Eingeladen',es:'Invitado'})}: ${inv.created_at?new Date(inv.created_at).toLocaleDateString():''}</div>
+      <div class="client-card-name">${name}</div>
+      <div class="client-card-meta">${meta}</div>
     </div>
     <span class="client-status-badge client-status-${inv.status}">${statusLabel}</span>
     ${inv.status==='pending'?`<button class="btn btn-ghost" style="padding:4px 10px;font-size:12px;margin-left:4px;" onclick="event.stopPropagation();cancelInvitation('${inv.id}')">✕</button>`:''}
@@ -507,7 +533,24 @@ async function loadClientsFromCloud(){
       .eq('coach_id',S.user.id)
       .order('created_at',{ascending:false});
     if(error)throw error;
-    return data||[];
+    const invitations=data||[];
+    const clientIds=[...new Set(invitations.map(inv=>inv.client_user_id).filter(Boolean))];
+    if(clientIds.length){
+      const{data:profiles,error:profilesError}=await sb.from('profiles')
+        .select('id,email,display_name')
+        .in('id',clientIds);
+      if(!profilesError&&profiles){
+        const byId=new Map(profiles.map(p=>[p.id,p]));
+        invitations.forEach(inv=>{
+          const profile=byId.get(inv.client_user_id);
+          if(profile){
+            inv.client_display_name=profile.display_name||null;
+            inv.client_email=inv.client_email||profile.email;
+          }
+        });
+      }
+    }
+    return invitations;
   }catch(e){
     console.error('loadClientsFromCloud',e);
     return null;
@@ -584,6 +627,7 @@ async function sendCoachInvitation(){
   }
 }
 window.sendCoachInvitation=sendCoachInvitation;
+window.filterClients=filterClients;
 
 async function cancelInvitation(invId){
   if(!sb||!S.user)return;
