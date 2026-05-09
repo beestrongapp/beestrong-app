@@ -1239,6 +1239,44 @@ function renderSettings(){
   el.innerHTML=proCard+rowsHtml+adminChangelog+versionLbl;
 }
 
+function renderNotifications(){
+  const el=document.getElementById('notificationsContent');
+  if(!el)return;
+  const items=[];
+  if(S.pendingInvites&&S.pendingInvites.length){
+    S.pendingInvites.forEach(inv=>items.push({
+      title:tt({pl:'Zaproszenie od trenera',en:'Coach invitation',de:'Trainer-Einladung',es:'Invitación del entrenador'}),
+      body:`${inv.coach_name||inv.coach_email||'Coach'} ${tt({pl:'chce mieć wgląd w Twoje treningi.',en:'wants to follow your progress.',de:'möchte deinen Fortschritt verfolgen.',es:'quiere seguir tu progreso.'})}`,
+      at:inv.created_at,
+      action:"showScreen('dashboard')",
+    }));
+  }
+  const updates=ld('bs-admin-changelog-v1',[]).slice(0,5);
+  if(isAdmin()){
+    updates.forEach(u=>items.push({
+      title:u.message||'Auto update',
+      body:tt({pl:'Wpis z changeloga admina.',en:'Admin changelog entry.',de:'Admin-Changelog-Eintrag.',es:'Entrada del changelog admin.'}),
+      at:u.at,
+      action:"showScreen('settings')",
+    }));
+  }
+  if(!items.length){
+    el.innerHTML=`<div class="empty-state">${tt({pl:'Brak powiadomień.',en:'No notifications.',de:'Keine Benachrichtigungen.',es:'Sin notificaciones.'})}</div>`;
+    return;
+  }
+  const fmt=iso=>{try{return iso?new Date(iso).toLocaleString():'';}catch(e){return '';}};
+  el.innerHTML=items.map(item=>`<div class="client-card" onclick="${item.action||''}">
+    <div style="width:38px;height:38px;border-radius:50%;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;color:var(--accent);flex-shrink:0;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" width="18" height="18"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+    </div>
+    <div class="client-card-info">
+      <div class="client-card-name">${item.title}</div>
+      <div class="client-card-meta">${item.body}</div>
+      ${item.at?`<div class="client-card-meta" style="margin-top:3px;color:var(--text3);">${fmt(item.at)}</div>`:''}
+    </div>
+  </div>`).join('');
+}
+
 function addAdminChangelogEntry(type,message){
   const entries=ld('bs-admin-changelog-v1',[]);
   entries.unshift({type,message,at:new Date().toISOString()});
@@ -1528,6 +1566,7 @@ let _lastBackOnWorkouts=0;
 function setupBackButton(){
   history.replaceState({bs:true,sentinel:true},'','');
   history.pushState({bs:true},'','');
+  window._bsHistoryReady=true;
   window.addEventListener('popstate',()=>{
     // 1) Close detail modal
     if(S.detailModal){closeDetailModal();history.pushState({bs:true},'','');return;}
@@ -1558,7 +1597,9 @@ function setupBackButton(){
 
     // 5) Any screen other than dashboard → go home
     if(active!=='dashboard'){
+      window._bsHandlingBack=true;
       showScreen('dashboard');
+      window._bsHandlingBack=false;
       history.pushState({bs:true},'','');
       return;
     }

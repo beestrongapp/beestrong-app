@@ -97,6 +97,9 @@ function saveAll(){
 }
 
 function showScreen(name){
+  if(window._bsHistoryReady&&!window._bsHandlingBack&&name!=='dashboard'){
+    history.pushState({bs:true,screen:name},'','');
+  }
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('.mobile-nav-item[data-screen]').forEach(b=>b.classList.remove('active'));
@@ -112,6 +115,7 @@ function showScreen(name){
   const mBtn=document.querySelector(`.mobile-nav-item[data-screen="${name}"]`);
   if(mBtn)mBtn.classList.add('active');
   if(name==='settings')document.getElementById('mobileSettingsBtn')?.classList.add('active');
+  if(name==='notifications')document.getElementById('mobileNotificationsBtn')?.classList.add('active');
   if(name==='clients')document.getElementById('mobileClientsBtn')?.classList.add('active');
   if(name==='coaches')document.getElementById('mobileCoachesBtn')?.classList.add('active');
   if(name==='admin')document.getElementById('mobileAdminBtn')?.classList.add('active');
@@ -124,6 +128,7 @@ function showScreen(name){
   if(name==='workouts')renderWorkout();
   // Profile screen removed — its content lives in Settings now (renderSettings handles measurements + Pro card)
   if(name==='settings')renderSettings();
+  if(name==='notifications')renderNotifications();
   if(name==='clients')renderClients();
   if(name==='coaches')renderUserCoaches();
   if(name==='admin')renderAdmin();
