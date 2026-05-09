@@ -1495,12 +1495,18 @@ function setupBackButton(){
   window.addEventListener('popstate',()=>{
     // 1) Close detail modal
     if(S.detailModal){closeDetailModal();history.pushState({bs:true},'','');return;}
-    // 2) Close any modal/popup
+    // 2) Client detail subview -> return to client hub before closing the full-screen client card
+    if(S.modal&&window._clientDetailData&&window._clientDetailView&&window._clientDetailView!=='hub'){
+      renderClientHub();
+      history.pushState({bs:true},'','');
+      return;
+    }
+    // 3) Close any modal/popup
     if(S.modal){closeModal();history.pushState({bs:true},'','');return;}
 
     const active=document.querySelector('.screen.active')?.id?.replace('screen-','');
 
-    // 3) Active workout — double-back asks for confirmation
+    // 4) Active workout — double-back asks for confirmation
     if(active==='workouts'&&S.activeWorkout){
       const now=Date.now();
       if(now-_lastBackOnWorkouts<2500){
@@ -1514,14 +1520,14 @@ function setupBackButton(){
       return;
     }
 
-    // 4) Any screen other than dashboard → go home
+    // 5) Any screen other than dashboard → go home
     if(active!=='dashboard'){
       showScreen('dashboard');
       history.pushState({bs:true},'','');
       return;
     }
 
-    // 5) On dashboard — double-press to exit app
+    // 6) On dashboard — double-press to exit app
     const now=Date.now();
     if(now-_lastBackOnDash<2500){
       return;

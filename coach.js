@@ -747,11 +747,14 @@ window.cancelInvitation=cancelInvitation;
 
 async function openClientDetail(invId){
   closeModal();
+  window._clientDetailData=null;
+  window._clientDetailView=null;
   const ov=document.createElement('div');ov.className='modal-overlay';
-  ov.innerHTML=`<div class="modal" style="max-height:85vh;overflow-y:auto;">
-    <div class="modal-handle"></div>
+  ov.classList.add('client-detail-overlay');
+  ov.innerHTML=`<div class="modal client-detail-modal">
     <div id="clientDetailContent" style="display:flex;align-items:center;justify-content:center;padding:40px 0;"><div class="spinner"></div></div>
   </div>`;
+  ov._cleanup=()=>{window._clientDetailData=null;window._clientDetailView=null;};
   document.body.appendChild(ov);S.modal=ov;
 
   try{
@@ -801,6 +804,7 @@ function renderClientHub(){
   const ctx=window._clientDetailData;
   const el=document.getElementById('clientDetailContent');
   if(!ctx||!el)return;
+  window._clientDetailView='hub';
   el.style.display='block';
   el.style.padding='0';
   const name=clientDetailName(ctx);
@@ -854,6 +858,7 @@ function remoteWorkoutName(w){
 function renderClientWorkoutsView(){
   const ctx=window._clientDetailData,el=document.getElementById('clientDetailContent');
   if(!ctx||!el)return;
+  window._clientDetailView='workouts';
   el.style.display='block';
   el.style.padding='0';
   let html=clientDetailHeader(t('workout'),clientDetailName(ctx),true);
@@ -875,6 +880,7 @@ function renderClientWorkoutsView(){
 function renderClientWorkoutDetail(idx){
   const ctx=window._clientDetailData,el=document.getElementById('clientDetailContent');
   if(!ctx||!el)return;
+  window._clientDetailView='workout-detail';
   el.style.display='block';
   el.style.padding='0';
   const w=ctx.workouts[idx];
@@ -903,6 +909,7 @@ function renderClientWorkoutDetail(idx){
 function renderClientMeasurementsView(){
   const ctx=window._clientDetailData,el=document.getElementById('clientDetailContent');
   if(!ctx||!el)return;
+  window._clientDetailView='measurements';
   el.style.display='block';
   el.style.padding='0';
   let html=clientDetailHeader(tt({pl:'Pomiary',en:'Measurements',de:'Messungen',es:'Medidas'}),clientDetailName(ctx),true);
@@ -930,6 +937,7 @@ function renderClientMeasurementsView(){
 function renderClientProgressView(){
   const ctx=window._clientDetailData,el=document.getElementById('clientDetailContent');
   if(!ctx||!el)return;
+  window._clientDetailView='progress';
   el.style.display='block';
   el.style.padding='0';
   const workouts=ctx.workouts||[];
@@ -968,6 +976,7 @@ function renderClientProgressView(){
 function renderClientChatPlaceholder(){
   const ctx=window._clientDetailData,el=document.getElementById('clientDetailContent');
   if(!ctx||!el)return;
+  window._clientDetailView='chat';
   el.style.display='block';
   el.style.padding='0';
   el.innerHTML=clientDetailHeader('Chat',clientDetailName(ctx),true)+`<div class="empty-state">${tt({pl:'Chat zbudujemy w kolejnym etapie.',en:'Chat will be built in the next step.',de:'Chat kommt im nächsten Schritt.',es:'Chat se construirá en el siguiente paso.'})}</div>`;

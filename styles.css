@@ -123,6 +123,9 @@ input:focus,textarea:focus{outline:none;border-color:var(--accent);}
 .delta-down{color:var(--red);font-size:12px;margin-top:3px;}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:flex-end;z-index:200;}
 .modal{background:var(--bg2);border-radius:20px 20px 0 0;border-top:1px solid var(--border2);padding:20px;padding-bottom:calc(20px + env(safe-area-inset-bottom));width:100%;max-height:92dvh;overflow-y:auto;}
+.client-detail-overlay{align-items:stretch;background:var(--bg);}
+.client-detail-modal{height:100dvh;max-height:100dvh;border-radius:0;border-top:none;padding:20px;padding-top:calc(20px + env(safe-area-inset-top));padding-bottom:calc(20px + env(safe-area-inset-bottom));overflow-y:auto;background:var(--bg);}
+@media(min-width:760px){.client-detail-modal{max-width:760px;margin:0 auto;border-left:1px solid var(--border);border-right:1px solid var(--border);}}
 .modal-title{font-size:17px;font-weight:700;margin-bottom:16px;}
 .modal-handle{width:36px;height:4px;background:var(--bg4);border-radius:2px;margin:0 auto 14px;}
 .modal-back{display:flex;align-items:center;gap:8px;color:var(--accent);font-size:14px;font-weight:600;cursor:pointer;margin-bottom:16px;background:none;border:none;font-family:inherit;padding:0;}
