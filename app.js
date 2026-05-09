@@ -1233,9 +1233,45 @@ function renderSettings(){
     }).join('')}
   </div>`;
 
+  const adminChangelog=isAdmin()?adminChangelogHtml():'';
   const versionLbl=`<div style="margin:24px 0 40px;padding:12px;text-align:center;font-size:11px;color:var(--text3);">BeeStrong Gym Tracker · v1.0</div>`;
 
-  el.innerHTML=proCard+rowsHtml+versionLbl;
+  el.innerHTML=proCard+rowsHtml+adminChangelog+versionLbl;
+}
+
+function addAdminChangelogEntry(type,message){
+  const entries=ld('bs-admin-changelog-v1',[]);
+  entries.unshift({type,message,at:new Date().toISOString()});
+  sv('bs-admin-changelog-v1',entries.slice(0,30));
+}
+
+function adminChangelogHtml(){
+  const entries=ld('bs-admin-changelog-v1',[]);
+  const fmt=iso=>{
+    try{return new Date(iso).toLocaleString();}catch(e){return iso||'';}
+  };
+  const rows=entries.length?entries.map(e=>`
+    <div style="padding:12px 14px;border-top:1px solid var(--border);background:var(--bg2);">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+        <div style="font-size:13px;font-weight:700;">${e.message||e.type||'Update'}</div>
+        <div style="font-size:11px;color:var(--text3);white-space:nowrap;">${fmt(e.at)}</div>
+      </div>
+    </div>`).join(''):`<div style="padding:14px;background:var(--bg2);border-top:1px solid var(--border);font-size:12px;color:var(--text3);">${tt({pl:'Brak zapisanych updateów.',en:'No updates recorded yet.',de:'Noch keine Updates gespeichert.',es:'Aún no hay actualizaciones registradas.'})}</div>`;
+  return `<div style="margin-top:16px;margin-bottom:8px;">
+    <div style="font-size:13px;color:var(--text2);font-weight:700;text-transform:uppercase;letter-spacing:0.4px;margin:0 0 8px 2px;">Admin changelog</div>
+    <div style="border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;">
+      <div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--bg2);">
+        <div style="width:34px;height:34px;border-radius:10px;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;color:var(--accent);flex-shrink:0;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M3 3v5h5"/><path d="M21 21v-5h-5"/><path d="M21 8a9 9 0 0 0-15-4.7L3 8"/><path d="M3 16a9 9 0 0 0 15 4.7L21 16"/></svg>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:14px;font-weight:700;">Auto updates</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:2px;">${tt({pl:'Widoczne tylko dla admina.',en:'Visible only to admin.',de:'Nur für Admin sichtbar.',es:'Visible solo para admin.'})}</div>
+        </div>
+      </div>
+      ${rows}
+    </div>
+  </div>`;
 }
 
 function toggleUnitsInline(){
@@ -1541,5 +1577,6 @@ setupBackButton();
 
 if(sessionStorage.getItem('bs-updated')==='1'){
   sessionStorage.removeItem('bs-updated');
+  addAdminChangelogEntry('auto_update',tt({pl:'Auto update wykonany',en:'Auto update completed',de:'Auto update abgeschlossen',es:'Auto update completado'}));
   setTimeout(()=>showSyncToast(tt({pl:'Aplikacja została zaktualizowana.',en:'App has been updated.',de:'App wurde aktualisiert.',es:'La app se ha actualizado.'}),'success'),700);
 }
