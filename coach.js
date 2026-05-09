@@ -538,7 +538,10 @@ async function openUserCoachDetail(invId){
     if(error||!inv)throw error||new Error('not found');
     const coachName=inv.coach_name||inv.coach_email||'Coach';
     const msg=tt({pl:'Chat zbudujemy w kolejnym etapie.',en:'Chat will be built in the next step.',de:'Chat kommt im nächsten Schritt.',es:'Chat se construirá en el siguiente paso.'}).replace(/'/g,"\\'");
-    document.getElementById('userCoachDetailContent').innerHTML=`
+    const content=document.getElementById('userCoachDetailContent');
+    content.style.display='block';
+    content.style.padding='0';
+    content.innerHTML=`
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:14px;">
         <div>
           <div class="modal-title" style="margin-bottom:4px;">${coachName}</div>
@@ -546,10 +549,22 @@ async function openUserCoachDetail(invId){
         </div>
         <button class="rm-btn" onclick="closeModal()" style="width:34px;height:34px;font-size:18px;">✕</button>
       </div>
-      <div class="quick-access-grid" style="grid-template-columns:repeat(2,1fr);margin-bottom:10px;">
+      <div class="quick-access-grid" style="grid-template-columns:repeat(2,minmax(0,1fr));margin-bottom:10px;">
         <div class="qa-tile" onclick="showSyncToast('${msg}')">
           <div class="qa-tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="22" height="22"><path d="M21 15a4 4 0 0 1-4 4H7l-4 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg></div>
           <div class="qa-tile-label">Chat</div>
+        </div>
+        <div class="qa-tile" onclick="showSyncToast('${tt({pl:'Programy od coacha są w zakładce Programy.',en:'Coach programs are in the Programs tab.',de:'Coach-Programme sind im Programme-Tab.',es:'Los programas del coach están en Programas.'}).replace(/'/g,"\\'")}')">
+          <div class="qa-tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="22" height="22"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 3v18"/></svg></div>
+          <div class="qa-tile-label">${t('programs')}</div>
+        </div>
+        <div class="qa-tile" onclick="showSyncToast('${tt({pl:'Podgląd check-in dodamy później.',en:'Check-in view will be added later.',de:'Check-in kommt später.',es:'Check-in se añadirá más tarde.'}).replace(/'/g,"\\'")}')">
+          <div class="qa-tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="22" height="22"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="qa-tile-label">Check-in</div>
+        </div>
+        <div class="qa-tile" onclick="showSyncToast('${tt({pl:'Notatki coacha dodamy później.',en:'Coach notes will be added later.',de:'Coach-Notizen kommen später.',es:'Notas del coach se añadirán más tarde.'}).replace(/'/g,"\\'")}')">
+          <div class="qa-tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="22" height="22"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="14" y2="17"/></svg></div>
+          <div class="qa-tile-label">${tt({pl:'Notatki',en:'Notes',de:'Notizen',es:'Notas'})}</div>
         </div>
       </div>`;
   }catch(e){
@@ -786,15 +801,17 @@ function renderClientHub(){
   const ctx=window._clientDetailData;
   const el=document.getElementById('clientDetailContent');
   if(!ctx||!el)return;
+  el.style.display='block';
+  el.style.padding='0';
   const name=clientDetailName(ctx);
   const lastWeight=ctx.measurements.find(m=>m.weight_kg!=null);
   el.innerHTML=clientDetailHeader(name,ctx.inv.client_email||'',false)+`
-    <div class="stats-grid" style="margin-bottom:18px;">
+    <div class="stats-grid" style="grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:18px;">
       <div class="stat-card"><div class="stat-top"><span class="stat-label">${tt({pl:'Treningi',en:'Workouts',de:'Trainings',es:'Entrenos'})}</span></div><div class="stat-value">${ctx.workouts.length}</div><div class="stat-unit">${tt({pl:'łącznie',en:'total',de:'gesamt',es:'total'})}</div></div>
       <div class="stat-card"><div class="stat-top"><span class="stat-label">${t('objetosc')}</span></div><div class="stat-value">${fmtVol(ctx.workouts.reduce((a,w)=>a+(+(w.volume_kg||0)),0))}</div><div class="stat-unit">${unitVol()}</div></div>
       <div class="stat-card"><div class="stat-top"><span class="stat-label">${tt({pl:'Waga',en:'Weight',de:'Gewicht',es:'Peso'})}</span></div><div class="stat-value">${lastWeight?dispW(+lastWeight.weight_kg):'—'}</div><div class="stat-unit">${unitW()}</div></div>
     </div>
-    <div class="quick-access-grid" style="grid-template-columns:repeat(2,1fr);">
+    <div class="quick-access-grid" style="grid-template-columns:repeat(2,minmax(0,1fr));">
       ${clientHubTile('renderClientWorkoutsView()',t('workout'),'<path d="M6 4v16M18 4v16M3 12h18M3 7h3M18 7h3M3 17h3M18 17h3"/>')}
       ${clientHubTile('renderClientProgressView()',t('progress'),'<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>')}
       ${clientHubTile('renderClientMeasurementsView()',tt({pl:'Pomiary',en:'Measurements',de:'Messungen',es:'Medidas'}),'<line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><circle cx="12" cy="12" r="4"/>')}
@@ -837,6 +854,8 @@ function remoteWorkoutName(w){
 function renderClientWorkoutsView(){
   const ctx=window._clientDetailData,el=document.getElementById('clientDetailContent');
   if(!ctx||!el)return;
+  el.style.display='block';
+  el.style.padding='0';
   let html=clientDetailHeader(t('workout'),clientDetailName(ctx),true);
   if(!ctx.workouts.length){
     el.innerHTML=html+`<div class="empty-state">${tt({pl:'Brak treningów.',en:'No workouts yet.',de:'Noch keine Trainings.',es:'Sin entrenamientos.'})}</div>`;
@@ -856,6 +875,8 @@ function renderClientWorkoutsView(){
 function renderClientWorkoutDetail(idx){
   const ctx=window._clientDetailData,el=document.getElementById('clientDetailContent');
   if(!ctx||!el)return;
+  el.style.display='block';
+  el.style.padding='0';
   const w=ctx.workouts[idx];
   if(!w){renderClientWorkoutsView();return;}
   const[y,m,d]=(w.date||'').split('-');
@@ -882,6 +903,8 @@ function renderClientWorkoutDetail(idx){
 function renderClientMeasurementsView(){
   const ctx=window._clientDetailData,el=document.getElementById('clientDetailContent');
   if(!ctx||!el)return;
+  el.style.display='block';
+  el.style.padding='0';
   let html=clientDetailHeader(tt({pl:'Pomiary',en:'Measurements',de:'Messungen',es:'Medidas'}),clientDetailName(ctx),true);
   if(!ctx.measurements.length){
     el.innerHTML=html+`<div class="empty-state">${t('noMeasures')}</div>`;
@@ -907,6 +930,8 @@ function renderClientMeasurementsView(){
 function renderClientProgressView(){
   const ctx=window._clientDetailData,el=document.getElementById('clientDetailContent');
   if(!ctx||!el)return;
+  el.style.display='block';
+  el.style.padding='0';
   const workouts=ctx.workouts||[];
   let html=clientDetailHeader(t('progress'),clientDetailName(ctx),true);
   if(!workouts.length){
@@ -927,7 +952,7 @@ function renderClientProgressView(){
     });
   }));
   const top=Object.values(exMap).sort((a,b)=>b.volume-a.volume).slice(0,5);
-  html+=`<div class="stats-grid" style="margin-bottom:18px;">
+  html+=`<div class="stats-grid" style="grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:18px;">
     <div class="stat-card"><div class="stat-top"><span class="stat-label">${tt({pl:'Treningi',en:'Workouts',de:'Trainings',es:'Entrenos'})}</span></div><div class="stat-value">${workouts.length}</div><div class="stat-unit">${tt({pl:'łącznie',en:'total',de:'gesamt',es:'total'})}</div></div>
     <div class="stat-card"><div class="stat-top"><span class="stat-label">${t('volume')}</span></div><div class="stat-value">${fmtVol(totalVolume)}</div><div class="stat-unit">${unitVol()}</div></div>
     <div class="stat-card"><div class="stat-top"><span class="stat-label">${tt({pl:'Najlepszy',en:'Best',de:'Beste',es:'Mejor'})}</span></div><div class="stat-value">${fmtVol(+(best.volume_kg||0))}</div><div class="stat-unit">${unitVol()}</div></div>
@@ -943,6 +968,8 @@ function renderClientProgressView(){
 function renderClientChatPlaceholder(){
   const ctx=window._clientDetailData,el=document.getElementById('clientDetailContent');
   if(!ctx||!el)return;
+  el.style.display='block';
+  el.style.padding='0';
   el.innerHTML=clientDetailHeader('Chat',clientDetailName(ctx),true)+`<div class="empty-state">${tt({pl:'Chat zbudujemy w kolejnym etapie.',en:'Chat will be built in the next step.',de:'Chat kommt im nächsten Schritt.',es:'Chat se construirá en el siguiente paso.'})}</div>`;
 }
 
