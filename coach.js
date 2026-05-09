@@ -532,12 +532,12 @@ async function openUserCoachDetail(invId){
     <div class="modal-handle"></div>
     <div id="userCoachDetailContent" style="display:flex;align-items:center;justify-content:center;padding:40px 0;"><div class="spinner"></div></div>
   </div>`;
+  ov._cleanup=()=>stopCoachChatRealtime();
   document.body.appendChild(ov);S.modal=ov;
   try{
     const{data:inv,error}=await sb.from('coach_invitations').select('*').eq('id',invId).single();
     if(error||!inv)throw error||new Error('not found');
     const coachName=inv.coach_name||inv.coach_email||'Coach';
-    const msg=tt({pl:'Chat zbudujemy w kolejnym etapie.',en:'Chat will be built in the next step.',de:'Chat kommt im nächsten Schritt.',es:'Chat se construirá en el siguiente paso.'}).replace(/'/g,"\\'");
     const content=document.getElementById('userCoachDetailContent');
     content.style.display='block';
     content.style.padding='0';
@@ -550,7 +550,7 @@ async function openUserCoachDetail(invId){
         <button class="rm-btn" onclick="closeModal()" style="width:34px;height:34px;font-size:18px;">✕</button>
       </div>
       <div class="quick-access-grid" style="grid-template-columns:repeat(2,minmax(0,1fr));margin-bottom:10px;">
-        <div class="qa-tile" onclick="showSyncToast('${msg}')">
+        <div class="qa-tile" onclick="renderUserCoachChat('${inv.id}')">
           <div class="qa-tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="22" height="22"><path d="M21 15a4 4 0 0 1-4 4H7l-4 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg></div>
           <div class="qa-tile-label">Chat</div>
         </div>
@@ -754,7 +754,7 @@ async function openClientDetail(invId){
   ov.innerHTML=`<div class="modal client-detail-modal">
     <div id="clientDetailContent" style="display:flex;align-items:center;justify-content:center;padding:40px 0;"><div class="spinner"></div></div>
   </div>`;
-  ov._cleanup=()=>{window._clientDetailData=null;window._clientDetailView=null;};
+  ov._cleanup=()=>{stopCoachChatRealtime();window._clientDetailData=null;window._clientDetailView=null;};
   document.body.appendChild(ov);S.modal=ov;
 
   try{
@@ -979,7 +979,15 @@ function renderClientChatPlaceholder(){
   window._clientDetailView='chat';
   el.style.display='block';
   el.style.padding='0';
-  el.innerHTML=clientDetailHeader('Chat',clientDetailName(ctx),true)+`<div class="empty-state">${tt({pl:'Chat zbudujemy w kolejnym etapie.',en:'Chat will be built in the next step.',de:'Chat kommt im nächsten Schritt.',es:'Chat se construirá en el siguiente paso.'})}</div>`;
+  renderCoachChat({
+    inv:ctx.inv,
+    containerId:'clientDetailContent',
+    title:'Chat',
+    subtitle:clientDetailName(ctx),
+    backHtml:clientDetailHeader('Chat',clientDetailName(ctx),true),
+    inputId:'clientChatInput',
+    listId:'clientChatMessages',
+  });
 }
 
 window.renderClientHub=renderClientHub;
@@ -988,6 +996,139 @@ window.renderClientWorkoutDetail=renderClientWorkoutDetail;
 window.renderClientMeasurementsView=renderClientMeasurementsView;
 window.renderClientProgressView=renderClientProgressView;
 window.renderClientChatPlaceholder=renderClientChatPlaceholder;
+
+let _coachChatChannel=null;
+let _coachChatContext=null;
+
+function stopCoachChatRealtime(){
+  if(_coachChatChannel&&sb){
+    try{sb.removeChannel(_coachChatChannel);}catch(e){}
+  }
+  _coachChatChannel=null;
+  _coachChatContext=null;
+}
+
+function chatEsc(v){
+  return String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+
+function chatTime(iso){
+  try{return new Date(iso).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});}catch(e){return '';}
+}
+
+async function renderCoachChat(opts){
+  if(!opts?.inv)return;
+  stopCoachChatRealtime();
+  const el=document.getElementById(opts.containerId);
+  if(!el)return;
+  el.style.display='block';
+  el.style.padding='0';
+  _coachChatContext=opts;
+  el.innerHTML=`${opts.backHtml||clientDetailHeader(opts.title||'Chat',opts.subtitle||'',true)}
+    <div id="${opts.listId}" style="min-height:260px;max-height:calc(100dvh - 220px);overflow-y:auto;padding:4px 2px 12px;"></div>
+    <div style="display:flex;gap:8px;align-items:flex-end;position:sticky;bottom:0;background:var(--bg);padding-top:10px;">
+      <textarea id="${opts.inputId}" rows="1" maxlength="2000" placeholder="${tt({pl:'Napisz wiadomość...',en:'Write a message...',de:'Nachricht schreiben...',es:'Escribe un mensaje...'})}" style="min-height:44px;max-height:110px;resize:none;"></textarea>
+      <button class="btn btn-primary" onclick="sendCoachChatMessage('${opts.inputId}')" style="width:auto;min-width:86px;height:44px;padding:0 16px;">${tt({pl:'Wyślij',en:'Send',de:'Senden',es:'Enviar'})}</button>
+    </div>`;
+  await loadCoachChatMessages();
+  if(sb){
+    _coachChatChannel=sb.channel('bs-chat-'+opts.inv.id)
+      .on('postgres_changes',{event:'*',schema:'public',table:'coach_messages',filter:`invitation_id=eq.${opts.inv.id}`},()=>loadCoachChatMessages())
+      .subscribe();
+  }
+  setTimeout(()=>document.getElementById(opts.inputId)?.focus(),150);
+}
+
+async function loadCoachChatMessages(){
+  const ctx=_coachChatContext;
+  if(!ctx||!sb)return;
+  const list=document.getElementById(ctx.listId);
+  if(!list)return;
+  list.innerHTML=`<div style="display:flex;justify-content:center;padding:26px 0;"><div class="spinner"></div></div>`;
+  const{data,error}=await sb.from('coach_messages')
+    .select('id,sender_id,message,created_at')
+    .eq('invitation_id',ctx.inv.id)
+    .order('created_at',{ascending:true});
+  if(error){
+    list.innerHTML=`<div style="color:var(--red);padding:14px;">${error.message}</div>`;
+    return;
+  }
+  const messages=data||[];
+  if(!messages.length){
+    list.innerHTML=`<div class="empty-state" style="padding:36px 16px;">${tt({pl:'Brak wiadomości. Zacznij rozmowę.',en:'No messages yet. Start the conversation.',de:'Noch keine Nachrichten.',es:'Sin mensajes todavía.'})}</div>`;
+    return;
+  }
+  list.innerHTML=messages.map(m=>{
+    const mine=m.sender_id===S.user?.id;
+    return `<div style="display:flex;justify-content:${mine?'flex-end':'flex-start'};margin:8px 0;">
+      <div style="max-width:78%;background:${mine?'var(--accent)':'var(--bg2)'};color:${mine?'var(--btn-text)':'var(--text)'};border:1px solid ${mine?'var(--accent)':'var(--border)'};border-radius:14px;padding:9px 11px;">
+        <div style="font-size:14px;line-height:1.4;white-space:pre-wrap;overflow-wrap:anywhere;">${chatEsc(m.message)}</div>
+        <div style="font-size:10px;opacity:0.65;text-align:right;margin-top:5px;">${chatTime(m.created_at)}</div>
+      </div>
+    </div>`;
+  }).join('');
+  list.scrollTop=list.scrollHeight;
+}
+
+async function sendCoachChatMessage(inputId){
+  const ctx=_coachChatContext;
+  const input=document.getElementById(inputId);
+  if(!ctx||!input||!sb||!S.user)return;
+  const message=(input.value||'').trim();
+  if(!message)return;
+  input.disabled=true;
+  const row={
+    invitation_id:ctx.inv.id,
+    coach_id:ctx.inv.coach_id,
+    client_user_id:ctx.inv.client_user_id||S.user.id,
+    sender_id:S.user.id,
+    message,
+  };
+  const{error}=await sb.from('coach_messages').insert(row);
+  input.disabled=false;
+  if(error){
+    showSyncToast(error.message,'error');
+    input.focus();
+    return;
+  }
+  input.value='';
+  await loadCoachChatMessages();
+  input.focus();
+}
+
+async function renderUserCoachChat(invId){
+  const content=document.getElementById('userCoachDetailContent');
+  if(!content||!sb)return;
+  content.style.display='block';
+  content.style.padding='0';
+  content.innerHTML=`<div style="display:flex;justify-content:center;padding:40px 0;"><div class="spinner"></div></div>`;
+  const{data:inv,error}=await sb.from('coach_invitations').select('*').eq('id',invId).single();
+  if(error||!inv){
+    content.innerHTML=`<div style="color:var(--red);padding:16px;">${error?.message||'Chat unavailable'}</div>`;
+    return;
+  }
+  const title=inv.coach_name||inv.coach_email||'Coach';
+  const header=`<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:16px;">
+    <div>
+      <button class="modal-back" onclick="openUserCoachDetail('${inv.id}')" style="margin-bottom:8px;">${t('backBtn')}</button>
+      <div class="modal-title" style="margin-bottom:4px;">Chat</div>
+      <div style="font-size:12px;color:var(--text2);">${title}</div>
+    </div>
+    <button class="rm-btn" onclick="closeModal()" style="width:34px;height:34px;font-size:18px;">✕</button>
+  </div>`;
+  renderCoachChat({
+    inv,
+    containerId:'userCoachDetailContent',
+    title:'Chat',
+    subtitle:title,
+    backHtml:header,
+    inputId:'userCoachChatInput',
+    listId:'userCoachChatMessages',
+  });
+}
+
+window.renderUserCoachChat=renderUserCoachChat;
+window.sendCoachChatMessage=sendCoachChatMessage;
 
 // ── INVITATION BANNERS (client side) ──────────────────────
 
