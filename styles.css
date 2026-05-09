@@ -31,7 +31,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',sa
 .nav-item.active{background:var(--accent-dim);color:var(--accent);}
 .nav-item svg{width:18px;height:18px;flex-shrink:0;}
 .sidebar-bottom{padding:16px 10px;padding-bottom:calc(16px + env(safe-area-inset-bottom));border-top:1px solid var(--border);}
-.screen{display:none;padding:24px;padding-bottom:calc(24px + env(safe-area-inset-bottom));overflow-y:auto;height:100%;}
+.screen{display:none;padding:24px;padding-bottom:calc(24px + env(safe-area-inset-bottom));overflow-y:auto;height:100%;scrollbar-width:none;}
+.screen::-webkit-scrollbar{display:none;}
 .screen.active{display:block;}
 .screen-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;padding-top:env(safe-area-inset-top);}
 .screen-title{font-size:28px;font-weight:700;letter-spacing:-0.5px;}

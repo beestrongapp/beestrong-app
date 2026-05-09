@@ -435,8 +435,9 @@ async function syncProfileFlags(){
   if(data.display_name&&!localStorage.getItem('bs-username')){
     localStorage.setItem('bs-username',data.display_name);
     const unEl=document.getElementById('sidebarUserName');if(unEl)unEl.textContent=data.display_name;
+    applyLang();
   }
-  if(changed){saveAll();updateCoachNav();updateAdminNav();renderDashboard();renderSettings();}
+  if(changed){saveAll();updateCoachNav();updateAdminNav();applyLang();renderDashboard();renderSettings();}
 }
 
 // ── CLIENT SCREEN ──────────────────────────────────────────

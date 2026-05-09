@@ -1013,7 +1013,7 @@ function finishWorkout(){
   let volume=0;w.exercises.forEach(ex=>ex.sets.forEach(s=>{if(s.done&&s.weight>0)volume+=s.weight*s.reps;}));
   const k=today()+'_'+Date.now();
   S.workouts[k]={templateId:w.templateId,name:w.name,nameKey:w.nameKey||null,types:w.types,volume,duration,date:today(),exercises:w.exercises.map(ex=>({id:ex.id,pl:ex.pl,en:ex.en,name:ex.name,sup:ex.sup,gk:ex.gk,equipment:ex.equipment,sets:ex.sets}))};
-  S.activeWorkout=null;saveAll();showWorkoutSummary(k,prs);S.selectedDate=today();showScreen('calendar');
+  S.activeWorkout=null;saveAll();showWorkoutSummary(k,prs);showScreen('dashboard');
 }
 function cancelWorkout(){stopTimer();S.activeWorkout=null;renderWorkout();}
 
@@ -1163,8 +1163,19 @@ function proCardHtml(){
     </div>`;
   }
 
-  // PRO active
-  const coachBtn=S.coachMode?'':` <button class="btn btn-sm" onclick="showCoachModeInfo()" style="font-size:10px;padding:5px 10px;flex-shrink:0;background:rgba(0,200,83,0.12);color:#00e676;border:1px solid rgba(0,200,83,0.38);font-weight:700;letter-spacing:0.3px;">Get Coach Mode</button>`;
+  // PRO + Coach active
+  if(S.isPro&&S.coachMode){
+    return `<div style="display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,rgba(0,200,83,0.08),rgba(245,197,66,0.08));border:1px solid rgba(245,197,66,0.45);border-radius:12px;padding:12px 14px;margin-bottom:14px;">
+      ${logoImg}
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:14px;font-weight:700;"><span style="color:#00e676;">BeeStrong Pro</span> <span style="color:var(--yellow);">+ Coach Subscription</span></div>
+        <div style="font-size:12px;color:var(--text2);">${tt({pl:'Aktywne — dziękujemy!',en:'Active — thank you!',de:'Aktiv — danke!',es:'Activo — ¡gracias!'})}</div>
+      </div>
+    </div>`;
+  }
+
+  // PRO only active
+  const coachBtn=` <button class="btn btn-sm" onclick="showCoachModeInfo()" style="font-size:10px;padding:5px 10px;flex-shrink:0;background:rgba(0,200,83,0.12);color:#00e676;border:1px solid rgba(0,200,83,0.38);font-weight:700;letter-spacing:0.3px;">Get Coach Mode</button>`;
   return `<div style="display:flex;align-items:center;gap:10px;background:rgba(0,200,83,0.08);border:1px solid rgba(0,200,83,0.35);border-radius:12px;padding:12px 14px;margin-bottom:14px;">
     ${logoImg}
     <div style="flex:1;min-width:0;">
@@ -1637,9 +1648,9 @@ function showSaveAsTemplateModal(wo,dateKey,prs=[]){
     S.templates.push({id:newTid,name,types:[],restDefault:S.defaultRest||90,exercises:exs});
     // Link workout to template so progress tracking works
     if(S.workouts[wKey]) S.workouts[wKey].templateId=newTid;
-    saveAll();closeModal();showWorkoutSummary(wKey,prs);S.selectedDate=wo.date||today();showScreen('calendar');
+    saveAll();closeModal();showWorkoutSummary(wKey,prs);showScreen('dashboard');
   };
-  window.dontSaveTemplate=wKey=>{closeModal();showWorkoutSummary(wKey,prs);S.selectedDate=wo.date||today();showScreen('calendar');};
+  window.dontSaveTemplate=wKey=>{closeModal();showWorkoutSummary(wKey,prs);showScreen('dashboard');};
   document.body.appendChild(ov);S.modal=ov;
 }
 
