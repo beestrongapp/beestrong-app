@@ -1142,8 +1142,12 @@ async function openChatFromNotification(invId){
   ov.className='modal-overlay client-detail-overlay';
   ov.innerHTML=`<div class="modal client-detail-modal"><div id="notificationChatContent" style="display:flex;justify-content:center;padding:40px 0;"><div class="spinner"></div></div></div>`;
   ov._cleanup=()=>stopCoachChatRealtime();
+  ov._returnScreen='notifications';
   document.body.appendChild(ov);
   S.modal=ov;
+  if(window._bsHistoryReady&&!window._bsHandlingBack){
+    history.pushState({bs:true,modal:'notification-chat'},'','');
+  }
   const{data:inv,error}=await sb.from('coach_invitations').select('*').eq('id',invId).single();
   if(error||!inv){
     document.getElementById('notificationChatContent').innerHTML=`<div style="color:var(--red);padding:16px;">${chatEsc(error?.message||'Chat unavailable')}</div>`;

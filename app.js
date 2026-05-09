@@ -1247,6 +1247,7 @@ function renderNotifications(){
   chatItems.forEach(n=>items.push({
     id:n.id||'',
     type:n.type||'',
+    invitationId:n.invitationId||'',
     title:n.title||tt({pl:'Nowa wiadomość',en:'New message',de:'Neue Nachricht',es:'Nuevo mensaje'}),
     body:n.body||'',
     at:n.at,
@@ -1275,7 +1276,9 @@ function renderNotifications(){
     return;
   }
   const fmt=iso=>{try{return iso?new Date(iso).toLocaleString():'';}catch(e){return '';}};
-  el.innerHTML=items.map(item=>`<div class="client-card" onclick="${item.action||''}">
+  el.innerHTML=items.map(item=>{
+    const click=item.id?`openNotificationItem('${chatEsc(item.id)}')`:(item.action||'');
+    return `<div class="client-card" onclick="${click}">
     <div style="width:38px;height:38px;border-radius:50%;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;color:var(--accent);flex-shrink:0;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" width="18" height="18"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
     </div>
@@ -1284,8 +1287,26 @@ function renderNotifications(){
       <div class="client-card-meta">${chatEsc(item.body)}</div>
       ${item.at?`<div class="client-card-meta" style="margin-top:3px;color:var(--text3);">${fmt(item.at)}</div>`:''}
     </div>
-  </div>`).join('');
+  </div>`;
+  }).join('');
   markLocalNotificationsRead(chatItems);
+}
+
+function openNotificationItem(id){
+  const entries=ld('bs-notifications-v1',[]);
+  const item=entries.find(n=>n.id===id);
+  if(id){
+    sv('bs-notifications-v1',entries.filter(n=>n.id!==id));
+    updateNotificationBadge();
+    renderNotifications();
+  }
+  if(item?.type==='chat_message'&&item.invitationId&&typeof openChatFromNotification==='function'){
+    openChatFromNotification(item.invitationId);
+    return;
+  }
+  if(item?.action){
+    try{new Function(item.action)();}catch(e){console.warn('notification action failed',e);}
+  }
 }
 
 function addAdminChangelogEntry(type,message){
@@ -1326,6 +1347,8 @@ function updateNotificationBadge(){
   if(!btn)return;
   btn.classList.toggle('has-notifications',getUnreadNotificationCount()>0);
 }
+
+window.openNotificationItem=openNotificationItem;
 
 function adminChangelogHtml(){
   const entries=ld('bs-admin-changelog-v1',[]);
@@ -1596,6 +1619,7 @@ initSupabase();
 //   - On Dashboard → first back shows toast "Press Back again to exit"; second within 2.5s exits
 let _lastBackOnDash=0;
 let _backToastEl=null;
+let _allowAppExit=false;
 function showBackToast(msg){
   if(!_backToastEl){
     _backToastEl=document.createElement('div');
@@ -1607,12 +1631,40 @@ function showBackToast(msg){
   clearTimeout(_backToastEl._fadeT);
   _backToastEl._fadeT=setTimeout(()=>{if(_backToastEl)_backToastEl.style.opacity='0';},2300);
 }
+
+function openExitConfirmModal(){
+  closeModal();
+  const ov=document.createElement('div');
+  ov.className='modal-overlay';
+  ov.innerHTML=`<div class="modal" style="max-width:360px;">
+    <div class="modal-title" style="margin-bottom:8px;">${tt({pl:'Wyjść z aplikacji?',en:'Exit app?',de:'App beenden?',es:'¿Salir de la app?'})}</div>
+    <div style="font-size:13px;color:var(--text2);line-height:1.45;margin-bottom:18px;">${tt({pl:'Czy na pewno chcesz wyjść?',en:'Are you sure you want to exit?',de:'Möchtest du die App wirklich beenden?',es:'¿Seguro que quieres salir?'})}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <button class="btn btn-ghost" onclick="closeModal();history.pushState({bs:true},'','');">${tt({pl:'Nie',en:'No',de:'Nein',es:'No'})}</button>
+      <button class="btn btn-primary" onclick="confirmExitApp()">${tt({pl:'Tak',en:'Yes',de:'Ja',es:'Sí'})}</button>
+    </div>
+  </div>`;
+  ov.addEventListener('click',e=>{if(e.target===ov){closeModal();history.pushState({bs:true},'','');}});
+  document.body.appendChild(ov);
+  S.modal=ov;
+}
+
+function confirmExitApp(){
+  closeModal();
+  _allowAppExit=true;
+  setTimeout(()=>{_allowAppExit=false;},1200);
+  history.back();
+}
+
+window.confirmExitApp=confirmExitApp;
+
 let _lastBackOnWorkouts=0;
 function setupBackButton(){
   history.replaceState({bs:true,sentinel:true},'','');
   history.pushState({bs:true},'','');
   window._bsHistoryReady=true;
   window.addEventListener('popstate',()=>{
+    if(_allowAppExit)return;
     // 1) Close detail modal
     if(S.detailModal){closeDetailModal();history.pushState({bs:true},'','');return;}
     // 2) Client detail subview -> return to client hub before closing the full-screen client card
@@ -1622,7 +1674,17 @@ function setupBackButton(){
       return;
     }
     // 3) Close any modal/popup
-    if(S.modal){closeModal();history.pushState({bs:true},'','');return;}
+    if(S.modal){
+      const returnScreen=S.modal._returnScreen;
+      closeModal();
+      if(returnScreen){
+        window._bsHandlingBack=true;
+        showScreen(returnScreen);
+        window._bsHandlingBack=false;
+      }
+      history.pushState({bs:true},'','');
+      return;
+    }
 
     const active=document.querySelector('.screen.active')?.id?.replace('screen-','');
 
@@ -1652,6 +1714,8 @@ function setupBackButton(){
     // 6) On dashboard — double-press to exit app
     const now=Date.now();
     if(now-_lastBackOnDash<2500){
+      openExitConfirmModal();
+      history.pushState({bs:true},'','');
       return;
     }
     _lastBackOnDash=now;
