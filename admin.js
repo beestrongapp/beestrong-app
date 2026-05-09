@@ -59,7 +59,7 @@ async function adminToggle(userId,field,value){
     if(field==='is_pro'){
       S.isPro=!!value;
       saveAll();
-      renderAccountBadge();renderSettings();renderTemplates();renderProgress();
+      renderAccountBadge();updateProCoachNav();renderSettings();renderTemplates();renderProgress();
     }
     if(field==='is_coach'){
       S.coachMode=!!value;

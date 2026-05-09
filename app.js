@@ -1463,7 +1463,7 @@ window.openSettingsCoachMode=openSettingsCoachMode;
 window.setCoachMode=function(on){
   S.coachMode=!!on;
   saveAll();
-  renderSettings();renderPrograms();renderAccountBadge();updateCoachNav();updateAdminNav();
+  renderSettings();renderPrograms();renderAccountBadge();updateCoachNav();updateProCoachNav();updateAdminNav();
 };
 
 loadData();

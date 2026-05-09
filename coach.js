@@ -1,4 +1,4 @@
-// ===== COACH MODE: Custom Programs Editor + Share/Import =====
+﻿// ===== COACH MODE: Custom Programs Editor + Share/Import =====
 
 // Generate a short, URL-safe random code (8 chars). Collisions theoretically possible
 // but for ~36^8 = 2.8 trillion combinations, fine for our scale.
@@ -406,6 +406,16 @@ function updateCoachNav(){
   }
 }
 
+function updateProCoachNav(){
+  const show=!!(S.isPro&&S.user);
+  document.querySelectorAll('.pro-coach-nav-item').forEach(el=>{
+    el.style.display=show?'flex':'none';
+  });
+  if(!show&&document.getElementById('screen-coaches')?.classList.contains('active')){
+    showScreen('dashboard');
+  }
+}
+
 async function upsertProfile(){
   if(!sb||!S.user)return;
   const metaName=(S.user.name||'').trim();
@@ -437,7 +447,7 @@ async function syncProfileFlags(){
     const unEl=document.getElementById('sidebarUserName');if(unEl)unEl.textContent=data.display_name;
     applyLang();
   }
-  if(changed){saveAll();updateCoachNav();updateAdminNav();renderAccountBadge();renderSettings();}
+  if(changed){saveAll();updateCoachNav();updateProCoachNav();updateAdminNav();renderAccountBadge();renderSettings();}
 }
 
 // ── CLIENT SCREEN ──────────────────────────────────────────
@@ -464,6 +474,87 @@ function renderClients(){
     el.innerHTML=`<div style="margin-bottom:14px;"><input type="text" id="clientSearch" placeholder="${tt({pl:'Szukaj po imieniu lub mailu...',en:'Search by name or email...',de:'Nach Name oder E-Mail suchen...',es:'Buscar por nombre o email...'})}" oninput="filterClients()" style="font-size:14px;"/></div><div id="clientList"></div>`;
     renderClientList(window._clientInvitations);
   });
+}
+
+async function renderUserCoaches(){
+  const el=document.getElementById('coachesContent');
+  if(!el)return;
+  if(!S.user){
+    el.innerHTML=`<div class="empty-state">${tt({pl:'Zaloguj się, aby zobaczyć swojego coacha.',en:'Sign in to see your coach.',de:'Melde dich an, um deinen Coach zu sehen.',es:'Inicia sesión para ver tu coach.'})}</div>`;
+    return;
+  }
+  if(!S.isPro){
+    el.innerHTML=`<div class="empty-state">${tt({pl:'Zakładka Coach jest dostępna dla użytkowników Pro.',en:'Coach tab is available for Pro users.',de:'Coach ist für Pro-Nutzer verfügbar.',es:'Coach está disponible para usuarios Pro.'})}</div>`;
+    return;
+  }
+  if(!sb){
+    el.innerHTML=`<div class="empty-state">${tt({pl:'Supabase nie jest dostępny.',en:'Supabase is not available.',de:'Supabase ist nicht verfügbar.',es:'Supabase no está disponible.'})}</div>`;
+    return;
+  }
+  el.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;padding:40px 0;"><div class="spinner"></div></div>`;
+  try{
+    const email=(S.user.email||'').toLowerCase();
+    const[byId,byEmail]=await Promise.all([
+      sb.from('coach_invitations').select('*').eq('client_user_id',S.user.id).eq('status','accepted').order('responded_at',{ascending:false}),
+      sb.from('coach_invitations').select('*').eq('client_email',email).eq('status','accepted').order('responded_at',{ascending:false}),
+    ]);
+    if(byId.error)throw byId.error;
+    if(byEmail.error)throw byEmail.error;
+    const byInviteId=new Map([...(byId.data||[]),...(byEmail.data||[])].map(inv=>[inv.id,inv]));
+    const coaches=[...byInviteId.values()];
+    if(!coaches.length){
+      el.innerHTML=`<div class="empty-state">${tt({pl:'Nie masz jeszcze przypisanego coacha.',en:'You do not have an assigned coach yet.',de:'Du hast noch keinen zugewiesenen Coach.',es:'Aún no tienes coach asignado.'})}</div>`;
+      return;
+    }
+    el.innerHTML=coaches.map(inv=>userCoachCardHtml(inv)).join('');
+  }catch(e){
+    el.innerHTML=`<div style="color:var(--red);padding:12px;">${e.message||tt({pl:'Nie udało się pobrać coacha.',en:'Could not load coach.',de:'Coach konnte nicht geladen werden.',es:'No se pudo cargar el coach.'})}</div>`;
+  }
+}
+
+function userCoachCardHtml(inv){
+  const name=inv.coach_name||inv.coach_email||'Coach';
+  const meta=inv.coach_name&&inv.coach_email?inv.coach_email:tt({pl:'Twój coach',en:'Your coach',de:'Dein Coach',es:'Tu coach'});
+  return `<div class="client-card" onclick="openUserCoachDetail('${inv.id}')">
+    <div style="width:38px;height:38px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--btn-text);flex-shrink:0;">${(name||'?')[0].toUpperCase()}</div>
+    <div class="client-card-info">
+      <div class="client-card-name">${name}</div>
+      <div class="client-card-meta">${meta}</div>
+    </div>
+    <span style="color:var(--text3);font-size:22px;">›</span>
+  </div>`;
+}
+
+async function openUserCoachDetail(invId){
+  closeModal();
+  const ov=document.createElement('div');ov.className='modal-overlay';
+  ov.innerHTML=`<div class="modal" style="max-height:86vh;overflow-y:auto;">
+    <div class="modal-handle"></div>
+    <div id="userCoachDetailContent" style="display:flex;align-items:center;justify-content:center;padding:40px 0;"><div class="spinner"></div></div>
+  </div>`;
+  document.body.appendChild(ov);S.modal=ov;
+  try{
+    const{data:inv,error}=await sb.from('coach_invitations').select('*').eq('id',invId).single();
+    if(error||!inv)throw error||new Error('not found');
+    const coachName=inv.coach_name||inv.coach_email||'Coach';
+    const msg=tt({pl:'Chat zbudujemy w kolejnym etapie.',en:'Chat will be built in the next step.',de:'Chat kommt im nächsten Schritt.',es:'Chat se construirá en el siguiente paso.'}).replace(/'/g,"\\'");
+    document.getElementById('userCoachDetailContent').innerHTML=`
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:14px;">
+        <div>
+          <div class="modal-title" style="margin-bottom:4px;">${coachName}</div>
+          <div style="font-size:12px;color:var(--text2);">${inv.coach_email||''}</div>
+        </div>
+        <button class="rm-btn" onclick="closeModal()" style="width:34px;height:34px;font-size:18px;">✕</button>
+      </div>
+      <div class="quick-access-grid" style="grid-template-columns:repeat(2,1fr);margin-bottom:10px;">
+        <div class="qa-tile" onclick="showSyncToast('${msg}')">
+          <div class="qa-tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="22" height="22"><path d="M21 15a4 4 0 0 1-4 4H7l-4 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg></div>
+          <div class="qa-tile-label">Chat</div>
+        </div>
+      </div>`;
+  }catch(e){
+    document.getElementById('userCoachDetailContent').innerHTML=`<div style="padding:20px;text-align:center;color:var(--red);">${tt({pl:'Nie udało się pobrać danych coacha.',en:'Could not load coach data.',de:'Coach-Daten konnten nicht geladen werden.',es:'No se pudieron cargar los datos del coach.'})}<br><br><button class="btn btn-ghost" onclick="closeModal()">OK</button></div>`;
+  }
 }
 
 function filterClients(){
@@ -654,86 +745,213 @@ async function openClientDetail(invId){
     const clientId=inv.client_user_id;
     if(!clientId)throw new Error('no client id');
 
-    const[woRes,mRes]=await Promise.all([
-      sb.from('workouts').select('*').eq('user_id',clientId).order('date',{ascending:false}).limit(10),
-      sb.from('measurements').select('*').eq('user_id',clientId).order('date',{ascending:false}).limit(30),
+    const[profileRes,woRes,mRes,assignedRes]=await Promise.all([
+      sb.from('profiles').select('id,email,display_name').eq('id',clientId).maybeSingle(),
+      sb.from('workouts').select('*').eq('user_id',clientId).order('date',{ascending:false}),
+      sb.from('measurements').select('*').eq('user_id',clientId).order('date',{ascending:false}),
+      sb.from('coach_program_assignments').select('*').eq('client_user_id',clientId).eq('status','active'),
     ]);
 
-    const workouts=woRes.data||[];
-    const measurements=mRes.data||[];
-
-    // Weekly stats (last 4 weeks)
-    const now=new Date();
-    const weekStats=[];
-    for(let w=0;w<4;w++){
-      const wEnd=new Date(now);wEnd.setDate(wEnd.getDate()-w*7);
-      const wStart=new Date(wEnd);wStart.setDate(wStart.getDate()-6);
-      const wWos=workouts.filter(wo=>{const d=new Date(wo.date);return d>=wStart&&d<=wEnd;});
-      weekStats.push({label:`-${w}w`,count:wWos.length,vol:wWos.reduce((a,w)=>a+(w.volume_kg||0),0)});
-    }
-
-    const lastWeight=measurements.find(m=>m.weight_kg!=null);
-
-    let html=`<div class="modal-title" style="margin-bottom:4px;">${inv.client_email}</div>
-      <div style="font-size:12px;color:var(--text2);margin-bottom:20px;">${tt({pl:'Klient od',en:'Client since',de:'Klient seit',es:'Cliente desde'})}: ${new Date(inv.created_at).toLocaleDateString()}</div>`;
-
-    // Stats row
-    html+=`<div class="stats-grid" style="margin-bottom:20px;">
-      <div class="stat-card"><div class="stat-top"><span class="stat-label">${tt({pl:'Treningi',en:'Workouts',de:'Trainings',es:'Entrenos'})}</span></div><div class="stat-value">${workouts.length}</div><div class="stat-unit">${tt({pl:'ostatnie 10',en:'last 10',de:'letzte 10',es:'últimos 10'})}</div></div>
-      <div class="stat-card"><div class="stat-top"><span class="stat-label">${tt({pl:'Waga',en:'Weight',de:'Gewicht',es:'Peso'})}</span></div><div class="stat-value">${lastWeight?dispW(lastWeight.weight_kg):'—'}</div><div class="stat-unit">${unitW()}</div></div>
-    </div>`;
-
-    // Recent workouts
-    if(workouts.length){
-      html+=`<div class="section-label">${tt({pl:'Ostatnie treningi',en:'Recent workouts',de:'Letzte Trainings',es:'Últimos entrenos'})}</div>`;
-      html+=workouts.slice(0,5).map(w=>{
-        const[y,m,d]=(w.date||'').split('-');
-        return `<div class="workout-row"><div class="workout-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><path d="M6 4v16M18 4v16M3 12h18"/></svg></div><div class="workout-row-info"><div class="workout-row-name">${w.name||'Workout'}</div><div class="workout-row-meta">${d?`${d}.${m}.${y}`:''}${w.duration_min?` · ${w.duration_min} min`:''} · ${fmtVol(w.volume_kg||0)}${unitVol()}</div></div></div>`;
-      }).join('');
-    } else {
-      html+=`<div class="empty-state">${tt({pl:'Brak treningów.',en:'No workouts yet.',de:'Noch keine Trainings.',es:'Sin entrenamientos.'})}</div>`;
-    }
-
-    // Recent measurements
-    if(measurements.length){
-      html+=`<div class="section-label" style="margin-top:16px;">${tt({pl:'Ostatnie pomiary',en:'Recent measurements',de:'Letzte Messungen',es:'Últimas medidas'})}</div>`;
-      html+=measurements.slice(0,5).map(m=>{
-        const parts=[];
-        if(m.weight_kg!=null)parts.push(`${tt({pl:'Waga',en:'Weight',de:'Gewicht',es:'Peso'})}: ${dispW(m.weight_kg)}${unitW()}`);
-        if(m.waist_cm!=null)parts.push(`${tt({pl:'Talia',en:'Waist',de:'Taille',es:'Cintura'})}: ${dispL(m.waist_cm)}${unitL()}`);
-        const[y,mo,d]=(m.date||'').split('-');
-        return `<div style="padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;"><span style="color:var(--text2);margin-right:10px;">${d?`${d}.${mo}.${y}`:''}</span>${parts.join(' · ')}</div>`;
-      }).join('');
-    }
-
-    // Coach-assigned programs for this client
-    const{data:assignedData}=await sb.from('coach_program_assignments')
-      .select('*').eq('client_user_id',clientId).eq('status','active');
-    const assigned=assignedData||[];
-
-    html+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-top:20px;margin-bottom:10px;">
-      <div class="section-label" style="margin:0;">${tt({pl:'Przypisane programy',en:'Assigned programs',de:'Zugewiesene Programme',es:'Programas asignados'})}</div>
-      <button class="btn btn-sm btn-primary" style="font-size:12px;padding:7px 14px;" onclick="openAssignProgramModal('${inv.id}','${clientId}')">+ ${tt({pl:'Przypisz',en:'Assign',de:'Zuweisen',es:'Asignar'})}</button>
-    </div>`;
-    if(assigned.length){
-      html+=assigned.map(a=>`
-        <div style="background:var(--bg3);border-radius:10px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;">
-          <div style="flex:1;font-size:13px;font-weight:600;">${a.program_name}</div>
-          <div style="font-size:11px;color:var(--text3);">${new Date(a.assigned_at).toLocaleDateString()}</div>
-          <button class="btn btn-sm btn-ghost" style="color:var(--red);font-size:11px;padding:4px 10px;" onclick="removeCoachAssignment('${a.id}',this)">${tt({pl:'Usuń',en:'Remove',de:'Entfernen',es:'Quitar'})}</button>
-        </div>`).join('');
-    } else {
-      html+=`<div style="font-size:13px;color:var(--text3);padding:8px 0;">${tt({pl:'Brak przypisanych programów.',en:'No programs assigned yet.',de:'Noch keine Programme zugewiesen.',es:'Aún no hay programas asignados.'})}</div>`;
-    }
-
-    html+=`<button class="btn btn-ghost" style="margin-top:20px;width:100%;" onclick="closeModal()">${tt({pl:'Zamknij',en:'Close',de:'Schließen',es:'Cerrar'})}</button>`;
-
-    document.getElementById('clientDetailContent').innerHTML=html;
+    window._clientDetailData={
+      inv,
+      clientId,
+      profile:profileRes.data||null,
+      workouts:woRes.data||[],
+      measurements:mRes.data||[],
+      assigned:assignedRes.data||[],
+    };
+    renderClientHub();
   }catch(e){
     document.getElementById('clientDetailContent').innerHTML=`<div style="padding:20px;text-align:center;color:var(--red);">${tt({pl:'Nie udało się pobrać danych klienta.',en:'Could not load client data.',de:'Kundendaten konnten nicht geladen werden.',es:'No se pudieron cargar los datos del cliente.'})}<br><br><button class="btn btn-ghost" onclick="closeModal()">OK</button></div>`;
   }
 }
 window.openClientDetail=openClientDetail;
+
+function clientDetailName(ctx){
+  return ctx?.profile?.display_name||ctx?.inv?.client_display_name||ctx?.inv?.client_email||'Client';
+}
+
+function clientDetailHeader(title,sub,back){
+  return `<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:16px;">
+    <div>
+      ${back?`<button class="modal-back" onclick="renderClientHub()" style="margin-bottom:8px;">${t('backBtn')}</button>`:''}
+      <div class="modal-title" style="margin-bottom:4px;">${title}</div>
+      ${sub?`<div style="font-size:12px;color:var(--text2);">${sub}</div>`:''}
+    </div>
+    <button class="rm-btn" onclick="closeModal()" style="width:34px;height:34px;font-size:18px;">✕</button>
+  </div>`;
+}
+
+function renderClientHub(){
+  const ctx=window._clientDetailData;
+  const el=document.getElementById('clientDetailContent');
+  if(!ctx||!el)return;
+  const name=clientDetailName(ctx);
+  const lastWeight=ctx.measurements.find(m=>m.weight_kg!=null);
+  el.innerHTML=clientDetailHeader(name,ctx.inv.client_email||'',false)+`
+    <div class="stats-grid" style="margin-bottom:18px;">
+      <div class="stat-card"><div class="stat-top"><span class="stat-label">${tt({pl:'Treningi',en:'Workouts',de:'Trainings',es:'Entrenos'})}</span></div><div class="stat-value">${ctx.workouts.length}</div><div class="stat-unit">${tt({pl:'łącznie',en:'total',de:'gesamt',es:'total'})}</div></div>
+      <div class="stat-card"><div class="stat-top"><span class="stat-label">${t('objetosc')}</span></div><div class="stat-value">${fmtVol(ctx.workouts.reduce((a,w)=>a+(+(w.volume_kg||0)),0))}</div><div class="stat-unit">${unitVol()}</div></div>
+      <div class="stat-card"><div class="stat-top"><span class="stat-label">${tt({pl:'Waga',en:'Weight',de:'Gewicht',es:'Peso'})}</span></div><div class="stat-value">${lastWeight?dispW(+lastWeight.weight_kg):'—'}</div><div class="stat-unit">${unitW()}</div></div>
+    </div>
+    <div class="quick-access-grid" style="grid-template-columns:repeat(2,1fr);">
+      ${clientHubTile('renderClientWorkoutsView()',t('workout'),'<path d="M6 4v16M18 4v16M3 12h18M3 7h3M18 7h3M3 17h3M18 17h3"/>')}
+      ${clientHubTile('renderClientProgressView()',t('progress'),'<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>')}
+      ${clientHubTile('renderClientMeasurementsView()',tt({pl:'Pomiary',en:'Measurements',de:'Messungen',es:'Medidas'}),'<line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><circle cx="12" cy="12" r="4"/>')}
+      ${clientHubTile('renderClientChatPlaceholder()',tt({pl:'Chat',en:'Chat',de:'Chat',es:'Chat'}),'<path d="M21 15a4 4 0 0 1-4 4H7l-4 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/>')}
+    </div>
+    ${renderClientAssignments(ctx)}
+    <button class="btn btn-ghost" style="margin-top:20px;width:100%;" onclick="closeModal()">${tt({pl:'Zamknij',en:'Close',de:'Schließen',es:'Cerrar'})}</button>`;
+}
+
+function clientHubTile(action,label,svg){
+  return `<div class="qa-tile" onclick="${action}">
+    <div class="qa-tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="22" height="22">${svg}</svg></div>
+    <div class="qa-tile-label">${label}</div>
+  </div>`;
+}
+
+function renderClientAssignments(ctx){
+  let html=`<div style="display:flex;align-items:center;justify-content:space-between;margin-top:20px;margin-bottom:10px;">
+    <div class="section-label" style="margin:0;">${tt({pl:'Przypisane programy',en:'Assigned programs',de:'Zugewiesene Programme',es:'Programas asignados'})}</div>
+    <button class="btn btn-sm btn-primary" style="font-size:12px;padding:7px 14px;" onclick="openAssignProgramModal('${ctx.inv.id}','${ctx.clientId}')">+ ${tt({pl:'Przypisz',en:'Assign',de:'Zuweisen',es:'Asignar'})}</button>
+  </div>`;
+  if(ctx.assigned.length){
+    html+=ctx.assigned.map(a=>`
+      <div style="background:var(--bg3);border-radius:10px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;">
+        <div style="flex:1;font-size:13px;font-weight:600;">${a.program_name}</div>
+        <div style="font-size:11px;color:var(--text3);">${a.assigned_at?new Date(a.assigned_at).toLocaleDateString():''}</div>
+        <button class="btn btn-sm btn-ghost" style="color:var(--red);font-size:11px;padding:4px 10px;" onclick="removeCoachAssignment('${a.id}',this)">${tt({pl:'Usuń',en:'Remove',de:'Entfernen',es:'Quitar'})}</button>
+      </div>`).join('');
+  } else {
+    html+=`<div style="font-size:13px;color:var(--text3);padding:8px 0;">${tt({pl:'Brak przypisanych programów.',en:'No programs assigned yet.',de:'Noch keine Programme zugewiesen.',es:'Aún no hay programas asignados.'})}</div>`;
+  }
+  return html;
+}
+
+function remoteWorkoutName(w){
+  if(w.name_key)return t(w.name_key)||w.name||'Workout';
+  return w.name||'Workout';
+}
+
+function renderClientWorkoutsView(){
+  const ctx=window._clientDetailData,el=document.getElementById('clientDetailContent');
+  if(!ctx||!el)return;
+  let html=clientDetailHeader(t('workout'),clientDetailName(ctx),true);
+  if(!ctx.workouts.length){
+    el.innerHTML=html+`<div class="empty-state">${tt({pl:'Brak treningów.',en:'No workouts yet.',de:'Noch keine Trainings.',es:'Sin entrenamientos.'})}</div>`;
+    return;
+  }
+  html+=ctx.workouts.map((w,i)=>{
+    const[y,m,d]=(w.date||'').split('-');
+    return `<div class="workout-row" onclick="renderClientWorkoutDetail(${i})">
+      <div class="workout-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><path d="M6 4v16M18 4v16M3 12h18"/></svg></div>
+      <div class="workout-row-info"><div class="workout-row-name">${remoteWorkoutName(w)}</div><div class="workout-row-meta">${d?`${d}.${m}.${y}`:''}${w.duration_min?` · ${w.duration_min} min`:''} · ${fmtVol(+(w.volume_kg||0))}${unitVol()}</div></div>
+      <div>${typeTagHtml(w.types)}</div>
+    </div>`;
+  }).join('');
+  el.innerHTML=html;
+}
+
+function renderClientWorkoutDetail(idx){
+  const ctx=window._clientDetailData,el=document.getElementById('clientDetailContent');
+  if(!ctx||!el)return;
+  const w=ctx.workouts[idx];
+  if(!w){renderClientWorkoutsView();return;}
+  const[y,m,d]=(w.date||'').split('-');
+  let html=clientDetailHeader(remoteWorkoutName(w),`${d?`${d}.${m}.${y}`:''}${w.duration_min?` · ${w.duration_min} min`:''} · ${fmtVol(+(w.volume_kg||0))}${unitVol()}`,true);
+  html+=`<div class="summary-grid">
+    <div class="metric-card"><div class="metric-label">${t('time')}</div><div class="metric-value">${w.duration_min||0}</div><div class="stat-unit">${t('minutes')}</div></div>
+    <div class="metric-card"><div class="metric-label">${t('volume')}</div><div class="metric-value">${fmtVol(+(w.volume_kg||0))}</div><div class="stat-unit">${unitVol()}</div></div>
+  </div>`;
+  const exercises=Array.isArray(w.exercises)?w.exercises:[];
+  html+=exercises.length?exercises.map(ex=>{
+    const sets=(ex.sets||[]).filter(s=>s.done!==false);
+    return `<div class="ex-card">
+      <div class="ex-card-header"><div style="font-size:15px;font-weight:700;">${exName(ex)||ex.name||''}</div></div>
+      ${sets.length?sets.map((s,si)=>`<div style="display:grid;grid-template-columns:34px 1fr 1fr;gap:8px;padding:8px 0;border-top:1px solid var(--border);font-size:13px;align-items:center;">
+        <div style="color:var(--text3);">#${si+1}</div>
+        <div>${s.reps||0} ${t('reps')}</div>
+        <div style="text-align:right;font-weight:700;">${dispW(+(s.weight||0))}${unitW()}</div>
+      </div>`).join(''):`<div style="font-size:13px;color:var(--text3);">${t('noData')}</div>`}
+    </div>`;
+  }).join(''):`<div class="empty-state">${t('noData')}</div>`;
+  el.innerHTML=html;
+}
+
+function renderClientMeasurementsView(){
+  const ctx=window._clientDetailData,el=document.getElementById('clientDetailContent');
+  if(!ctx||!el)return;
+  let html=clientDetailHeader(tt({pl:'Pomiary',en:'Measurements',de:'Messungen',es:'Medidas'}),clientDetailName(ctx),true);
+  if(!ctx.measurements.length){
+    el.innerHTML=html+`<div class="empty-state">${t('noMeasures')}</div>`;
+    return;
+  }
+  html+=ctx.measurements.map(m=>{
+    const parts=[];
+    if(m.weight_kg!=null)parts.push(`${tt({pl:'Waga',en:'Weight',de:'Gewicht',es:'Peso'})}: <strong>${dispW(+m.weight_kg)}${unitW()}</strong>`);
+    if(m.chest_cm!=null)parts.push(`${t('chest_m')}: <strong>${dispL(+m.chest_cm)}${unitL()}</strong>`);
+    if(m.waist_cm!=null)parts.push(`${t('waist')}: <strong>${dispL(+m.waist_cm)}${unitL()}</strong>`);
+    if(m.hips_cm!=null)parts.push(`${t('hips')}: <strong>${dispL(+m.hips_cm)}${unitL()}</strong>`);
+    if(m.arm_cm!=null)parts.push(`${t('arm')}: <strong>${dispL(+m.arm_cm)}${unitL()}</strong>`);
+    if(m.thigh_cm!=null)parts.push(`${t('thigh')}: <strong>${dispL(+m.thigh_cm)}${unitL()}</strong>`);
+    const[y,mo,d]=(m.date||'').split('-');
+    return `<div style="padding:12px 0;border-bottom:1px solid var(--border);font-size:13px;">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:5px;">${d?`${d}.${mo}.${y}`:''}</div>
+      <div style="line-height:1.7;">${parts.join(' · ')||t('noData')}</div>
+    </div>`;
+  }).join('');
+  el.innerHTML=html;
+}
+
+function renderClientProgressView(){
+  const ctx=window._clientDetailData,el=document.getElementById('clientDetailContent');
+  if(!ctx||!el)return;
+  const workouts=ctx.workouts||[];
+  let html=clientDetailHeader(t('progress'),clientDetailName(ctx),true);
+  if(!workouts.length){
+    el.innerHTML=html+`<div class="empty-state">${t('noData')}</div>`;
+    return;
+  }
+  const totalVolume=workouts.reduce((a,w)=>a+(+(w.volume_kg||0)),0);
+  const best=workouts.reduce((b,w)=>(+(w.volume_kg||0)>+(b?.volume_kg||0)?w:b),workouts[0]);
+  const exMap={};
+  workouts.forEach(w=>(w.exercises||[]).forEach(ex=>{
+    const name=exName(ex)||ex.name||'Exercise';
+    if(!exMap[name])exMap[name]={name,count:0,volume:0,bestWeight:0};
+    exMap[name].count+=1;
+    (ex.sets||[]).forEach(s=>{
+      const weight=+(s.weight||0),reps=+(s.reps||0);
+      exMap[name].volume+=weight*reps;
+      if(weight>exMap[name].bestWeight)exMap[name].bestWeight=weight;
+    });
+  }));
+  const top=Object.values(exMap).sort((a,b)=>b.volume-a.volume).slice(0,5);
+  html+=`<div class="stats-grid" style="margin-bottom:18px;">
+    <div class="stat-card"><div class="stat-top"><span class="stat-label">${tt({pl:'Treningi',en:'Workouts',de:'Trainings',es:'Entrenos'})}</span></div><div class="stat-value">${workouts.length}</div><div class="stat-unit">${tt({pl:'łącznie',en:'total',de:'gesamt',es:'total'})}</div></div>
+    <div class="stat-card"><div class="stat-top"><span class="stat-label">${t('volume')}</span></div><div class="stat-value">${fmtVol(totalVolume)}</div><div class="stat-unit">${unitVol()}</div></div>
+    <div class="stat-card"><div class="stat-top"><span class="stat-label">${tt({pl:'Najlepszy',en:'Best',de:'Beste',es:'Mejor'})}</span></div><div class="stat-value">${fmtVol(+(best.volume_kg||0))}</div><div class="stat-unit">${unitVol()}</div></div>
+  </div>
+  <div class="section-label">${tt({pl:'Najczęściej obciążane ćwiczenia',en:'Top exercises by volume',de:'Top-Übungen nach Volumen',es:'Top ejercicios por volumen'})}</div>
+  ${top.length?top.map(ex=>`<div class="workout-row" style="cursor:default;">
+    <div class="workout-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><path d="M6 4v16M18 4v16M3 12h18"/></svg></div>
+    <div class="workout-row-info"><div class="workout-row-name">${ex.name}</div><div class="workout-row-meta">${ex.count}× · ${fmtVol(ex.volume)}${unitVol()} · ${tt({pl:'max',en:'max',de:'max',es:'max'})} ${dispW(ex.bestWeight)}${unitW()}</div></div>
+  </div>`).join(''):`<div class="empty-state">${t('noData')}</div>`}`;
+  el.innerHTML=html;
+}
+
+function renderClientChatPlaceholder(){
+  const ctx=window._clientDetailData,el=document.getElementById('clientDetailContent');
+  if(!ctx||!el)return;
+  el.innerHTML=clientDetailHeader('Chat',clientDetailName(ctx),true)+`<div class="empty-state">${tt({pl:'Chat zbudujemy w kolejnym etapie.',en:'Chat will be built in the next step.',de:'Chat kommt im nächsten Schritt.',es:'Chat se construirá en el siguiente paso.'})}</div>`;
+}
+
+window.renderClientHub=renderClientHub;
+window.renderClientWorkoutsView=renderClientWorkoutsView;
+window.renderClientWorkoutDetail=renderClientWorkoutDetail;
+window.renderClientMeasurementsView=renderClientMeasurementsView;
+window.renderClientProgressView=renderClientProgressView;
+window.renderClientChatPlaceholder=renderClientChatPlaceholder;
 
 // ── INVITATION BANNERS (client side) ──────────────────────
 

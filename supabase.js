@@ -1,4 +1,4 @@
-// ===== AUTH (Supabase) =====
+﻿// ===== AUTH (Supabase) =====
 // Phase 1: account-only (login/signup/logout). Cloud sync of templates/workouts/programs
 // is wired in the next iteration. For now, signing in associates the device with a user
 // so future syncs can attach data to their account.
@@ -9,7 +9,7 @@ function clearLocalUserData(){
   S.programs=(S.programs||[]).filter(p=>p.builtin);
   ['bs-wo-v4','bs-tpl-v4','bs-meas-v1','bs-ispro-v1','bs-coach-v1','bs-clients-v1','bs-username'].forEach(k=>localStorage.removeItem(k));
   const unEl=document.getElementById('sidebarUserName');if(unEl)unEl.textContent='';
-  updateCoachNav();updateAdminNav();
+  updateCoachNav();updateProCoachNav();updateAdminNav();
   if(typeof renderDashboard==='function')renderDashboard();
   if(typeof renderTemplates==='function')renderTemplates();
   if(typeof renderWorkout==='function')renderWorkout();
@@ -57,7 +57,7 @@ function initSupabase(){
         clearLocalUserData();
       }
       if(typeof renderSettings==='function')renderSettings();
-      updateCoachNav();updateAdminNav();
+      updateCoachNav();updateProCoachNav();updateAdminNav();
     });
   }catch(e){
     console.error('Supabase init error',e);

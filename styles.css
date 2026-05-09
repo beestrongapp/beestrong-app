@@ -252,6 +252,7 @@ body.light #screen-dashboard::before{background:url('./light_logo.png') center/c
 .toggle-switch.on .toggle-knob{transform:translateX(20px);}
 /* ── Coach Mode ── */
 .coach-nav-item{display:none;}
+.pro-coach-nav-item{display:none;}
 .invite-banner{background:var(--bg2);border:1px solid var(--accent);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px;display:flex;align-items:flex-start;gap:12px;}
 .invite-banner-icon{font-size:22px;flex-shrink:0;margin-top:1px;}
 .invite-banner-body{flex:1;min-width:0;}

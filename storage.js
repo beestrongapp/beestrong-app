@@ -43,7 +43,7 @@ function loadData(){
   S.units=ld('bs-units-v1','metric');
   S.weekPlan=ld('bs-week-plan-v1',{});
   S.loaded=true;
-  applyLang();applyTheme();updateCoachNav();updateAdminNav();
+  applyLang();applyTheme();updateCoachNav();updateProCoachNav();updateAdminNav();
   renderCalendar();renderDashboard();renderTemplates();renderWorkout();renderProgress();renderSettings();
 
   // Set username in sidebar
@@ -113,6 +113,7 @@ function showScreen(name){
   if(mBtn)mBtn.classList.add('active');
   if(name==='settings')document.getElementById('mobileSettingsBtn')?.classList.add('active');
   if(name==='clients')document.getElementById('mobileClientsBtn')?.classList.add('active');
+  if(name==='coaches')document.getElementById('mobileCoachesBtn')?.classList.add('active');
   if(name==='admin')document.getElementById('mobileAdminBtn')?.classList.add('active');
   if(name==='dashboard')renderDashboard();
   if(name==='calendar')renderCalendar();
@@ -124,6 +125,7 @@ function showScreen(name){
   // Profile screen removed — its content lives in Settings now (renderSettings handles measurements + Pro card)
   if(name==='settings')renderSettings();
   if(name==='clients')renderClients();
+  if(name==='coaches')renderUserCoaches();
   if(name==='admin')renderAdmin();
 }
 

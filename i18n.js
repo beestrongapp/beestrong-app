@@ -1,6 +1,6 @@
 const T={
   pl:{
-    home:'Home',workout:'Treningi',calendar:'Kalendarz',progress:'Progres',templates:'Szablony',profile:'Profil',programs:'Programy',clients:'Klienci',addClient:'Dodaj',quickAccess:'Szybki dostęp',
+    home:'Home',workout:'Treningi',calendar:'Kalendarz',progress:'Progres',templates:'Szablony',profile:'Profil',programs:'Programy',clients:'Klienci',coach:'Coach',addClient:'Dodaj',quickAccess:'Szybki dostęp',
     dashboard:'Dashboard',recentWorkouts:'Ostatnie treningi',newWorkout:'Nowy trening',
     workoutsThisWeek:'w tym tygodniu',minutes:'minut',tons:'ton',
     noWorkouts:'Brak treningów. Zacznij pierwszy!',startWorkout:'Zacznij trening',
@@ -37,7 +37,7 @@ const T={
     monthsShort:['sty','lut','mar','kwi','maj','cze','lip','sie','wrz','paź','lis','gru'],
   },
   en:{
-    home:'Home',workout:'Workouts',calendar:'Calendar',progress:'Progress',templates:'Templates',profile:'Profile',programs:'Programs',clients:'Clients',addClient:'Add',quickAccess:'Quick Access',
+    home:'Home',workout:'Workouts',calendar:'Calendar',progress:'Progress',templates:'Templates',profile:'Profile',programs:'Programs',clients:'Clients',coach:'Coach',addClient:'Add',quickAccess:'Quick Access',
     dashboard:'Dashboard',recentWorkouts:'Recent Workouts',newWorkout:'New Workout',
     workoutsThisWeek:'this week',minutes:'min',tons:'tons',
     noWorkouts:'No workouts yet. Start your first!',startWorkout:'Start Workout',
@@ -75,7 +75,7 @@ const T={
     monthsShort:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
   },
   de:{
-    home:'Start',workout:'Training',calendar:'Kalender',progress:'Fortschritt',templates:'Vorlagen',profile:'Profil',programs:'Programme',clients:'Klienten',addClient:'Hinzufügen',quickAccess:'Schnellzugriff',
+    home:'Start',workout:'Training',calendar:'Kalender',progress:'Fortschritt',templates:'Vorlagen',profile:'Profil',programs:'Programme',clients:'Klienten',coach:'Coach',addClient:'Hinzufügen',quickAccess:'Schnellzugriff',
     dashboard:'Übersicht',recentWorkouts:'Letzte Trainings',newWorkout:'Neues Training',
     workoutsThisWeek:'diese Woche',minutes:'Min',tons:'Tonnen',
     noWorkouts:'Noch keine Trainings. Starte dein erstes!',startWorkout:'Training starten',
@@ -113,7 +113,7 @@ const T={
     monthsShort:['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'],
   },
   es:{
-    home:'Inicio',workout:'Entrenamiento',calendar:'Calendario',progress:'Progreso',templates:'Plantillas',profile:'Perfil',programs:'Programas',clients:'Clientes',addClient:'Añadir',quickAccess:'Acceso rápido',
+    home:'Inicio',workout:'Entrenamiento',calendar:'Calendario',progress:'Progreso',templates:'Plantillas',profile:'Perfil',programs:'Programas',clients:'Clientes',coach:'Coach',addClient:'Añadir',quickAccess:'Acceso rápido',
     dashboard:'Panel',recentWorkouts:'Entrenamientos recientes',newWorkout:'Nuevo entrenamiento',
     workoutsThisWeek:'esta semana',minutes:'min',tons:'toneladas',
     noWorkouts:'Sin entrenamientos. ¡Empieza el primero!',startWorkout:'Empezar',
