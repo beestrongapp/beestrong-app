@@ -7,10 +7,8 @@ function renderDashboard(){
   const keys=Object.entries(S.workouts).filter(([k,w])=>{const d=new Date((w.date||k.split('_')[0]));return d>=ws&&d<=we;}).map(([k])=>k);
   const tm=keys.reduce((a,k)=>a+(S.workouts[k].duration||0),0);
   const tv=keys.reduce((a,k)=>a+(S.workouts[k].volume||0),0);
-  document.getElementById('dashStats').innerHTML=`
-    <div class="stat-card" style="cursor:pointer;" onclick="showMonthChart()"><div class="stat-top"><span class="stat-label">${t('treningi')}</span><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 4v16M18 4v16M3 12h18"/></svg></div></div><div class="stat-value">${keys.length}</div><div class="stat-unit">${t('workoutsThisWeek')}</div></div>
-    <div class="stat-card" style="cursor:pointer;" onclick="showMonthChart()"><div class="stat-top"><span class="stat-label">${t('czas')}</span><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg></div></div><div class="stat-value">${tm}</div><div class="stat-unit">${t('minutes')}</div></div>
-    <div class="stat-card" style="cursor:pointer;" onclick="showMonthChart()"><div class="stat-top"><span class="stat-label">${t('objetosc')}</span><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg></div></div><div class="stat-value">${fmtVol(tv)}</div><div class="stat-unit">${unitVol()}</div></div>`;
+  const dashStats=document.getElementById('dashStats');
+  if(dashStats)dashStats.innerHTML='';
 
   // Streak
   const streak=getWorkoutStreak();
@@ -30,8 +28,7 @@ function renderDashboard(){
   const qaLbl=document.getElementById('lblQuickAccess');
   if(qaLbl)qaLbl.textContent=t('quickAccess');
 
-  // Quick Access 6 tiles
-  const QA_TILES=[
+  const standardTiles=[
     {
       icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="22" height="22"><polygon points="5 3 19 12 5 21 5 3"/></svg>',
       labelKey:{pl:'Szybki trening',en:'Quick Workout',de:'Schnell-Training',es:'Entrenamiento rápido'},
@@ -64,6 +61,8 @@ function renderDashboard(){
       action:"showScreen('programs')",
     },
   ];
+  const minimalTiles=standardTiles.filter((_,i)=>[0,1,2,3].includes(i));
+  const QA_TILES=S.layoutMode==='minimal'?minimalTiles:standardTiles;
   const qaGrid=document.getElementById('quickAccessGrid');
   if(qaGrid){
     qaGrid.innerHTML=QA_TILES.map(tile=>`
@@ -93,9 +92,11 @@ function renderCalendar(){
   const isPL=lang==='pl';
   const statsEl=document.getElementById('calStats');
   if(statsEl){
-    statsEl.innerHTML=wCount
-      ?`<span><strong>${wCount}</strong> ${tt({pl:'treningi',en:'workouts',de:'Trainings',es:'entrenamientos'})}</span><span><strong>${fmtVol(wVol)}${unitVol()}</strong> ${tt({pl:'wolumen',en:'volume',de:'Volumen',es:'volumen'})}</span>`
-      :`<span style="color:var(--text3);">${tt({pl:'Brak treningów w tym miesiącu',en:'No workouts this month',de:'Keine Trainings in diesem Monat',es:'Sin entrenamientos este mes'})}</span>`;
+    const wTime=monthWorkouts.reduce((a,[,w])=>a+(w.duration||0),0);
+    statsEl.innerHTML=`
+      <div class="cal-stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 4v16M18 4v16M3 12h18"/></svg></div><div><strong>${wCount}</strong><span>${tt({pl:'treningi',en:'workouts',de:'Trainings',es:'entrenamientos'})}</span></div></div>
+      <div class="cal-stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg></div><div><strong>${wTime}</strong><span>${t('minutes')}</span></div></div>
+      <div class="cal-stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg></div><div><strong>${fmtVol(wVol)}</strong><span>${unitVol()}</span></div></div>`;
   }
 
   const g=document.getElementById('calGrid');
@@ -807,6 +808,19 @@ function renderWeekPlan(){
     <button data-wp="next" style="background:none;border:none;cursor:pointer;color:var(--text2);padding:6px;font-size:20px;">▶</button>
   </div>`;
 
+  const weekWorkouts=Object.entries(S.workouts).filter(([wk,w])=>{
+    const date=(w.date||wk.split('_')[0]);
+    return dates.includes(date);
+  });
+  const weekCount=weekWorkouts.length;
+  const weekTime=weekWorkouts.reduce((a,[,w])=>a+(w.duration||0),0);
+  const weekVol=weekWorkouts.reduce((a,[,w])=>a+(w.volume||0),0);
+  html+=`<div class="cal-stats">
+    <div class="cal-stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 4v16M18 4v16M3 12h18"/></svg></div><div><strong>${weekCount}</strong><span>${tt({pl:'treningi',en:'workouts',de:'Trainings',es:'entrenamientos'})}</span></div></div>
+    <div class="cal-stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg></div><div><strong>${weekTime}</strong><span>${t('minutes')}</span></div></div>
+    <div class="cal-stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg></div><div><strong>${fmtVol(weekVol)}</strong><span>${unitVol()}</span></div></div>
+  </div>`;
+
   // ── Day cards ──
   const dayCardsHtml=dates.map((date,i)=>{
     const plan=S.weekPlan?.[date];
@@ -1171,6 +1185,13 @@ function renderSettings(){
       action:'openSettingsRestTimer'
     },
     {
+      key:'layout',
+      label:tt({pl:'Layout Home',en:'Home layout',de:'Home-Layout',es:'Layout inicio'}),
+      value:S.layoutMode==='minimal'?tt({pl:'Minimal',en:'Minimal',de:'Minimal',es:'Minimal'}):tt({pl:'Standard + menu',en:'Standard + menu',de:'Standard + Menü',es:'Estándar + menú'}),
+      icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="18" height="7" rx="1"/></svg>',
+      action:'openSettingsLayout'
+    },
+    {
       key:'units',
       label:tt({pl:'Jednostki',en:'Units',de:'Einheiten',es:'Unidades'}),
       value:S.units==='imperial'?'Imperial (lbs / in)':'Metric (kg / cm)',
@@ -1393,6 +1414,47 @@ function updateNotificationBadge(){
 
 window.openNotificationItem=openNotificationItem;
 
+function toggleMobileFabMenu(){
+  const open=document.body.classList.toggle('fab-open');
+  document.getElementById('mobileFabBtn')?.setAttribute('aria-expanded',open?'true':'false');
+}
+function closeMobileFabMenu(){
+  document.body.classList.remove('fab-open');
+  document.getElementById('mobileFabBtn')?.setAttribute('aria-expanded','false');
+}
+function runFabAction(action){
+  closeMobileFabMenu();
+  if(action==='quick'){startQuickWorkout();return;}
+  if(action==='template'){openNewTemplate();return;}
+  if(action==='measure'){openSettingsMeasurements();return;}
+  if(action==='plan'){showScreen('calendar');switchCalTab('plan');return;}
+}
+function openMoreMenu(){
+  closeMobileFabMenu();
+  closeModal();
+  const items=[
+    {label:t('calendar'),screen:'calendar',icon:'<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>'},
+    {label:t('exercises'),screen:'exercises',icon:'<path d="M6.5 6.5h11"/><path d="M6.5 17.5h11"/><rect x="2" y="9" width="3" height="6" rx="0.5"/><rect x="19" y="9" width="3" height="6" rx="0.5"/><rect x="5" y="7" width="2" height="10" rx="0.5"/><rect x="17" y="7" width="2" height="10" rx="0.5"/>'},
+    {label:t('programs'),screen:'programs',icon:'<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 3v18"/>'},
+    {label:t('templates'),screen:'templates',icon:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>'},
+    {label:t('settings'),screen:'settings',icon:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>'},
+  ];
+  const ov=document.createElement('div');ov.className='modal-overlay';
+  ov.innerHTML=`<div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">More</div>
+    ${items.map(item=>`<div onclick="closeModal();showScreen('${item.screen}')" style="display:flex;align-items:center;gap:14px;padding:14px 12px;border-radius:12px;cursor:pointer;border:1px solid var(--border);background:var(--bg3);margin-bottom:8px;">
+      <span style="width:36px;height:36px;border-radius:10px;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;color:var(--accent);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="18" height="18">${item.icon}</svg></span>
+      <span style="font-size:15px;font-weight:700;">${item.label}</span>
+    </div>`).join('')}
+  </div>`;
+  document.body.appendChild(ov);S.modal=ov;
+}
+window.toggleMobileFabMenu=toggleMobileFabMenu;
+window.closeMobileFabMenu=closeMobileFabMenu;
+window.runFabAction=runFabAction;
+window.openMoreMenu=openMoreMenu;
+
 function adminChangelogHtml(){
   const entries=ld('bs-admin-changelog-v1',[]);
   const fmt=iso=>{
@@ -1435,6 +1497,35 @@ function toggleThemeInline(){
   document.body.classList.toggle('light',!isDark);
   renderSettings();
 }
+
+function openSettingsLayout(){
+  closeModal();
+  const ov=document.createElement('div');ov.className='modal-overlay';
+  const options=[
+    {val:'minimal',label:tt({pl:'Minimal',en:'Minimal',de:'Minimal',es:'Minimal'}),desc:tt({pl:'Mniej skrótów na Home, spokojniejszy ekran.',en:'Fewer Home shortcuts, calmer screen.',de:'Weniger Home-Shortcuts, ruhigerer Bildschirm.',es:'Menos accesos en inicio.'})},
+    {val:'standard',label:tt({pl:'Standard + menu',en:'Standard + menu',de:'Standard + Menü',es:'Estándar + menú'}),desc:tt({pl:'Pełny Quick Access i dolny przycisk +.',en:'Full Quick Access and bottom + action.',de:'Voller Schnellzugriff und + Menü.',es:'Acceso completo y botón +.'})},
+  ];
+  ov.innerHTML=`<div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">${tt({pl:'Layout Home',en:'Home layout',de:'Home-Layout',es:'Layout inicio'})}</div>
+    ${options.map(o=>`
+      <div onclick="setLayoutMode('${o.val}')" style="display:flex;align-items:center;gap:14px;padding:14px 12px;border-radius:12px;cursor:pointer;background:${S.layoutMode===o.val?'var(--accent-dim)':'none'};border:1px solid ${S.layoutMode===o.val?'var(--accent)':'var(--border)'};margin-bottom:8px;transition:all 0.12s;">
+        <span style="width:38px;height:38px;border-radius:10px;background:var(--bg3);display:flex;align-items:center;justify-content:center;color:var(--accent);font-weight:800;">${o.val==='minimal'?'M':'+'}</span>
+        <span style="flex:1;min-width:0;"><span style="display:block;font-size:15px;font-weight:700;color:${S.layoutMode===o.val?'var(--accent)':'var(--text)'};">${o.label}</span><span style="display:block;font-size:12px;color:var(--text2);margin-top:2px;">${o.desc}</span></span>
+        ${S.layoutMode===o.val?'<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="3" width="18" height="18"><polyline points="20 6 9 17 4 12"/></svg>':''}
+      </div>`).join('')}
+    <button class="btn btn-ghost" style="margin-top:8px;" onclick="closeModal()">${t('cancelTemplate')}</button>
+  </div>`;
+  document.body.appendChild(ov);S.modal=ov;
+}
+window.openSettingsLayout=openSettingsLayout;
+window.setLayoutMode=function(mode){
+  S.layoutMode=mode==='minimal'?'minimal':'standard';
+  saveAll();
+  closeModal();
+  renderDashboard();
+  renderSettings();
+};
 
 function openSettingsName(){
   closeModal();

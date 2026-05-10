@@ -10,7 +10,7 @@ const SUPABASE_URL='https://gtaskzdyoyscbgsqdvnk.supabase.co';
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd0YXNremR5b3lzY2Jnc3Fkdm5rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5OTU4MTIsImV4cCI6MjA5MzU3MTgxMn0.EPBUyLflxYSsr7BNdzVSZM4Q-M1oRAsBI9sIXhUDOH8';
 let sb=null; // Supabase client, initialized after DOM ready (see initSupabase)
 
-let S={month:new Date().getMonth(),year:new Date().getFullYear(),selectedDate:null,templates:[],workouts:{},measurements:{},activeWorkout:null,timerSecs:0,timerInterval:null,modal:null,loaded:false,isPro:false,coachMode:false,programs:[],clients:[],pendingInvites:[],user:null,defaultRest:90,units:'metric',goal:localStorage.getItem('bs-goal-v1')||'strength',level:localStorage.getItem('bs-level-v1')||'beginner',weekPlan:{}};
+let S={month:new Date().getMonth(),year:new Date().getFullYear(),selectedDate:null,templates:[],workouts:{},measurements:{},activeWorkout:null,timerSecs:0,timerInterval:null,modal:null,loaded:false,isPro:false,coachMode:false,programs:[],clients:[],pendingInvites:[],user:null,defaultRest:90,units:'metric',layoutMode:localStorage.getItem('bs-layout-mode-v1')||'standard',goal:localStorage.getItem('bs-goal-v1')||'strength',level:localStorage.getItem('bs-level-v1')||'beginner',weekPlan:{}};
 let progressChart=null;
 
 function exName(e){return e[lang]||e.pl||e.name||'';}
@@ -41,6 +41,7 @@ function loadData(){
   S.clients=ld('bs-clients-v1',[]);
   S.defaultRest=+ld('bs-default-rest-v1',90)||90;
   S.units=ld('bs-units-v1','metric');
+  S.layoutMode=localStorage.getItem('bs-layout-mode-v1')||'standard';
   S.weekPlan=ld('bs-week-plan-v1',{});
   S.loaded=true;
   applyLang();applyTheme();updateCoachNav();updateProCoachNav();updateAdminNav();
@@ -91,12 +92,13 @@ function showNamePrompt(){
 }
 
 function saveAll(){
-  sv('bs-tpl-v4',S.templates);sv('bs-wo-v4',S.workouts);sv('bs-meas-v1',S.measurements);sv('bs-ispro-v1',S.isPro);sv('bs-coach-v1',S.coachMode);sv('bs-programs-v1',S.programs);sv('bs-clients-v1',S.clients);sv('bs-default-rest-v1',S.defaultRest);sv('bs-units-v1',S.units);sv('bs-week-plan-v1',S.weekPlan||{});if(S.goal)localStorage.setItem('bs-goal-v1',S.goal);if(S.level)localStorage.setItem('bs-level-v1',S.level);
+  sv('bs-tpl-v4',S.templates);sv('bs-wo-v4',S.workouts);sv('bs-meas-v1',S.measurements);sv('bs-ispro-v1',S.isPro);sv('bs-coach-v1',S.coachMode);sv('bs-programs-v1',S.programs);sv('bs-clients-v1',S.clients);sv('bs-default-rest-v1',S.defaultRest);sv('bs-units-v1',S.units);sv('bs-week-plan-v1',S.weekPlan||{});if(S.layoutMode)localStorage.setItem('bs-layout-mode-v1',S.layoutMode);if(S.goal)localStorage.setItem('bs-goal-v1',S.goal);if(S.level)localStorage.setItem('bs-level-v1',S.level);
   const p=document.getElementById('savePill');p.classList.add('show');setTimeout(()=>p.classList.remove('show'),1800);
   if(S.user&&sb)pushAllToCloud().catch(e=>console.warn('auto-push failed',e));
 }
 
 function showScreen(name){
+  if(typeof closeMobileFabMenu==='function')closeMobileFabMenu();
   if(window._bsHistoryReady&&!window._bsHandlingBack&&name!=='dashboard'){
     if(typeof ensureBackTrap==='function')ensureBackTrap({screen:name});
     else history.pushState({bs:true,screen:name},'','');
