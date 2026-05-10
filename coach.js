@@ -545,8 +545,14 @@ async function openUserCoachDetail(invId){
       return true;
     }
     closeModal();
+    if(typeof showScreen==='function'){
+      window._bsHandlingBack=true;
+      showScreen('coaches');
+      window._bsHandlingBack=false;
+    }
     return true;
   };
+  if(typeof ensureBackTrap==='function')ensureBackTrap({modal:'user-coach-detail',invId});
   try{
     const{data:inv,error}=await sb.from('coach_invitations').select('*').eq('id',invId).single();
     if(error||!inv)throw error||new Error('not found');
@@ -1138,6 +1144,7 @@ async function renderUserCoachChat(invId){
     S.modal._userCoachInvId=invId;
     S.modal._userCoachView='chat';
   }
+  if(typeof ensureBackTrap==='function')ensureBackTrap({modal:'user-coach-chat',invId});
   content.style.display='block';
   content.style.padding='0';
   content.innerHTML=`<div style="display:flex;justify-content:center;padding:40px 0;"><div class="spinner"></div></div>`;
