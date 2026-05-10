@@ -1346,12 +1346,6 @@ function renderNotifications(){
   markLocalNotificationsRead(chatItems);
 }
 
-function renderFriends(){
-  const el=document.getElementById('friendsContent');
-  if(!el)return;
-  el.innerHTML=`<div class="empty-state">${tt({pl:'Sekcja Friends zostanie podłączona później.',en:'Friends section will be connected later.',de:'Friends-Bereich wird später verbunden.',es:'La sección Friends se conectará más tarde.'})}</div>`;
-}
-
 function openNotificationItem(id){
   const entries=ld('bs-notifications-v1',[]);
   const item=entries.find(n=>n.id===id);
@@ -1393,7 +1387,7 @@ async function manualHardRefresh(){
     es:'Descargando archivos nuevos del servidor...'
   }),'success');
   try{
-    const coreAssets=['./','./index.html','./manifest.json','./styles.css','./i18n.js','./storage.js','./workouts.js','./supabase.js','./coach.js','./admin.js','./app.js','./sw.js'];
+    const coreAssets=['./','./index.html','./manifest.json','./styles.css','./i18n.js','./storage.js','./workouts.js','./supabase.js','./coach.js','./friends.js','./admin.js','./app.js','./sw.js'];
     if('serviceWorker' in navigator){
       const regs=await navigator.serviceWorker.getRegistrations();
       await Promise.all(regs.map(reg=>reg.update().catch(()=>{})));

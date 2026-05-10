@@ -580,6 +580,30 @@ function setupRealtimeSubscriptions(){
       payload=>{ if(typeof rememberChatMessageNotification==='function')rememberChatMessageNotification(payload); })
     .subscribe();
   _realtimeChannels.push(chatReceivedCh);
+
+  const friendInvitedCh=sb.channel('bs-friend-invites-in-'+S.user.id)
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'friend_invitations',filter:`invitee_id=eq.${S.user.id}`},
+      payload=>{
+        if(typeof addAppNotification==='function')addAppNotification({type:'friend_invite',title:'Friends',body:tt({pl:'Nowe zaproszenie do Friends.',en:'New Friends invitation.',de:'Neue Friends-Einladung.',es:'Nueva invitación de Friends.'}),at:payload.new?.created_at,action:"showScreen('friends')"});
+        if(document.getElementById('screen-friends')?.classList.contains('active')&&typeof renderFriends==='function')renderFriends();
+      })
+    .subscribe();
+  _realtimeChannels.push(friendInvitedCh);
+
+  const friendInviteUpdateCh=sb.channel('bs-friend-invites-update-'+S.user.id)
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'friend_invitations',filter:`inviter_id=eq.${S.user.id}`},
+      payload=>{
+        if(payload.new?.status==='accepted'&&typeof addAppNotification==='function')addAppNotification({type:'friend_accept',title:'Friends',body:tt({pl:'Zaproszenie do Friends zaakceptowane.',en:'Friends invitation accepted.',de:'Friends-Einladung angenommen.',es:'Invitación de Friends aceptada.'}),at:payload.new?.responded_at,action:"showScreen('friends')"});
+        if(document.getElementById('screen-friends')?.classList.contains('active')&&typeof renderFriends==='function')renderFriends();
+      })
+    .subscribe();
+  _realtimeChannels.push(friendInviteUpdateCh);
+
+  const friendMsgCh=sb.channel('bs-friend-messages-'+S.user.id)
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'friend_messages',filter:`receiver_id=eq.${S.user.id}`},
+      payload=>{ if(typeof rememberFriendNotification==='function')rememberFriendNotification(payload); })
+    .subscribe();
+  _realtimeChannels.push(friendMsgCh);
 }
 
 // Auto-sync when tab becomes visible
