@@ -254,9 +254,10 @@ async function pullAllFromCloud(){
       types:p.types||[],
       templates:p.templates||[],
     }));
-    // Coach-assigned programs (client receives from coach)
-    if(!assignRes.error&&assignRes.data&&assignRes.data.length){
-      const coachPrograms=assignRes.data.map(a=>({
+    // Coach-assigned programs/workouts (client receives from coach)
+    if(!assignRes.error){
+      const activeAssignments=assignRes.data||[];
+      const coachPrograms=activeAssignments.filter(a=>(a.assignment_type||'program')==='program').map(a=>({
         id:'coach_'+a.id,
         assignmentId:a.id,
         builtin:false,
@@ -267,6 +268,21 @@ async function pullAllFromCloud(){
       }));
       // Keep user's own programs, replace any existing fromCoach entries
       S.programs=[...S.programs.filter(p=>!p.fromCoach),...coachPrograms];
+      const ownWeekPlan=Object.fromEntries(Object.entries(S.weekPlan||{}).filter(([,p])=>!p?.fromCoach));
+      activeAssignments.forEach(a=>{
+        const schedule=a.schedule_data||{};
+        (schedule.items||[]).forEach(item=>{
+          if(!item?.date)return;
+          ownWeekPlan[item.date]={
+            ...item,
+            assignmentId:a.id,
+            assignmentType:a.assignment_type||'program',
+            fromCoach:true,
+            coachName:(a.program_data&&a.program_data.coachName)||'Coach',
+          };
+        });
+      });
+      S.weekPlan=ownWeekPlan;
     }
     // Coach clients (only for coaches; non-coaches get an empty array)
     if(!ccRes.error){
@@ -547,7 +563,6 @@ let _realtimeChannels=[];
 
 async function autoSyncFromCloud(){
   if(!sb||!S.user)return;
-  if(!S.isPro&&!S.coachMode)return;
   const now=Date.now();
   if(now-_lastAutoSync<120000)return; // 2 min cooldown
   _lastAutoSync=now;

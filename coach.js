@@ -457,23 +457,24 @@ async function syncProfileFlags(){
 function renderClients(){
   const el=document.getElementById('clientsContent');
   if(!el)return;
+  const bottomBack=`<div class="screen-bottom-back"><button class="btn btn-primary" onclick="showScreen('dashboard')">${t('backBtn')}</button></div>`;
   if(!S.user){
-    el.innerHTML=`<div class="empty-state">${tt({pl:'Zaloguj się, aby zarządzać klientami.',en:'Sign in to manage clients.',de:'Melde dich an, um Klienten zu verwalten.',es:'Inicia sesión para gestionar clientes.'})}</div>`;
+    el.innerHTML=`<div class="empty-state">${tt({pl:'Zaloguj się, aby zarządzać klientami.',en:'Sign in to manage clients.',de:'Melde dich an, um Klienten zu verwalten.',es:'Inicia sesión para gestionar clientes.'})}</div>${bottomBack}`;
     return;
   }
   if(!S.coachMode||!isCoachAllowed()){
-    el.innerHTML=`<div class="empty-state">${tt({pl:'Coach Mode nie jest aktywny.',en:'Coach Mode is not active.',de:'Coach-Modus ist nicht aktiv.',es:'El modo entrenador no está activo.'})}</div>`;
+    el.innerHTML=`<div class="empty-state">${tt({pl:'Coach Mode nie jest aktywny.',en:'Coach Mode is not active.',de:'Coach-Modus ist nicht aktiv.',es:'El modo entrenador no está activo.'})}</div>${bottomBack}`;
     return;
   }
   el.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;padding:40px 0;"><div class="spinner"></div></div>`;
   loadClientsFromCloud().then(invitations=>{
-    if(!invitations){el.innerHTML=`<div class="empty-state">${tt({pl:'Błąd ładowania klientów.',en:'Error loading clients.',de:'Fehler beim Laden.',es:'Error al cargar.'})}</div>`;return;}
+    if(!invitations){el.innerHTML=`<div class="empty-state">${tt({pl:'Błąd ładowania klientów.',en:'Error loading clients.',de:'Fehler beim Laden.',es:'Error al cargar.'})}</div>${bottomBack}`;return;}
     if(!invitations.length){
-      el.innerHTML=`<div class="empty-state">${tt({pl:'Brak klientów. Zaproś pierwszego klikając +.',en:'No clients yet. Invite one by tapping +.',de:'Noch keine Klienten. Tippe + um einzuladen.',es:'Sin clientes aún. Pulsa + para invitar.'})}</div>`;
+      el.innerHTML=`<div class="empty-state">${tt({pl:'Brak klientów. Zaproś pierwszego klikając +.',en:'No clients yet. Invite one by tapping +.',de:'Noch keine Klienten. Tippe + um einzuladen.',es:'Sin clientes aún. Pulsa + para invitar.'})}</div>${bottomBack}`;
       return;
     }
     window._clientInvitations=invitations;
-    el.innerHTML=`<div style="margin-bottom:14px;"><input type="text" id="clientSearch" placeholder="${tt({pl:'Szukaj po imieniu lub mailu...',en:'Search by name or email...',de:'Nach Name oder E-Mail suchen...',es:'Buscar por nombre o email...'})}" oninput="filterClients()" style="font-size:14px;"/></div><div id="clientList"></div>`;
+    el.innerHTML=`<div style="margin-bottom:14px;"><input type="text" id="clientSearch" placeholder="${tt({pl:'Szukaj po imieniu lub mailu...',en:'Search by name or email...',de:'Nach Name oder E-Mail suchen...',es:'Buscar por nombre o email...'})}" oninput="filterClients()" style="font-size:14px;"/></div><div id="clientList"></div>${bottomBack}`;
     renderClientList(window._clientInvitations);
   });
 }
@@ -856,18 +857,18 @@ function clientHubTile(action,label,svg){
 
 function renderClientAssignments(ctx){
   let html=`<div style="display:flex;align-items:center;justify-content:space-between;margin-top:20px;margin-bottom:10px;">
-    <div class="section-label" style="margin:0;">${tt({pl:'Przypisane programy',en:'Assigned programs',de:'Zugewiesene Programme',es:'Programas asignados'})}</div>
+    <div class="section-label" style="margin:0;">${tt({pl:'Przypisane plany',en:'Assigned plans',de:'Zugewiesene Pläne',es:'Planes asignados'})}</div>
     <button class="btn btn-sm btn-primary" style="font-size:12px;padding:7px 14px;" onclick="openAssignProgramModal('${ctx.inv.id}','${ctx.clientId}')">+ ${tt({pl:'Przypisz',en:'Assign',de:'Zuweisen',es:'Asignar'})}</button>
   </div>`;
   if(ctx.assigned.length){
     html+=ctx.assigned.map(a=>`
       <div style="background:var(--bg3);border-radius:10px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;">
-        <div style="flex:1;font-size:13px;font-weight:600;">${a.program_name}</div>
+        <div style="flex:1;"><div style="font-size:13px;font-weight:600;">${a.program_name}</div><div style="font-size:11px;color:var(--text3);">${a.assignment_type||'program'}${a.start_date?' · '+a.start_date:''}</div></div>
         <div style="font-size:11px;color:var(--text3);">${a.assigned_at?new Date(a.assigned_at).toLocaleDateString():''}</div>
         <button class="btn btn-sm btn-ghost" style="color:var(--red);font-size:11px;padding:4px 10px;" onclick="removeCoachAssignment('${a.id}',this)">${tt({pl:'Usuń',en:'Remove',de:'Entfernen',es:'Quitar'})}</button>
       </div>`).join('');
   } else {
-    html+=`<div style="font-size:13px;color:var(--text3);padding:8px 0;">${tt({pl:'Brak przypisanych programów.',en:'No programs assigned yet.',de:'Noch keine Programme zugewiesen.',es:'Aún no hay programas asignados.'})}</div>`;
+    html+=`<div style="font-size:13px;color:var(--text3);padding:8px 0;">${tt({pl:'Brak przypisanych planów.',en:'No plans assigned yet.',de:'Noch keine Pläne zugewiesen.',es:'Aún no hay planes asignados.'})}</div>`;
   }
   return html;
 }
@@ -1329,57 +1330,195 @@ async function declineInvitation(invId){
 }
 window.declineInvitation=declineInvitation;
 
-// ===== COACH: ASSIGN PROGRAM TO CLIENT =====
+// ===== COACH: ASSIGN PROGRAM / WORKOUT TO CLIENT =====
+
+function assignIso(d){return d.toISOString().slice(0,10);}
+function assignMondayWeekday(dateStr){
+  const d=new Date(dateStr+'T00:00:00');
+  const js=d.getDay();
+  return js===0?7:js;
+}
+function assignProgramSchedule(program,startDate,weekdays){
+  const templates=program.templates||[];
+  const duration=Math.max(1,+(program.duration||8));
+  const days=[...weekdays].sort((a,b)=>a-b);
+  const start=new Date(startDate+'T00:00:00');
+  const items=[];
+  let templateIdx=0;
+  for(let i=0;i<duration*7;i++){
+    const d=new Date(start);d.setDate(start.getDate()+i);
+    const iso=assignIso(d);
+    if(!days.includes(assignMondayWeekday(iso)))continue;
+    const tpl=templates[templateIdx%Math.max(templates.length,1)];
+    if(!tpl)continue;
+    items.push({date:iso,type:'template',name:tpl.name||program.name?.en||'Workout',template:tpl,exercises:tpl.exercises||[]});
+    templateIdx++;
+  }
+  const end=new Date(start);end.setDate(start.getDate()+duration*7-1);
+  return{items,startDate,endDate:assignIso(end),weekdays:days};
+}
+function assignWeekdayPicker(idPrefix,selected){
+  const labels=T[lang]?.days||T.en.days;
+  return `<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin:10px 0 14px;">
+    ${labels.map((d,i)=>{
+      const val=i+1,checked=selected.includes(val);
+      return `<label style="display:flex;align-items:center;justify-content:center;min-height:38px;border-radius:10px;border:1px solid ${checked?'var(--accent)':'var(--border)'};background:${checked?'var(--accent-dim)':'var(--bg3)'};font-size:12px;font-weight:700;color:${checked?'var(--accent)':'var(--text2)'};">
+        <input type="checkbox" data-assign-weekday value="${val}" ${checked?'checked':''} style="display:none;">${d}
+      </label>`;
+    }).join('')}
+  </div>`;
+}
 
 function openAssignProgramModal(invId, clientUserId){
   closeModal();
   const allPrograms=[...BUILTIN_PROGRAMS,...(Array.isArray(S.programs)?S.programs.filter(p=>!p.fromCoach):[])];
-  if(!allPrograms.length){
-    showSyncToast(tt({pl:'Brak programów do przypisania.',en:'No programs to assign.',de:'Keine Programme zum Zuweisen.',es:'No hay programas para asignar.'}),'error');
-    return;
-  }
+  const coachTemplates=Array.isArray(S.templates)?S.templates:[];
+  const state={mode:'program',startDate:today(),workoutDate:today(),programWeekdays:[1,2,3],customExercises:[]};
   const ov=document.createElement('div');ov.className='modal-overlay';
-  ov.innerHTML=`<div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title">${tt({pl:'Wybierz program',en:'Choose program',de:'Programm wählen',es:'Elige programa'})}</div>
-    <div style="max-height:55vh;overflow-y:auto;margin-bottom:12px;">
-      ${allPrograms.map(p=>{
-        const n=localizedField(p,'name')||p.name?.en||p.name?.pl||'';
-        return `<div class="workout-row" style="cursor:pointer;margin-bottom:8px;" onclick="assignProgramToClient('${invId}','${clientUserId}',${JSON.stringify(JSON.stringify(p)).replace(/'/g,"\\'")},'${n.replace(/'/g,"\\'")}')" >
-          <div class="workout-row-info">
-            <div class="workout-row-name">${n}</div>
-            <div class="workout-row-meta">${p.daysPerWeek||3}× ${tt({pl:'tyg.',en:'/wk',de:'/Wo.',es:'/sem.'})} · ${p.duration||8} ${tt({pl:'tyg.',en:'wks',de:'Wo.',es:'sem.'})}</div>
-          </div>
+  function sync(){
+    state.startDate=document.getElementById('assignStartDate')?.value||state.startDate;
+    state.workoutDate=document.getElementById('assignWorkoutDate')?.value||state.workoutDate;
+    state.customName=document.getElementById('assignCustomName')?.value||state.customName||'';
+    state.programWeekdays=[...ov.querySelectorAll('[data-assign-weekday]:checked')].map(x=>+x.value);
+  }
+  function modeBtn(mode,label){
+    const active=state.mode===mode;
+    return `<button class="btn ${active?'btn-primary':'btn-ghost'}" onclick="window.assignSetMode('${mode}')" style="font-size:12px;padding:10px 6px;">${label}</button>`;
+  }
+  function render(){
+    const programHtml=`<label class="form-label">${tt({pl:'Start programu',en:'Program start',de:'Programmstart',es:'Inicio del programa'})}</label>
+      <input id="assignStartDate" type="date" value="${state.startDate}" style="margin-bottom:8px;">
+      <div style="font-size:12px;color:var(--text2);font-weight:700;">${tt({pl:'Dni treningowe',en:'Training days',de:'Trainingstage',es:'Días de entrenamiento'})}</div>
+      ${assignWeekdayPicker('assign',state.programWeekdays)}
+      <div style="max-height:42vh;overflow-y:auto;">
+        ${allPrograms.length?allPrograms.map((p,i)=>{
+          const n=localizedField(p,'name')||p.name?.en||p.name?.pl||'Program';
+          return `<div class="workout-row" style="cursor:pointer;margin-bottom:8px;" onclick="assignProgramToClient('${invId}','${clientUserId}',${i})">
+            <div class="workout-row-info"><div class="workout-row-name">${n}</div><div class="workout-row-meta">${p.daysPerWeek||3}× ${tt({pl:'tyg.',en:'/wk',de:'/Wo.',es:'/sem.'})} · ${p.duration||8} ${tt({pl:'tyg.',en:'wks',de:'Wo.',es:'sem.'})}</div></div>
+            <div style="color:var(--accent);font-size:20px;">›</div>
+          </div>`;
+        }).join(''):`<div class="empty-state">${tt({pl:'Brak programów.',en:'No programs.',de:'Keine Programme.',es:'Sin programas.'})}</div>`}
+      </div>`;
+    const templateHtml=`<label class="form-label">${t('date')}</label>
+      <input id="assignWorkoutDate" type="date" value="${state.workoutDate}" style="margin-bottom:12px;">
+      <div style="max-height:48vh;overflow-y:auto;">
+        ${coachTemplates.length?coachTemplates.map((tp,i)=>`<div class="workout-row" style="cursor:pointer;margin-bottom:8px;" onclick="assignTemplateWorkoutToClient('${invId}','${clientUserId}',${i})">
+          <div class="workout-row-info"><div class="workout-row-name">${tp.name||'Template'}</div><div class="workout-row-meta">${(tp.exercises||[]).length} ${t('exExercises')} · ${t('exRest')} ${tp.restDefault||90}s</div></div>
           <div style="color:var(--accent);font-size:20px;">›</div>
-        </div>`;
-      }).join('')}
-    </div>
-    <button class="btn btn-ghost" onclick="closeModal()">${tt({pl:'Anuluj',en:'Cancel',de:'Abbrechen',es:'Cancelar'})}</button>
-  </div>`;
-  document.body.appendChild(ov);S.modal=ov;
+        </div>`).join(''):`<div class="empty-state">${tt({pl:'Brak templates coacha.',en:'No coach templates.',de:'Keine Coach-Vorlagen.',es:'Sin templates del coach.'})}</div>`}
+      </div>`;
+    const customHtml=`<label class="form-label">${t('date')}</label>
+      <input id="assignWorkoutDate" type="date" value="${state.workoutDate}" style="margin-bottom:10px;">
+      <label class="form-label">${tt({pl:'Nazwa treningu',en:'Workout name',de:'Workout-Name',es:'Nombre del entrenamiento'})}</label>
+      <input id="assignCustomName" type="text" value="${(state.customName||'').replace(/"/g,'&quot;')}" placeholder="${t('customWorkout')}" style="margin-bottom:12px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div style="font-size:13px;font-weight:700;">${t('exercises')} (${state.customExercises.length})</div>
+        <button class="btn btn-sm btn-ghost" onclick="window.assignPickCustomExercises()" style="font-size:12px;padding:7px 12px;">+ ${t('addExercise')}</button>
+      </div>
+      <div style="max-height:34vh;overflow-y:auto;margin-bottom:12px;">
+        ${state.customExercises.length?state.customExercises.map(e=>`<div class="workout-row" style="cursor:default;"><div class="workout-row-info"><div class="workout-row-name">${exName(e)}</div><div class="workout-row-meta">${e.sets||3}×${e.reps||10}</div></div></div>`).join(''):`<div class="empty-state" style="padding:18px;">${tt({pl:'Dodaj ćwiczenia albo zapisz samą nazwę.',en:'Add exercises or save the name only.',de:'Übungen hinzufügen oder nur Namen speichern.',es:'Añade ejercicios o guarda solo el nombre.'})}</div>`}
+      </div>
+      <button class="btn btn-primary" onclick="assignCustomWorkoutToClient('${invId}','${clientUserId}')">${tt({pl:'Przypisz custom workout',en:'Assign custom workout',de:'Eigenes Training zuweisen',es:'Asignar entrenamiento personalizado'})}</button>`;
+    ov.innerHTML=`<div class="modal" style="max-height:92dvh;display:flex;flex-direction:column;">
+      <div class="modal-handle"></div>
+      <div class="modal-title">${tt({pl:'Assign dla klienta',en:'Client assign',de:'Client-Zuweisung',es:'Asignación de cliente'})}</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:14px;">
+        ${modeBtn('program',tt({pl:'Program',en:'Program',de:'Programm',es:'Programa'}))}
+        ${modeBtn('template',tt({pl:'Template',en:'Template',de:'Vorlage',es:'Template'}))}
+        ${modeBtn('custom',tt({pl:'Custom',en:'Custom',de:'Eigen',es:'Custom'}))}
+      </div>
+      <div style="overflow-y:auto;min-height:0;flex:1;">${state.mode==='program'?programHtml:state.mode==='template'?templateHtml:customHtml}</div>
+      <button class="btn btn-ghost" style="margin-top:12px;" onclick="closeModal()">${tt({pl:'Anuluj',en:'Cancel',de:'Abbrechen',es:'Cancelar'})}</button>
+    </div>`;
+  }
+  window.assignSetMode=mode=>{sync();state.mode=mode;render();};
+  window.assignPickCustomExercises=()=>{
+    sync();
+    S.modal=null;
+    showExPicker(state.customExercises,picked=>{
+      state.customExercises=picked.map(e=>({...e,sets:e.sets||3,reps:e.reps||10}));
+      S.modal=ov;
+      render();
+    });
+  };
+  window._assignPrograms=allPrograms;
+  window._assignTemplates=coachTemplates;
+  window._assignState=state;
+  ov._backHandler=()=>{closeModal();return true;};
+  document.body.appendChild(ov);S.modal=ov;render();
 }
 window.openAssignProgramModal=openAssignProgramModal;
 
-window.assignProgramToClient=async function(invId,clientUserId,programJson,programName){
+async function insertClientAssignment(invId,clientUserId,row,successMsg){
   if(!sb||!S.user)return;
   try{
-    const programData=JSON.parse(programJson);
-    // Embed coach name for display on client side
-    programData.coachName=(localStorage.getItem('bs-username')||'').trim()||S.user.email;
     const{error}=await sb.from('coach_program_assignments').insert({
       invitation_id:invId,
       coach_id:S.user.id,
       client_user_id:clientUserId,
-      program_name:programName,
-      program_data:programData,
       status:'active',
+      ...row,
     });
     if(error)throw error;
     closeModal();
-    showSyncToast(tt({pl:'Program przypisany ✓',en:'Program assigned ✓',de:'Programm zugewiesen ✓',es:'Programa asignado ✓'}),'success');
+    showSyncToast(successMsg,'success');
+    setTimeout(()=>openClientDetail(invId),150);
   }catch(e){
     showSyncToast(tt({pl:'Błąd: ',en:'Error: ',de:'Fehler: ',es:'Error: '})+(e.message||''),'error');
   }
+}
+
+window.assignProgramToClient=async function(invId,clientUserId,programIndex){
+  const programData=JSON.parse(JSON.stringify(window._assignPrograms?.[programIndex]||null));
+  const state=window._assignState;
+  if(!programData||!state)return;
+  const weekdays=[...document.querySelectorAll('[data-assign-weekday]:checked')].map(x=>+x.value);
+  if(!weekdays.length)return showSyncToast(tt({pl:'Wybierz dni tygodnia.',en:'Choose training days.',de:'Trainingstage wählen.',es:'Elige días de entrenamiento.'}),'error');
+  const startDate=document.getElementById('assignStartDate')?.value||today();
+  const schedule=assignProgramSchedule(programData,startDate,weekdays);
+  const programName=localizedField(programData,'name')||programData.name?.en||programData.name?.pl||'Program';
+  programData.coachName=(localStorage.getItem('bs-username')||'').trim()||S.user.email;
+  await insertClientAssignment(invId,clientUserId,{
+    assignment_type:'program',
+    program_name:programName,
+    program_data:programData,
+    schedule_data:schedule,
+    start_date:schedule.startDate,
+    end_date:schedule.endDate,
+    weekdays:schedule.weekdays,
+  },tt({pl:'Program rozpisany w kalendarzu klienta ✓',en:'Program scheduled in client calendar ✓',de:'Programm im Client-Kalender geplant ✓',es:'Programa planificado en el calendario ✓'}));
+};
+
+window.assignTemplateWorkoutToClient=async function(invId,clientUserId,templateIndex){
+  const tp=JSON.parse(JSON.stringify(window._assignTemplates?.[templateIndex]||null));
+  if(!tp)return;
+  const date=document.getElementById('assignWorkoutDate')?.value||today();
+  const name=tp.name||'Template';
+  await insertClientAssignment(invId,clientUserId,{
+    assignment_type:'template',
+    program_name:name,
+    program_data:{coachName:(localStorage.getItem('bs-username')||'').trim()||S.user.email,template:tp},
+    schedule_data:{items:[{date,type:'template',name,template:tp,exercises:tp.exercises||[]}]},
+    start_date:date,
+    end_date:date,
+    weekdays:[assignMondayWeekday(date)],
+  },tt({pl:'Workout z template przypisany ✓',en:'Template workout assigned ✓',de:'Vorlagen-Workout zugewiesen ✓',es:'Workout de template asignado ✓'}));
+};
+
+window.assignCustomWorkoutToClient=async function(invId,clientUserId){
+  const state=window._assignState||{};
+  const date=document.getElementById('assignWorkoutDate')?.value||today();
+  const name=(document.getElementById('assignCustomName')?.value||'').trim()||t('customWorkout');
+  const exercises=(state.customExercises||[]).map(e=>({id:e.id,name:exName(e),pl:e.pl,en:e.en,gk:e.gk,equipment:e.equipment,sets:e.sets||3,reps:e.reps||10}));
+  await insertClientAssignment(invId,clientUserId,{
+    assignment_type:'custom',
+    program_name:name,
+    program_data:{coachName:(localStorage.getItem('bs-username')||'').trim()||S.user.email,name,exercises},
+    schedule_data:{items:[{date,type:'custom',name,exercises}]},
+    start_date:date,
+    end_date:date,
+    weekdays:[assignMondayWeekday(date)],
+  },tt({pl:'Custom workout przypisany ✓',en:'Custom workout assigned ✓',de:'Eigenes Training zugewiesen ✓',es:'Workout personalizado asignado ✓'}));
 };
 
 window.removeCoachAssignment=async function(assignmentId,btnEl){

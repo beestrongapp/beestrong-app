@@ -849,10 +849,11 @@ function renderWeekPlan(){
     const isPast=date<today_;
     const isSelected=date===_selectedPlanDate;
     let content='';
+    const coachMark=plan?.fromCoach?' 👤':'';
     if(plan?.type==='custom'){
       content=`<div style="background:rgba(100,200,255,0.12);border-radius:8px;padding:4px 6px;font-size:11px;font-weight:600;color:#64c8ff;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${plan.name}</div>`;
     }else if(plan?.type==='template'){
-      content=`<div style="background:var(--accent-dim);border-radius:8px;padding:4px 6px;font-size:11px;font-weight:600;color:var(--accent);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${plan.name}</div>`;
+      content=`<div style="background:var(--accent-dim);border-radius:8px;padding:4px 6px;font-size:11px;font-weight:600;color:var(--accent);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${plan.name}${coachMark}</div>`;
     }else{
       content=`<div style="font-size:11px;color:var(--text3);margin-top:4px;">Rest</div>`;
     }
@@ -883,17 +884,19 @@ function renderWeekPlan(){
       const typeLbl=plan.type==='template'
         ?tt({pl:'Szablon',en:'Template',de:'Vorlage',es:'Plantilla'})
         :tt({pl:'Własny',en:'Custom',de:'Eigenes',es:'Personalizado'});
-      const exRows=plan.exercises?.length
-        ?plan.exercises.map(e=>`<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--border);">
-            <span style="color:var(--text2);">• ${e.name||'?'}</span>
+      const planExercises=plan.exercises?.length?plan.exercises:(plan.template?.exercises||[]);
+      const exRows=planExercises?.length
+        ?planExercises.map(e=>`<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--border);">
+            <span style="color:var(--text2);">• ${exName(e)||e.name||'?'}</span>
             <span style="color:var(--text3);flex-shrink:0;">${e.sets||3}×${e.reps||10}</span>
           </div>`).join(''):'';
+      const source=plan.fromCoach?` · ${tt({pl:'od coacha',en:'from coach',de:'vom Coach',es:'del coach'})}`:'';
       html+=`<div data-wp="view-detail" data-date="${sd}" style="cursor:pointer;margin-bottom:12px;" title="${tt({pl:'Kliknij by zobaczyć szczegóły',en:'Click to see details',de:'Klicken für Details',es:'Toca para ver detalles'})}">
           <div style="display:flex;align-items:center;gap:8px;">
             <span style="font-size:18px;">${icon}</span>
             <div>
               <div style="font-size:15px;font-weight:700;">${plan.name}</div>
-              <div style="font-size:11px;color:var(--text3);">${typeLbl}${plan.exercises?.length?' · '+plan.exercises.length+' '+tt({pl:'ćwiczeń',en:'exercises',de:'Übungen',es:'ejercicios'}):''}</div>
+              <div style="font-size:11px;color:var(--text3);">${typeLbl}${source}${planExercises?.length?' · '+planExercises.length+' '+tt({pl:'ćwiczeń',en:'exercises',de:'Übungen',es:'ejercicios'}):''}</div>
             </div>
             <span style="margin-left:auto;color:var(--text3);font-size:16px;">›</span>
           </div>
@@ -969,8 +972,9 @@ function showPlanDetailModal(date){
   let bodyHtml='';
   if(plan.type==='template'){
     const tp=S.templates.find(t=>+t.id===plan.templateId);
-    bodyHtml=tp
-      ?tp.exercises.map(e=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+    const exercises=(plan.exercises?.length?plan.exercises:null)||(plan.template?.exercises?.length?plan.template.exercises:null)||(tp?.exercises||[]);
+    bodyHtml=exercises.length
+      ?exercises.map(e=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
           <span style="font-size:14px;">${exName(e)}</span>
           <span style="font-size:12px;color:var(--text3);">${e.sets||3} × ${e.reps||10}</span>
         </div>`).join('')
@@ -1503,7 +1507,7 @@ function openMoreMenu(){
   ov.innerHTML=`<div class="modal">
     <div class="modal-handle"></div>
     <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;">
-      <div class="modal-title" style="margin-bottom:0;">More</div>
+      <div class="modal-title" style="margin-bottom:0;">${t('more')}</div>
       <button class="rm-btn" onclick="closeModal()" style="width:34px;height:34px;font-size:18px;">✕</button>
     </div>
     ${items.map(item=>`<div onclick="closeModal();showScreen('${item.screen}')" style="display:flex;align-items:center;gap:14px;padding:14px 12px;border-radius:12px;cursor:pointer;border:1px solid var(--border);background:var(--bg3);margin-bottom:8px;">
