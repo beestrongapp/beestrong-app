@@ -865,6 +865,7 @@ function renderClientAssignments(ctx){
       <div style="background:var(--bg3);border-radius:10px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;">
         <div style="flex:1;"><div style="font-size:13px;font-weight:600;">${a.program_name}</div><div style="font-size:11px;color:var(--text3);">${a.assignment_type||'program'}${a.start_date?' · '+a.start_date:''}</div></div>
         <div style="font-size:11px;color:var(--text3);">${a.assigned_at?new Date(a.assigned_at).toLocaleDateString():''}</div>
+        <button class="btn btn-sm btn-ghost" style="font-size:11px;padding:4px 10px;" onclick="openAssignProgramModal('${ctx.inv.id}','${ctx.clientId}','${a.id}')">${tt({pl:'Edit',en:'Edit',de:'Bearbeiten',es:'Editar'})}</button>
         <button class="btn btn-sm btn-ghost" style="color:var(--red);font-size:11px;padding:4px 10px;" onclick="removeCoachAssignment('${a.id}',this)">${tt({pl:'Usuń',en:'Remove',de:'Entfernen',es:'Quitar'})}</button>
       </div>`).join('');
   } else {
@@ -1362,51 +1363,83 @@ function assignWeekdayPicker(idPrefix,selected){
   return `<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin:10px 0 14px;">
     ${labels.map((d,i)=>{
       const val=i+1,checked=selected.includes(val);
-      return `<label style="display:flex;align-items:center;justify-content:center;min-height:38px;border-radius:10px;border:1px solid ${checked?'var(--accent)':'var(--border)'};background:${checked?'var(--accent-dim)':'var(--bg3)'};font-size:12px;font-weight:700;color:${checked?'var(--accent)':'var(--text2)'};">
-        <input type="checkbox" data-assign-weekday value="${val}" ${checked?'checked':''} style="display:none;">${d}
-      </label>`;
+      return `<button type="button" data-assign-weekday data-day="${val}" class="${checked?'is-selected':''}" onclick="window.assignToggleWeekday(${val})" style="display:flex;align-items:center;justify-content:center;min-height:38px;border-radius:10px;border:1px solid ${checked?'var(--accent)':'var(--border)'};background:${checked?'var(--accent-dim)':'var(--bg3)'};font-size:12px;font-weight:700;color:${checked?'var(--accent)':'var(--text2)'};">${d}</button>`;
     }).join('')}
   </div>`;
 }
 
-function openAssignProgramModal(invId, clientUserId){
+function openAssignProgramModal(invId, clientUserId, assignmentId){
   closeModal();
   const allPrograms=[...BUILTIN_PROGRAMS,...(Array.isArray(S.programs)?S.programs.filter(p=>!p.fromCoach):[])];
   const coachTemplates=Array.isArray(S.templates)?S.templates:[];
-  const state={mode:'program',startDate:today(),workoutDate:today(),programWeekdays:[1,2,3],customExercises:[]};
+  const existing=(window._clientDetailData?.assigned||[]).find(a=>String(a.id)===String(assignmentId));
+  const existingItems=existing?.schedule_data?.items||[];
+  const state={
+    mode:existing?.assignment_type||'program',
+    startDate:existing?.start_date||today(),
+    workoutDate:existing?.start_date||today(),
+    programWeekdays:existing?.weekdays?.length?[...existing.weekdays]:[1,2,3],
+    customExercises:existingItems[0]?.exercises||existing?.program_data?.exercises||[],
+    customName:existing?.program_name||'',
+    selectedProgramIndex:-1,
+    selectedTemplateIndex:-1,
+  };
+  if(existing?.assignment_type==='program'&&existing.program_data){
+    state.selectedProgramData=existing.program_data;
+  }
+  if(existing?.assignment_type==='template'&&existing.program_data?.template){
+    state.selectedTemplateData=existing.program_data.template;
+  }
   const ov=document.createElement('div');ov.className='modal-overlay';
   function sync(){
     state.startDate=document.getElementById('assignStartDate')?.value||state.startDate;
     state.workoutDate=document.getElementById('assignWorkoutDate')?.value||state.workoutDate;
     state.customName=document.getElementById('assignCustomName')?.value||state.customName||'';
-    state.programWeekdays=[...ov.querySelectorAll('[data-assign-weekday]:checked')].map(x=>+x.value);
+    state.programWeekdays=[...ov.querySelectorAll('[data-assign-weekday].is-selected')].map(x=>+x.dataset.day);
   }
   function modeBtn(mode,label){
     const active=state.mode===mode;
     return `<button class="btn ${active?'btn-primary':'btn-ghost'}" onclick="window.assignSetMode('${mode}')" style="font-size:12px;padding:10px 6px;">${label}</button>`;
   }
+  function selectedProgram(){
+    return state.selectedProgramData||allPrograms[state.selectedProgramIndex]||null;
+  }
+  function selectedTemplate(){
+    return state.selectedTemplateData||coachTemplates[state.selectedTemplateIndex]||null;
+  }
   function render(){
+    const selectedProg=selectedProgram();
     const programHtml=`<label class="form-label">${tt({pl:'Start programu',en:'Program start',de:'Programmstart',es:'Inicio del programa'})}</label>
       <input id="assignStartDate" type="date" value="${state.startDate}" style="margin-bottom:8px;">
+      ${selectedProg?`<div style="background:var(--accent-dim);border:1px solid var(--accent);border-radius:10px;padding:10px 12px;margin-bottom:10px;">
+        <div style="font-size:13px;font-weight:800;color:var(--accent);">${localizedField(selectedProg,'name')||selectedProg.name?.en||selectedProg.name?.pl||'Program'}</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px;">${selectedProg.daysPerWeek||3} ${tt({pl:'dni / tydz.',en:'days / week',de:'Tage / Woche',es:'días / semana'})} · ${selectedProg.duration||8} ${tt({pl:'tyg.',en:'weeks',de:'Wochen',es:'semanas'})}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px;">${tt({pl:'Zaznaczone dni:',en:'Selected days:',de:'Ausgewählte Tage:',es:'Días seleccionados:'})} ${state.programWeekdays.length}/${selectedProg.daysPerWeek||3}</div>
+      </div>`:''}
       <div style="font-size:12px;color:var(--text2);font-weight:700;">${tt({pl:'Dni treningowe',en:'Training days',de:'Trainingstage',es:'Días de entrenamiento'})}</div>
       ${assignWeekdayPicker('assign',state.programWeekdays)}
       <div style="max-height:42vh;overflow-y:auto;">
         ${allPrograms.length?allPrograms.map((p,i)=>{
           const n=localizedField(p,'name')||p.name?.en||p.name?.pl||'Program';
-          return `<div class="workout-row" style="cursor:pointer;margin-bottom:8px;" onclick="assignProgramToClient('${invId}','${clientUserId}',${i})">
+          const active=(state.selectedProgramIndex===i)||(!state.selectedProgramData?false:(localizedField(state.selectedProgramData,'name')||state.selectedProgramData.name?.en)===(localizedField(p,'name')||p.name?.en));
+          return `<div class="workout-row" style="cursor:pointer;margin-bottom:8px;border-color:${active?'var(--accent)':'var(--border)'};background:${active?'var(--accent-dim)':'var(--bg2)'};" onclick="window.assignSelectProgram(${i})">
             <div class="workout-row-info"><div class="workout-row-name">${n}</div><div class="workout-row-meta">${p.daysPerWeek||3}× ${tt({pl:'tyg.',en:'/wk',de:'/Wo.',es:'/sem.'})} · ${p.duration||8} ${tt({pl:'tyg.',en:'wks',de:'Wo.',es:'sem.'})}</div></div>
-            <div style="color:var(--accent);font-size:20px;">›</div>
+            <div style="color:var(--accent);font-size:18px;">${active?'✓':'›'}</div>
           </div>`;
         }).join(''):`<div class="empty-state">${tt({pl:'Brak programów.',en:'No programs.',de:'Keine Programme.',es:'Sin programas.'})}</div>`}
-      </div>`;
+      </div>
+      <button class="btn btn-primary" onclick="assignProgramToClient('${invId}','${clientUserId}')" style="margin-top:10px;" ${selectedProg?'':'disabled'}>${assignmentId?tt({pl:'Zapisz zmiany',en:'Save changes',de:'Änderungen speichern',es:'Guardar cambios'}):tt({pl:'Confirm assign',en:'Confirm assign',de:'Zuweisung bestätigen',es:'Confirmar asignación'})}</button>`;
     const templateHtml=`<label class="form-label">${t('date')}</label>
       <input id="assignWorkoutDate" type="date" value="${state.workoutDate}" style="margin-bottom:12px;">
       <div style="max-height:48vh;overflow-y:auto;">
-        ${coachTemplates.length?coachTemplates.map((tp,i)=>`<div class="workout-row" style="cursor:pointer;margin-bottom:8px;" onclick="assignTemplateWorkoutToClient('${invId}','${clientUserId}',${i})">
+        ${coachTemplates.length?coachTemplates.map((tp,i)=>{
+          const active=state.selectedTemplateIndex===i;
+          return `<div class="workout-row" style="cursor:pointer;margin-bottom:8px;border-color:${active?'var(--accent)':'var(--border)'};background:${active?'var(--accent-dim)':'var(--bg2)'};" onclick="window.assignSelectTemplate(${i})">
           <div class="workout-row-info"><div class="workout-row-name">${tp.name||'Template'}</div><div class="workout-row-meta">${(tp.exercises||[]).length} ${t('exExercises')} · ${t('exRest')} ${tp.restDefault||90}s</div></div>
-          <div style="color:var(--accent);font-size:20px;">›</div>
-        </div>`).join(''):`<div class="empty-state">${tt({pl:'Brak templates coacha.',en:'No coach templates.',de:'Keine Coach-Vorlagen.',es:'Sin templates del coach.'})}</div>`}
-      </div>`;
+          <div style="color:var(--accent);font-size:18px;">${active?'✓':'›'}</div>
+        </div>`;}).join(''):`<div class="empty-state">${tt({pl:'Brak templates coacha.',en:'No coach templates.',de:'Keine Coach-Vorlagen.',es:'Sin templates del coach.'})}</div>`}
+      </div>
+      <button class="btn btn-primary" onclick="assignTemplateWorkoutToClient('${invId}','${clientUserId}')" style="margin-top:10px;" ${(selectedTemplate()||state.selectedTemplateData)?'':'disabled'}>${assignmentId?tt({pl:'Zapisz zmiany',en:'Save changes',de:'Änderungen speichern',es:'Guardar cambios'}):tt({pl:'Confirm assign',en:'Confirm assign',de:'Zuweisung bestätigen',es:'Confirmar asignación'})}</button>`;
     const customHtml=`<label class="form-label">${t('date')}</label>
       <input id="assignWorkoutDate" type="date" value="${state.workoutDate}" style="margin-bottom:10px;">
       <label class="form-label">${tt({pl:'Nazwa treningu',en:'Workout name',de:'Workout-Name',es:'Nombre del entrenamiento'})}</label>
@@ -1416,9 +1449,15 @@ function openAssignProgramModal(invId, clientUserId){
         <button class="btn btn-sm btn-ghost" onclick="window.assignPickCustomExercises()" style="font-size:12px;padding:7px 12px;">+ ${t('addExercise')}</button>
       </div>
       <div style="max-height:34vh;overflow-y:auto;margin-bottom:12px;">
-        ${state.customExercises.length?state.customExercises.map(e=>`<div class="workout-row" style="cursor:default;"><div class="workout-row-info"><div class="workout-row-name">${exName(e)}</div><div class="workout-row-meta">${e.sets||3}×${e.reps||10}</div></div></div>`).join(''):`<div class="empty-state" style="padding:18px;">${tt({pl:'Dodaj ćwiczenia albo zapisz samą nazwę.',en:'Add exercises or save the name only.',de:'Übungen hinzufügen oder nur Namen speichern.',es:'Añade ejercicios o guarda solo el nombre.'})}</div>`}
+        ${state.customExercises.length?state.customExercises.map((e,i)=>`<div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:8px;">
+          <div style="font-size:13px;font-weight:700;margin-bottom:8px;">${exName(e)}</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <label style="font-size:11px;color:var(--text3);font-weight:700;">${t('sets')}<input type="number" min="1" max="20" value="${e.sets||3}" oninput="window.assignCustomSet(${i},'sets',this.value)" style="margin-top:4px;text-align:center;"></label>
+            <label style="font-size:11px;color:var(--text3);font-weight:700;">${t('reps')}<input type="number" min="1" max="100" value="${e.reps||10}" oninput="window.assignCustomSet(${i},'reps',this.value)" style="margin-top:4px;text-align:center;"></label>
+          </div>
+        </div>`).join(''):`<div class="empty-state" style="padding:18px;">${tt({pl:'Dodaj ćwiczenia albo zapisz samą nazwę.',en:'Add exercises or save the name only.',de:'Übungen hinzufügen oder nur Namen speichern.',es:'Añade ejercicios o guarda solo el nombre.'})}</div>`}
       </div>
-      <button class="btn btn-primary" onclick="assignCustomWorkoutToClient('${invId}','${clientUserId}')">${tt({pl:'Przypisz custom workout',en:'Assign custom workout',de:'Eigenes Training zuweisen',es:'Asignar entrenamiento personalizado'})}</button>`;
+      <button class="btn btn-primary" onclick="assignCustomWorkoutToClient('${invId}','${clientUserId}')">${assignmentId?tt({pl:'Zapisz zmiany',en:'Save changes',de:'Änderungen speichern',es:'Guardar cambios'}):tt({pl:'Przypisz custom workout',en:'Assign custom workout',de:'Eigenes Training zuweisen',es:'Asignar entrenamiento personalizado'})}</button>`;
     ov.innerHTML=`<div class="modal" style="max-height:92dvh;display:flex;flex-direction:column;">
       <div class="modal-handle"></div>
       <div class="modal-title">${tt({pl:'Assign dla klienta',en:'Client assign',de:'Client-Zuweisung',es:'Asignación de cliente'})}</div>
@@ -1432,11 +1471,19 @@ function openAssignProgramModal(invId, clientUserId){
     </div>`;
   }
   window.assignSetMode=mode=>{sync();state.mode=mode;render();};
+  window.assignSelectProgram=i=>{sync();state.selectedProgramIndex=i;state.selectedProgramData=null;const p=allPrograms[i];if(p?.daysPerWeek){state.programWeekdays=state.programWeekdays.slice(0,p.daysPerWeek);}render();};
+  window.assignSelectTemplate=i=>{sync();state.selectedTemplateIndex=i;state.selectedTemplateData=null;render();};
+  window.assignToggleWeekday=day=>{sync();const i=state.programWeekdays.indexOf(day);if(i>=0)state.programWeekdays.splice(i,1);else state.programWeekdays.push(day);render();};
+  window.assignCustomSet=(idx,field,val)=>{if(state.customExercises[idx])state.customExercises[idx][field]=Math.max(1,+val||1);};
   window.assignPickCustomExercises=()=>{
     sync();
+    const previous=new Map((state.customExercises||[]).map(e=>[String(e.id||e.name||exName(e)),e]));
     S.modal=null;
     showExPicker(state.customExercises,picked=>{
-      state.customExercises=picked.map(e=>({...e,sets:e.sets||3,reps:e.reps||10}));
+      state.customExercises=picked.map(e=>{
+        const old=previous.get(String(e.id||e.name||exName(e)));
+        return {...e,sets:e.sets||old?.sets||3,reps:e.reps||old?.reps||10};
+      });
       S.modal=ov;
       render();
     });
@@ -1444,6 +1491,7 @@ function openAssignProgramModal(invId, clientUserId){
   window._assignPrograms=allPrograms;
   window._assignTemplates=coachTemplates;
   window._assignState=state;
+  window._assignEditId=assignmentId||null;
   ov._backHandler=()=>{closeModal();return true;};
   document.body.appendChild(ov);S.modal=ov;render();
 }
@@ -1452,13 +1500,18 @@ window.openAssignProgramModal=openAssignProgramModal;
 async function insertClientAssignment(invId,clientUserId,row,successMsg){
   if(!sb||!S.user)return;
   try{
-    const{error}=await sb.from('coach_program_assignments').insert({
+    const payload={
       invitation_id:invId,
       coach_id:S.user.id,
       client_user_id:clientUserId,
       status:'active',
       ...row,
-    });
+    };
+    const editId=window._assignEditId;
+    const query=editId
+      ?sb.from('coach_program_assignments').update(payload).eq('id',editId).eq('coach_id',S.user.id)
+      :sb.from('coach_program_assignments').insert(payload);
+    const{error}=await query;
     if(error)throw error;
     closeModal();
     showSyncToast(successMsg,'success');
@@ -1468,12 +1521,15 @@ async function insertClientAssignment(invId,clientUserId,row,successMsg){
   }
 }
 
-window.assignProgramToClient=async function(invId,clientUserId,programIndex){
-  const programData=JSON.parse(JSON.stringify(window._assignPrograms?.[programIndex]||null));
+window.assignProgramToClient=async function(invId,clientUserId){
   const state=window._assignState;
+  const picked=state?.selectedProgramData||window._assignPrograms?.[state?.selectedProgramIndex];
+  const programData=JSON.parse(JSON.stringify(picked||null));
   if(!programData||!state)return;
-  const weekdays=[...document.querySelectorAll('[data-assign-weekday]:checked')].map(x=>+x.value);
+  const weekdays=[...document.querySelectorAll('[data-assign-weekday].is-selected')].map(x=>+x.dataset.day);
   if(!weekdays.length)return showSyncToast(tt({pl:'Wybierz dni tygodnia.',en:'Choose training days.',de:'Trainingstage wählen.',es:'Elige días de entrenamiento.'}),'error');
+  const required=+(programData.daysPerWeek||3);
+  if(weekdays.length!==required)return showSyncToast(tt({pl:`Ten program wymaga ${required} dni treningowych.`,en:`This program needs ${required} training days.`,de:`Dieses Programm braucht ${required} Trainingstage.`,es:`Este programa necesita ${required} días de entrenamiento.`}),'error');
   const startDate=document.getElementById('assignStartDate')?.value||today();
   const schedule=assignProgramSchedule(programData,startDate,weekdays);
   const programName=localizedField(programData,'name')||programData.name?.en||programData.name?.pl||'Program';
@@ -1489,8 +1545,10 @@ window.assignProgramToClient=async function(invId,clientUserId,programIndex){
   },tt({pl:'Program rozpisany w kalendarzu klienta ✓',en:'Program scheduled in client calendar ✓',de:'Programm im Client-Kalender geplant ✓',es:'Programa planificado en el calendario ✓'}));
 };
 
-window.assignTemplateWorkoutToClient=async function(invId,clientUserId,templateIndex){
-  const tp=JSON.parse(JSON.stringify(window._assignTemplates?.[templateIndex]||null));
+window.assignTemplateWorkoutToClient=async function(invId,clientUserId){
+  const state=window._assignState;
+  const picked=state?.selectedTemplateData||window._assignTemplates?.[state?.selectedTemplateIndex];
+  const tp=JSON.parse(JSON.stringify(picked||null));
   if(!tp)return;
   const date=document.getElementById('assignWorkoutDate')?.value||today();
   const name=tp.name||'Template';

@@ -114,7 +114,8 @@ function renderCalendar(){
   for(let d=1;d<=days;d++){
     const k=dk(S.year,S.month,d);
     const hasW=Object.keys(S.workouts).some(wk=>wk.startsWith(k));
-    const cls=['cal-day',k===td?'today':'',hasW?'has-workout':'',S.selectedDate===k?'selected':''].filter(Boolean).join(' ');
+    const hasPlan=!!S.weekPlan?.[k];
+    const cls=['cal-day',k===td?'today':'',hasW?'has-workout':'',hasPlan?'has-plan':'',S.selectedDate===k?'selected':''].filter(Boolean).join(' ');
     g.innerHTML+=`<div class="${cls}" onclick="selDay('${k}')">${d}</div>`;
   }
   renderDayDetail();
@@ -125,15 +126,24 @@ function renderDayDetail(){
   const dateKey=S.selectedDate;
   const[y,m,d]=dateKey.split('-');
   const dayWorkouts=Object.entries(S.workouts).filter(([wk])=>wk.startsWith(dateKey));
+  const planned=S.weekPlan?.[dateKey]||null;
 
   let html=`<div style="display:flex;align-items:center;justify-content:space-between;margin:12px 0 8px;">
     <div style="font-size:13px;color:var(--text2);">${d}.${m}.${y}</div>
     <button class="btn btn-sm btn-ghost" onclick="openManualWorkout('${dateKey}')" style="font-size:12px;">${tt({pl:'+ Dodaj trening',en:'+ Add workout',de:'+ Training hinzufügen',es:'+ Añadir entrenamiento'})}</button>
   </div>`;
 
-  if(!dayWorkouts.length){
+  if(planned){
+    html+=`<div class="workout-row" onclick="showPlanDetailModal('${dateKey}')" style="margin-bottom:8px;border-color:var(--accent-dim2);">
+      <div class="workout-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg></div>
+      <div class="workout-row-info"><div class="workout-row-name">${planned.name||t('workout')}</div><div class="workout-row-meta">${planned.fromCoach?tt({pl:'Przypisane przez coacha',en:'Assigned by coach',de:'Vom Coach zugewiesen',es:'Asignado por coach'}):tt({pl:'Zaplanowany trening',en:'Planned workout',de:'Geplantes Training',es:'Entrenamiento planificado'})}</div></div>
+      <button class="btn btn-sm btn-primary" onclick="event.stopPropagation();startPlannedWorkout('${dateKey}')" style="font-size:12px;padding:7px 12px;">${t('startWorkout')}</button>
+    </div>`;
+  }
+  if(!dayWorkouts.length&&!planned){
     html+=`<div style="font-size:13px;color:var(--text3);margin-bottom:10px;">${t('noRest')}</div>`;
-  } else {
+  }
+  if(dayWorkouts.length){
     dayWorkouts.sort((a,b)=>a[0]>b[0]?1:-1).forEach(([wk,w])=>{
       html+=`<div class="workout-row" onclick="showWorkoutSummary('${wk}')" style="margin-bottom:8px;">
         <div class="workout-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><path d="M6 4v16M18 4v16M3 12h18M3 7h3M18 7h3M3 17h3M18 17h3"/></svg></div>
@@ -851,21 +861,20 @@ function renderWeekPlan(){
     let content='';
     const coachMark=plan?.fromCoach?' 👤':'';
     if(plan?.type==='custom'){
-      content=`<div style="background:rgba(100,200,255,0.12);border-radius:8px;padding:4px 6px;font-size:11px;font-weight:600;color:#64c8ff;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${plan.name}</div>`;
+      content=`<div class="week-plan-pill custom">${plan.name}</div>`;
     }else if(plan?.type==='template'){
-      content=`<div style="background:var(--accent-dim);border-radius:8px;padding:4px 6px;font-size:11px;font-weight:600;color:var(--accent);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${plan.name}${coachMark}</div>`;
+      content=`<div class="week-plan-pill template">${plan.name}${coachMark}</div>`;
     }else{
-      content=`<div style="font-size:11px;color:var(--text3);margin-top:4px;">Rest</div>`;
+      content=`<div class="week-plan-rest">Rest</div>`;
     }
-    const border=isSelected?'border:2px solid var(--accent);':_planningProgram?'border:2px dashed var(--accent);':'border:1px solid var(--border);';
-    const bg=isSelected?'var(--accent-dim2)':isToday?'var(--accent-dim)':'var(--bg2)';
-    return`<div data-wp="day" data-date="${date}" style="${border}border-radius:12px;padding:10px 8px;background:${bg};${isPast?'opacity:0.65;':''}text-align:center;min-height:80px;cursor:pointer;transition:all 0.12s;user-select:none;">
-      <div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;">${dayNames[i]}</div>
-      <div style="font-size:18px;font-weight:700;${isToday||isSelected?'color:var(--accent)':''}">${date.slice(8)}</div>
+    const cls=['week-plan-day',isSelected?'is-selected':'',_planningProgram?'is-planning':'',isPast?'is-past':'',isToday?'is-today':''].filter(Boolean).join(' ');
+    return`<div data-wp="day" data-date="${date}" class="${cls}">
+      <div class="week-plan-day-label">${dayNames[i]}</div>
+      <div class="week-plan-day-num">${date.slice(8)}</div>
       ${content}
     </div>`;
   }).join('');
-  html+=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:14px;">${dayCardsHtml}</div>`;
+  html+=`<div class="week-plan-days">${dayCardsHtml}</div>`;
 
   // ── Action / info panel ──
   if(_selectedPlanDate&&!_planningProgram){
@@ -903,6 +912,7 @@ function renderWeekPlan(){
           ${exRows?`<div style="margin-top:8px;max-height:120px;overflow-y:auto;">${exRows}</div>`:''}
         </div>
         <div style="display:flex;gap:8px;">
+          <button data-wp="start-plan" data-date="${sd}" class="btn btn-primary" style="flex:1;font-size:13px;">▶ ${t('startWorkout')}</button>
           <button data-wp="change-plan" class="btn btn-ghost" style="flex:1;font-size:13px;">🔄 ${tt({pl:'Zmień',en:'Change',de:'Ändern',es:'Cambiar'})}</button>
           <button data-wp="remove" data-date="${sd}" class="btn btn-danger" style="flex:1;font-size:13px;">🗑 ${tt({pl:'Usuń',en:'Remove',de:'Entfernen',es:'Eliminar'})}</button>
         </div>`;
@@ -957,6 +967,7 @@ function renderWeekPlan(){
           if(S.weekPlan)delete S.weekPlan[date];
           saveAll();_selectedPlanDate=null;_planEditMode=false;renderWeekPlan();break;
         }
+        case 'start-plan':startPlannedWorkout(date);break;
         case 'view-detail':showPlanDetailModal(btn.dataset.date);break;
         case 'clear':clearWeekPlan();break;
       }
@@ -1166,6 +1177,40 @@ window.planAssignTpl=(date,id)=>{
   saveAll();renderWeekPlan();
 };
 window.planRemoveDay=date=>{if(S.weekPlan)delete S.weekPlan[date];saveAll();_selectedPlanDate=null;renderWeekPlan();};
+
+function plannedWorkoutTemplate(plan){
+  if(!plan)return null;
+  if(plan.type==='template'){
+    const tp=plan.template||S.templates.find(t=>String(t.id)===String(plan.templateId));
+    if(!tp&&!plan.exercises?.length)return null;
+    return{
+      id:null,
+      name:plan.name||tp?.name||t('workout'),
+      types:tp?.types||[],
+      restDefault:tp?.restDefault||S.defaultRest||90,
+      exercises:(plan.exercises?.length?plan.exercises:tp.exercises).map(e=>({...e,sets:e.sets||3,reps:e.reps||10,weight:e.weight||0})),
+    };
+  }
+  if(plan.type==='custom'){
+    return{
+      id:null,
+      name:plan.name||t('customWorkout'),
+      types:[],
+      restDefault:S.defaultRest||90,
+      exercises:(plan.exercises||[]).map(e=>({...e,sets:e.sets||3,reps:e.reps||10,weight:e.weight||0})),
+    };
+  }
+  return null;
+}
+
+function startPlannedWorkout(date){
+  const plan=S.weekPlan?.[date];
+  const tpl=plannedWorkoutTemplate(plan);
+  if(!tpl)return showSyncToast(tt({pl:'Brak danych treningu.',en:'No workout data.',de:'Keine Trainingsdaten.',es:'Sin datos del entrenamiento.'}),'error');
+  closeModal();
+  startWorkout(tpl);
+}
+window.startPlannedWorkout=startPlannedWorkout;
 window.switchCalTab=switchCalTab;
 
 // ===== SETTINGS =====
