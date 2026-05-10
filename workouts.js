@@ -1137,6 +1137,10 @@ const MEASURE_TYPES=[
 function proCardHtml(){
   const logoSrc=isDark?'./logo.jpg':'./light_logo.png';
   const logoImg=`<img src="${logoSrc}" alt="BeeStrong" style="width:34px;height:34px;object-fit:contain;border-radius:8px;flex-shrink:0;"/>`;
+  const proActiveBg=isDark?'rgba(0,200,83,0.08)':'#d8eadf';
+  const proActiveBorder=isDark?'rgba(0,200,83,0.35)':'rgba(0,120,62,0.28)';
+  const proCoachBg=isDark?'linear-gradient(135deg,rgba(0,200,83,0.08),rgba(245,197,66,0.08))':'#e4dcc0';
+  const proCoachBorder=isDark?'rgba(245,197,66,0.45)':'rgba(156,119,24,0.32)';
 
   // Not logged in
   if(!S.user){
@@ -1165,7 +1169,7 @@ function proCardHtml(){
 
   // PRO + Coach active
   if(S.isPro&&S.coachMode){
-    return `<div style="display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,rgba(0,200,83,0.08),rgba(245,197,66,0.08));border:1px solid rgba(245,197,66,0.45);border-radius:12px;padding:12px 14px;margin-bottom:14px;">
+    return `<div style="display:flex;align-items:center;gap:10px;background:${proCoachBg};border:1px solid ${proCoachBorder};border-radius:12px;padding:12px 14px;margin-bottom:14px;">
       ${logoImg}
       <div style="flex:1;min-width:0;">
         <div style="font-size:14px;font-weight:700;"><span style="color:#00e676;">BeeStrong Pro</span> <span style="color:var(--yellow);">+ Coach Subscription</span></div>
@@ -1176,7 +1180,7 @@ function proCardHtml(){
 
   // PRO only active
   const coachBtn=` <button class="btn btn-sm" onclick="showCoachModeInfo()" style="font-size:10px;padding:5px 10px;flex-shrink:0;background:rgba(0,200,83,0.12);color:#00e676;border:1px solid rgba(0,200,83,0.38);font-weight:700;letter-spacing:0.3px;">Get Coach Mode</button>`;
-  return `<div style="display:flex;align-items:center;gap:10px;background:rgba(0,200,83,0.08);border:1px solid rgba(0,200,83,0.35);border-radius:12px;padding:12px 14px;margin-bottom:14px;">
+  return `<div style="display:flex;align-items:center;gap:10px;background:${proActiveBg};border:1px solid ${proActiveBorder};border-radius:12px;padding:12px 14px;margin-bottom:14px;">
     ${logoImg}
     <div style="flex:1;min-width:0;">
       <div style="font-size:14px;font-weight:700;color:#00e676;">BeeStrong Pro</div>

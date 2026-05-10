@@ -38,10 +38,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',sa
 .screen-title{font-size:28px;font-weight:700;letter-spacing:-0.5px;}
 .screen-sub{font-size:13px;color:var(--text2);margin-top:3px;}
 .mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:rgba(26,26,26,0.96);backdrop-filter:blur(14px);border-top:1px solid var(--border);padding:4px 0;padding-bottom:calc(4px + env(safe-area-inset-bottom));z-index:100;}
+body.light .mobile-nav{background:#333e5e;border-top-color:rgba(255,255,255,0.12);}
 .mobile-nav-inner{display:flex;width:100%;flex:1 1 auto;overflow:visible;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
 .mobile-nav-inner::-webkit-scrollbar{display:none;}
 .mobile-nav-item{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:8px 2px;cursor:pointer;color:var(--text3);font-size:10px;font-weight:500;transition:color 0.15s;min-height:52px;white-space:nowrap;}
 .mobile-nav-item.active{color:var(--accent);}
+body.light .mobile-nav-item{color:rgba(255,255,255,0.68);}
+body.light .mobile-nav-item.active{color:#f0cf78;}
 .mobile-nav-item svg{width:22px;height:22px;flex-shrink:0;}
 .mobile-nav-item .nav-label{max-width:52px;overflow:hidden;text-overflow:ellipsis;}
 .mobile-fab-btn{width:64px;height:64px;border-radius:50%;border:1px solid rgba(255,255,255,0.18);background:radial-gradient(circle at 35% 30%,#f5d47b,var(--accent));color:rgb(26,26,26);font-size:40px;line-height:1;font-weight:800;display:flex;align-items:center;justify-content:center;align-self:flex-start;margin:-30px 4px 0;box-shadow:0 12px 32px rgba(201,169,110,0.32),0 0 0 8px rgba(201,169,110,0.08);cursor:pointer;transition:transform 0.22s ease,box-shadow 0.22s ease;z-index:103;font-family:inherit;flex:0 0 64px;}
@@ -55,8 +58,10 @@ body.fab-open .mobile-fab-menu{display:block;}
 .mobile-fab-menu::before{content:'';position:absolute;left:50%;bottom:6px;width:270px;height:135px;border:1px dashed rgba(201,169,110,0.55);border-bottom:none;border-radius:270px 270px 0 0;transform:translateX(-50%);opacity:0.9;}
 .mobile-fab-action{position:absolute;width:96px;min-height:102px;border:none;background:transparent;color:var(--text);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:9px;font-size:12px;font-weight:800;opacity:0;transform:translate(-50%,34px) scale(0.72);transition:opacity 0.2s ease,transform 0.28s cubic-bezier(.2,1.35,.4,1);pointer-events:auto;cursor:pointer;font-family:inherit;text-align:center;}
 .mobile-fab-action .fab-action-circle{width:66px;height:66px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#f5d47b,var(--accent));border:1.5px solid rgba(255,255,255,0.16);box-shadow:0 10px 26px rgba(0,0,0,0.55),0 0 0 1px rgba(201,169,110,0.35);display:flex;align-items:center;justify-content:center;color:rgb(26,26,26);margin:0;}
+body.light .mobile-fab-action .fab-action-circle{color:#333e5e;background:radial-gradient(circle at 35% 30%,#ffe08a,#d9b962);box-shadow:0 10px 22px rgba(0,0,0,0.28),0 0 0 1px rgba(51,62,94,0.15);}
 .mobile-fab-action svg{width:30px;height:30px;display:block;}
 .mobile-fab-action .fab-action-label{display:block;margin:0;text-shadow:0 2px 10px #000;line-height:1.15;max-width:96px;overflow-wrap:anywhere;}
+body.light .mobile-fab-action .fab-action-label{color:#333e5e;text-shadow:none;}
 body.fab-open .mobile-fab-action{opacity:1;transform:translate(-50%,0) scale(1);}
 .fab-action-1{left:18%;bottom:66px;transition-delay:0.02s;}
 .fab-action-2{left:38%;bottom:144px;transition-delay:0.06s;}
@@ -191,6 +196,9 @@ input:focus,textarea:focus{outline:none;border-color:var(--accent);}
 .cal-day.empty{pointer-events:none;}
 .progress-tpl-btn{padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--text2);font-size:13px;cursor:pointer;margin-right:8px;margin-bottom:8px;font-family:inherit;transition:all 0.12s;}
 .progress-tpl-btn.active{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);font-weight:600;}
+.progress-tabs{display:flex;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:4px;margin-bottom:16px;}
+.progress-tab-btn{flex:1;padding:10px 8px;border-radius:9px;border:none;background:none;color:var(--text2);font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;position:relative;z-index:2;}
+.progress-tab-btn.active{background:var(--accent);color:var(--btn-text);}
 .empty-state{text-align:center;padding:48px 20px;color:var(--text2);}
 .save-pill{position:fixed;top:calc(14px + env(safe-area-inset-top));right:14px;font-size:12px;padding:7px 14px;border-radius:20px;background:var(--accent);color:#000;font-weight:700;opacity:0;transition:opacity 0.3s;pointer-events:none;z-index:300;}
 .save-pill.show{opacity:1;}
@@ -242,9 +250,10 @@ body.light #screen-dashboard::before{background:url('./light_logo.png') center/c
 @keyframes syncPulse{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.5);opacity:0.5;}}
 /* ── Mobile brand header (hidden on desktop, visible on mobile dashboard) ── */
 .mobile-brand{display:none;align-items:center;gap:10px;padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:16px;justify-content:space-between;}
-.mobile-brand-logo{width:36px;height:36px;border-radius:10px;object-fit:cover;flex-shrink:0;}
-.mobile-brand-name{font-size:18px;font-weight:800;color:var(--accent);letter-spacing:-0.3px;display:block;line-height:1.15;}
-.mobile-brand-sub{font-size:11px;font-weight:400;color:var(--text3);letter-spacing:0.2px;display:block;}
+.mobile-brand-logo{width:42px;height:42px;border-radius:11px;object-fit:cover;flex-shrink:0;}
+.mobile-brand-copy{flex:1;min-width:0;}
+.mobile-brand-name{font-size:20px;font-weight:900;color:var(--accent);letter-spacing:0;display:block;line-height:1.08;}
+.mobile-brand-sub{font-size:12px;font-weight:500;color:var(--text3);letter-spacing:0;display:block;margin-top:1px;}
 .mobile-header-actions{display:flex;align-items:center;gap:6px;margin-left:auto;}
 .mobile-header-btn{width:36px;height:36px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--text2);cursor:pointer;flex-shrink:0;transition:background 0.15s,color 0.15s;-webkit-tap-highlight-color:transparent;position:relative;}
 .mobile-header-btn:active{background:var(--bg4);}

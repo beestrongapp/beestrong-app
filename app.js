@@ -1,5 +1,7 @@
 ﻿// ===== DASHBOARD =====
 function renderDashboard(){
+  document.getElementById('logoImg')?.setAttribute('src',isDark?'./logo.jpg':'./light_logo.png');
+  document.getElementById('mobileBrandLogo')?.setAttribute('src',isDark?'./logo.jpg':'./light_logo.png');
   renderInvitationBanners();
   const ws=weekStart(),we=new Date(ws);we.setDate(we.getDate()+6);
   const fmt=d=>`${d.getDate()} ${t('monthsShort')[d.getMonth()]} ${d.getFullYear()}`;
@@ -159,10 +161,11 @@ function renderProgress(){
   if(progressChart){try{progressChart.destroy();}catch(e){}progressChart=null;}
 
   const isPL=lang==='pl';
-  const tabsHtml=`<div style="display:flex;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:4px;margin-bottom:16px;">
-    <button onclick="setProgressTab('lifts')" style="flex:1;padding:10px 8px;border-radius:9px;border:none;background:${_progressTab==='lifts'?'var(--accent)':'none'};color:${_progressTab==='lifts'?'var(--btn-text)':'var(--text2)'};font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">${tt({pl:'Wyniki',en:'Your Lifts',de:'Leistung',es:'Rendimiento'})}</button>
-    <button onclick="setProgressTab('templates')" style="flex:1;padding:10px 8px;border-radius:9px;border:none;background:${_progressTab==='templates'?'var(--accent)':'none'};color:${_progressTab==='templates'?'var(--btn-text)':'var(--text2)'};font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">${t('templates')}</button>
-    <button onclick="setProgressTab('records')" style="flex:1;padding:10px 8px;border-radius:9px;border:none;background:${_progressTab==='records'?'var(--accent)':'none'};color:${_progressTab==='records'?'var(--btn-text)':'var(--text2)'};font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">${tt({pl:'Rekordy',en:'Records',de:'Rekorde',es:'Récords'})}</button>
+  const progressTabBtn=(tab,label)=>`<button type="button" class="progress-tab-btn ${_progressTab===tab?'active':''}" data-progress-tab="${tab}" onclick="setProgressTab('${tab}')">${label}</button>`;
+  const tabsHtml=`<div class="progress-tabs">
+    ${progressTabBtn('lifts',tt({pl:'Wyniki',en:'Your Lifts',de:'Leistung',es:'Rendimiento'}))}
+    ${progressTabBtn('templates',t('templates'))}
+    ${progressTabBtn('records',tt({pl:'Rekordy',en:'Records',de:'Rekorde',es:'Récords'}))}
   </div>`;
 
   if(_progressTab==='records'){renderRecordsTab(el,tabsHtml);return;}
@@ -383,6 +386,12 @@ window.setProgressTab=function(tab){
   renderProgress();
   document.getElementById('progressContent')?.scrollIntoView({block:'start'});
 };
+document.addEventListener('click',e=>{
+  const btn=e.target.closest?.('[data-progress-tab]');
+  if(!btn)return;
+  e.preventDefault();
+  window.setProgressTab(btn.dataset.progressTab);
+});
 window.setProgressGk=gk=>{_progressGk=gk;renderProgress();};
 window.toggleProgressEquip=eq=>{
   if(eq==='__all__'){_progressEquip.clear();}
@@ -1527,7 +1536,7 @@ function toggleUnitsInline(){
 function toggleThemeInline(){
   isDark=!isDark;
   localStorage.setItem('bs-theme',isDark?'dark':'light');
-  document.body.classList.toggle('light',!isDark);
+  applyTheme();
   renderSettings();
 }
 

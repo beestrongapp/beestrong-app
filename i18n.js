@@ -198,6 +198,8 @@ function applyTheme(){
   // Switch logo
   const logoImg=document.getElementById('logoImg');
   if(logoImg) logoImg.src=isDark?'./logo.jpg':'./light_logo.png';
+  const mobileBrandLogo=document.getElementById('mobileBrandLogo');
+  if(mobileBrandLogo) mobileBrandLogo.src=isDark?'./logo.jpg':'./light_logo.png';
   // Switch dashboard background
   const dash=document.getElementById('screen-dashboard');
   if(dash){
