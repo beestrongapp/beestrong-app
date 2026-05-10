@@ -1316,6 +1316,49 @@ function addAdminChangelogEntry(type,message){
   updateNotificationBadge();
 }
 
+async function manualHardRefresh(){
+  if(location.protocol==='file:'){
+    showSyncToast(tt({
+      pl:'Hard refresh działa tylko z serwera, nie z pliku index.html.',
+      en:'Hard refresh only works from a server, not from index.html file.',
+      de:'Hard Refresh funktioniert nur vom Server, nicht aus index.html.',
+      es:'Hard refresh solo funciona desde servidor, no desde index.html.'
+    }),'error');
+    return;
+  }
+  showSyncToast(tt({
+    pl:'Pobieram świeże pliki z serwera...',
+    en:'Fetching fresh files from server...',
+    de:'Neue Dateien werden vom Server geladen...',
+    es:'Descargando archivos nuevos del servidor...'
+  }),'success');
+  try{
+    const coreAssets=['./','./index.html','./manifest.json','./styles.css','./i18n.js','./storage.js','./workouts.js','./supabase.js','./coach.js','./admin.js','./app.js','./sw.js'];
+    if('serviceWorker' in navigator){
+      const regs=await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(reg=>reg.update().catch(()=>{})));
+    }
+    if('caches' in window){
+      const keys=await caches.keys();
+      await Promise.all(keys.map(k=>caches.delete(k)));
+    }
+    await Promise.all(coreAssets.map(src=>fetch(src,{cache:'reload'}).catch(()=>null)));
+    sessionStorage.setItem('bs-manual-hard-refresh','1');
+    const url=new URL(location.href);
+    url.searchParams.set('bs-refresh',Date.now().toString());
+    location.replace(url.toString());
+  }catch(e){
+    console.warn('manualHardRefresh failed',e);
+    showSyncToast(tt({
+      pl:'Nie udało się wymusić odświeżenia.',
+      en:'Could not force refresh.',
+      de:'Aktualisierung konnte nicht erzwungen werden.',
+      es:'No se pudo forzar la actualización.'
+    }),'error');
+  }
+}
+window.manualHardRefresh=manualHardRefresh;
+
 function addAppNotification(entry){
   const entries=ld('bs-notifications-v1',[]);
   const id=entry.id||`n_${Date.now()}_${Math.random().toString(36).slice(2)}`;
@@ -1366,7 +1409,7 @@ function adminChangelogHtml(){
   return `<div style="margin-top:16px;margin-bottom:8px;">
     <div style="font-size:13px;color:var(--text2);font-weight:700;text-transform:uppercase;letter-spacing:0.4px;margin:0 0 8px 2px;">Admin changelog</div>
     <div style="border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;">
-      <div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--bg2);">
+      <div onclick="manualHardRefresh()" style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--bg2);cursor:pointer;transition:background 0.12s;" onmouseenter="this.style.background='var(--bg3)'" onmouseleave="this.style.background='var(--bg2)'" ontouchstart="this.style.background='var(--bg3)'" ontouchend="this.style.background='var(--bg2)'">
         <div style="width:34px;height:34px;border-radius:10px;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;color:var(--accent);flex-shrink:0;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M3 3v5h5"/><path d="M21 21v-5h-5"/><path d="M21 8a9 9 0 0 0-15-4.7L3 8"/><path d="M3 16a9 9 0 0 0 15 4.7L21 16"/></svg>
         </div>
@@ -1737,4 +1780,10 @@ if(sessionStorage.getItem('bs-updated')==='1'){
   addAdminChangelogEntry('auto_update',tt({pl:'Auto update wykonany',en:'Auto update completed',de:'Auto update abgeschlossen',es:'Auto update completado'}));
   if(document.getElementById('screen-settings')?.classList.contains('active'))renderSettings();
   setTimeout(()=>showSyncToast(tt({pl:'Aplikacja została zaktualizowana.',en:'App has been updated.',de:'App wurde aktualisiert.',es:'La app se ha actualizado.'}),'success'),700);
+}
+if(sessionStorage.getItem('bs-manual-hard-refresh')==='1'){
+  sessionStorage.removeItem('bs-manual-hard-refresh');
+  addAdminChangelogEntry('manual_refresh',tt({pl:'Ręczny hard refresh wykonany',en:'Manual hard refresh completed',de:'Manueller Hard Refresh abgeschlossen',es:'Hard refresh manual completado'}));
+  if(document.getElementById('screen-settings')?.classList.contains('active'))renderSettings();
+  setTimeout(()=>showSyncToast(tt({pl:'Pobrano świeże pliki z serwera.',en:'Fresh files loaded from server.',de:'Neue Dateien vom Server geladen.',es:'Archivos nuevos cargados desde servidor.'}),'success'),700);
 }
