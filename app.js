@@ -161,7 +161,7 @@ function renderProgress(){
   if(progressChart){try{progressChart.destroy();}catch(e){}progressChart=null;}
 
   const isPL=lang==='pl';
-  const progressTabBtn=(tab,label)=>`<button type="button" class="progress-tab-btn ${_progressTab===tab?'active':''}" data-progress-tab="${tab}" onclick="setProgressTab('${tab}')">${label}</button>`;
+  const progressTabBtn=(tab,label)=>`<button type="button" class="progress-tab-btn ${_progressTab===tab?'active':''}" data-progress-tab="${tab}" onclick="setProgressTab('${tab}')" ontouchstart="setProgressTab('${tab}')" onpointerup="setProgressTab('${tab}')">${label}</button>`;
   const tabsHtml=`<div class="progress-tabs">
     ${progressTabBtn('lifts',tt({pl:'Wyniki',en:'Your Lifts',de:'Leistung',es:'Rendimiento'}))}
     ${progressTabBtn('templates',t('templates'))}
@@ -382,16 +382,21 @@ window.showRecordDetail=function(name){
 };
 
 window.setProgressTab=function(tab){
+  if(!['lifts','templates','records'].includes(tab))return;
   _progressTab=tab;
   renderProgress();
   document.getElementById('progressContent')?.scrollIntoView({block:'start'});
 };
-document.addEventListener('click',e=>{
+function handleProgressTabEvent(e){
   const btn=e.target.closest?.('[data-progress-tab]');
   if(!btn)return;
   e.preventDefault();
+  e.stopPropagation();
   window.setProgressTab(btn.dataset.progressTab);
-});
+}
+document.addEventListener('click',handleProgressTabEvent,true);
+document.addEventListener('touchstart',handleProgressTabEvent,{capture:true,passive:false});
+document.addEventListener('pointerup',handleProgressTabEvent,true);
 window.setProgressGk=gk=>{_progressGk=gk;renderProgress();};
 window.toggleProgressEquip=eq=>{
   if(eq==='__all__'){_progressEquip.clear();}
@@ -1291,8 +1296,9 @@ function renderSettings(){
 function renderNotifications(){
   const el=document.getElementById('notificationsContent');
   if(!el)return;
+  cleanupNotifications();
   const items=[];
-  const chatItems=ld('bs-notifications-v1',[]);
+  const chatItems=ld('bs-notifications-v1',[]).slice(0,3);
   chatItems.forEach(n=>items.push({
     id:n.id||'',
     type:n.type||'',
@@ -1310,7 +1316,7 @@ function renderNotifications(){
       action:"showScreen('dashboard')",
     }));
   }
-  const updates=ld('bs-admin-changelog-v1',[]).slice(0,5);
+  const updates=ld('bs-admin-changelog-v1',[]).slice(0,3);
   if(isAdmin()){
     updates.forEach(u=>items.push({
       title:u.message||'Auto update',
@@ -1325,7 +1331,7 @@ function renderNotifications(){
     return;
   }
   const fmt=iso=>{try{return iso?new Date(iso).toLocaleString():'';}catch(e){return '';}};
-  el.innerHTML=items.map(item=>{
+  el.innerHTML=items.slice(0,3).map(item=>{
     const click=item.id?`openNotificationItem('${chatEsc(item.id)}')`:(item.action||'');
     return `<div class="client-card" onclick="${click}">
     <div style="width:38px;height:38px;border-radius:50%;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;color:var(--accent);flex-shrink:0;">
@@ -1367,7 +1373,7 @@ function openNotificationItem(id){
 function addAdminChangelogEntry(type,message){
   const entries=ld('bs-admin-changelog-v1',[]);
   entries.unshift({type,message,at:new Date().toISOString()});
-  sv('bs-admin-changelog-v1',entries.slice(0,30));
+  sv('bs-admin-changelog-v1',entries.slice(0,3));
   updateNotificationBadge();
 }
 
@@ -1415,12 +1421,29 @@ async function manualHardRefresh(){
 window.manualHardRefresh=manualHardRefresh;
 
 function addAppNotification(entry){
+  cleanupNotifications();
   const entries=ld('bs-notifications-v1',[]);
   const id=entry.id||`n_${Date.now()}_${Math.random().toString(36).slice(2)}`;
   entries.unshift({...entry,id,read:entry.read===true,at:entry.at||new Date().toISOString()});
-  sv('bs-notifications-v1',entries.slice(0,50));
+  sv('bs-notifications-v1',entries.slice(0,3));
   if(document.getElementById('screen-notifications')?.classList.contains('active'))renderNotifications();
   updateNotificationBadge();
+}
+
+function cleanupNotifications(){
+  const entries=ld('bs-notifications-v1',[]);
+  if(!entries.length)return [];
+  const newest=entries.reduce((max,n)=>{
+    const t=n.at?Date.parse(n.at):0;
+    return Number.isFinite(t)&&t>max?t:max;
+  },0);
+  if(!newest||Date.now()-newest>24*60*60*1000){
+    sv('bs-notifications-v1',[]);
+    return [];
+  }
+  const trimmed=entries.slice(0,3);
+  if(trimmed.length!==entries.length)sv('bs-notifications-v1',trimmed);
+  return trimmed;
 }
 
 function markLocalNotificationsRead(items){
@@ -1435,7 +1458,7 @@ function markLocalNotificationsRead(items){
 }
 
 function getUnreadNotificationCount(){
-  const local=ld('bs-notifications-v1',[]).filter(n=>!n.read).length;
+  const local=cleanupNotifications().filter(n=>!n.read).length;
   const pending=(S.pendingInvites||[]).length;
   return local+pending;
 }
@@ -1498,7 +1521,9 @@ window.runFabAction=runFabAction;
 window.openMoreMenu=openMoreMenu;
 
 function adminChangelogHtml(){
-  const entries=ld('bs-admin-changelog-v1',[]);
+  const stored=ld('bs-admin-changelog-v1',[]);
+  const entries=stored.slice(0,3);
+  if(stored.length>3)sv('bs-admin-changelog-v1',entries);
   const fmt=iso=>{
     try{return iso?new Date(iso).toLocaleString():'';}catch(e){return iso||'';}
   };

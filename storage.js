@@ -99,6 +99,7 @@ function saveAll(){
 
 function showScreen(name){
   if(typeof closeMobileFabMenu==='function')closeMobileFabMenu();
+  document.body.classList.toggle('workout-active',name==='workouts'&&!!S.activeWorkout);
   if(window._bsHistoryReady&&!window._bsHandlingBack&&name!=='dashboard'){
     if(typeof ensureBackTrap==='function')ensureBackTrap({screen:name});
     else history.pushState({bs:true,screen:name},'','');

@@ -852,6 +852,8 @@ function startWorkout(tidOrTpl){
 
 function renderWorkout(){
   const el=document.getElementById('workoutContent');
+  document.body.classList.toggle('workout-active',!!S.activeWorkout);
+  if(S.activeWorkout&&typeof closeMobileFabMenu==='function')closeMobileFabMenu();
   if(!S.activeWorkout){
     // No active workout — show CHRONOLOGICAL history of all completed workouts.
     // (Starting a new workout happens from Dashboard or Templates.)
@@ -1013,9 +1015,9 @@ function finishWorkout(){
   let volume=0;w.exercises.forEach(ex=>ex.sets.forEach(s=>{if(s.done&&s.weight>0)volume+=s.weight*s.reps;}));
   const k=today()+'_'+Date.now();
   S.workouts[k]={templateId:w.templateId,name:w.name,nameKey:w.nameKey||null,types:w.types,volume,duration,date:today(),exercises:w.exercises.map(ex=>({id:ex.id,pl:ex.pl,en:ex.en,name:ex.name,sup:ex.sup,gk:ex.gk,equipment:ex.equipment,sets:ex.sets}))};
-  S.activeWorkout=null;saveAll();showWorkoutSummary(k,prs);showScreen('dashboard');
+  S.activeWorkout=null;document.body.classList.remove('workout-active');saveAll();showWorkoutSummary(k,prs);showScreen('dashboard');
 }
-function cancelWorkout(){stopTimer();S.activeWorkout=null;renderWorkout();}
+function cancelWorkout(){stopTimer();S.activeWorkout=null;document.body.classList.remove('workout-active');renderWorkout();}
 
 // Back-button guard: push a history state when workout starts, intercept popstate
 function pushWorkoutHistory(){
@@ -1137,10 +1139,10 @@ const MEASURE_TYPES=[
 function proCardHtml(){
   const logoSrc=isDark?'./logo.jpg':'./light_logo.png';
   const logoImg=`<img src="${logoSrc}" alt="BeeStrong" style="width:34px;height:34px;object-fit:contain;border-radius:8px;flex-shrink:0;"/>`;
-  const proActiveBg=isDark?'rgba(0,200,83,0.08)':'#d8eadf';
-  const proActiveBorder=isDark?'rgba(0,200,83,0.35)':'rgba(0,120,62,0.28)';
-  const proCoachBg=isDark?'linear-gradient(135deg,rgba(0,200,83,0.08),rgba(245,197,66,0.08))':'#e4dcc0';
-  const proCoachBorder=isDark?'rgba(245,197,66,0.45)':'rgba(156,119,24,0.32)';
+  const proActiveBg=isDark?'rgba(0,200,83,0.08)':'#bdd8c8';
+  const proActiveBorder=isDark?'rgba(0,200,83,0.35)':'rgba(0,105,55,0.38)';
+  const proCoachBg=isDark?'linear-gradient(135deg,rgba(0,200,83,0.08),rgba(245,197,66,0.08))':'#d3c48f';
+  const proCoachBorder=isDark?'rgba(245,197,66,0.45)':'rgba(130,96,18,0.42)';
 
   // Not logged in
   if(!S.user){
@@ -1572,6 +1574,7 @@ function openManualWorkout(dateStr){
 
 // ===== QUICK WORKOUT =====
 function startQuickWorkout(){
+  document.body.classList.add('workout-active');
   S.activeWorkout={
     templateId:null, nameKey:'quickWorkout', name:t('quickWorkout'),
     types:[], startTime:Date.now(), restDefault:S.defaultRest||90,
