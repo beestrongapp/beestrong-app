@@ -791,7 +791,7 @@ function clientDetailName(ctx){
 
 function clientDetailHeader(title,sub,back){
   const backBtn=back?`<button class="modal-back client-detail-back-top" onclick="renderClientHub()" style="margin-bottom:8px;">${t('backBtn')}</button>`:'';
-  const bottomBack=back?`<div class="client-detail-bottom-back"><button class="btn btn-primary" onclick="renderClientHub()">${t('backBtn')}</button></div>`:'';
+  const bottomBack=back===true?`<div class="client-detail-bottom-back"><button class="btn btn-primary" onclick="renderClientHub()">${t('backBtn')}</button></div>`:'';
   return `<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:16px;">
     <div>
       ${backBtn}
@@ -986,7 +986,8 @@ function renderClientChatPlaceholder(){
     containerId:'clientDetailContent',
     title:'Chat',
     subtitle:clientDetailName(ctx),
-    backHtml:clientDetailHeader('Chat',clientDetailName(ctx),true),
+    backHtml:clientDetailHeader('Chat',clientDetailName(ctx),'top'),
+    backAction:'renderClientHub()',
     inputId:'clientChatInput',
     listId:'clientChatMessages',
   });
@@ -1027,11 +1028,16 @@ async function renderCoachChat(opts){
   el.style.display='block';
   el.style.padding='0';
   _coachChatContext=opts;
-  el.innerHTML=`${opts.backHtml||clientDetailHeader(opts.title||'Chat',opts.subtitle||'',true)}
-    <div id="${opts.listId}" style="min-height:260px;max-height:calc(100dvh - 220px);overflow-y:auto;padding:4px 2px 12px;"></div>
-    <div style="display:flex;gap:8px;align-items:flex-end;position:sticky;bottom:0;background:var(--bg);padding-top:10px;">
+  const backAction=opts.backAction||'renderClientHub()';
+  el.innerHTML=`${opts.backHtml||clientDetailHeader(opts.title||'Chat',opts.subtitle||'','top')}
+    <div id="${opts.listId}" class="chat-messages coach-chat-messages"></div>
+    <div class="chat-input-bar coach-chat-input-bar">
       <textarea id="${opts.inputId}" rows="1" maxlength="2000" placeholder="${tt({pl:'Napisz wiadomość...',en:'Write a message...',de:'Nachricht schreiben...',es:'Escribe un mensaje...'})}" style="min-height:44px;max-height:110px;resize:none;"></textarea>
       <button class="btn btn-primary" onclick="sendCoachChatMessage('${opts.inputId}')" style="width:auto;min-width:86px;height:44px;padding:0 16px;">${tt({pl:'Wyślij',en:'Send',de:'Senden',es:'Enviar'})}</button>
+    </div>
+    <div class="chat-bottom-actions">
+      <button class="btn btn-ghost" onclick="clearCoachChat()">${tt({pl:'Clear chat',en:'Clear chat',de:'Chat löschen',es:'Limpiar chat'})}</button>
+      <button class="btn btn-primary" onclick="${backAction}">${t('backBtn')}</button>
     </div>`;
   await loadCoachChatMessages();
   if(sb){
@@ -1129,6 +1135,7 @@ async function renderUserCoachChat(invId){
     title:'Chat',
     subtitle:title,
     backHtml:header,
+    backAction:`openUserCoachDetail('${inv.id}')`,
     inputId:'userCoachChatInput',
     listId:'userCoachChatMessages',
   });
@@ -1136,6 +1143,17 @@ async function renderUserCoachChat(invId){
 
 window.renderUserCoachChat=renderUserCoachChat;
 window.sendCoachChatMessage=sendCoachChatMessage;
+
+async function clearCoachChat(){
+  const ctx=_coachChatContext;
+  if(!ctx||!sb)return;
+  if(!confirm(tt({pl:'Wyczyścić cały chat?',en:'Clear the whole chat?',de:'Gesamten Chat löschen?',es:'¿Limpiar todo el chat?'})))return;
+  const{error}=await sb.from('coach_messages').delete().eq('invitation_id',ctx.inv.id);
+  if(error){showSyncToast(error.message,'error');return;}
+  await loadCoachChatMessages();
+  showSyncToast(tt({pl:'Chat wyczyszczony',en:'Chat cleared',de:'Chat gelöscht',es:'Chat limpiado'}),'success');
+}
+window.clearCoachChat=clearCoachChat;
 
 async function openChatFromNotification(invId){
   if(!invId||!sb)return showScreen('notifications');
@@ -1173,6 +1191,7 @@ async function openChatFromNotification(invId){
     title:'Chat',
     subtitle:otherName,
     backHtml:header,
+    backAction:"closeModal();showScreen('notifications')",
     inputId:'notificationChatInput',
     listId:'notificationChatMessages',
   });

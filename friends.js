@@ -2,6 +2,7 @@
 let _friendInvitations=[];
 let _friendDetail=null;
 let _friendChatChannel=null;
+let _friendDetailView=null;
 
 function friendName(inv){
   const mine=S.user?.id===inv.inviter_id;
@@ -189,8 +190,9 @@ async function openFriendProfile(invId){
   const ov=document.createElement('div');
   ov.className='modal-overlay client-detail-overlay';
   ov.innerHTML=`<div class="modal client-detail-modal"><div id="friendDetailContent" style="display:flex;justify-content:center;padding:40px 0;"><div class="spinner"></div></div></div>`;
-  ov._cleanup=()=>stopFriendChatRealtime();
+  ov._cleanup=()=>{stopFriendChatRealtime();_friendDetail=null;_friendDetailView=null;window._friendDetailView=null;};
   document.body.appendChild(ov);S.modal=ov;
+  if(window._bsHistoryReady&&!window._bsHandlingBack&&typeof ensureBackTrap==='function')ensureBackTrap({modal:'friend-detail'});
   try{
     const fid=friendId(inv);
     const[profileRes,woRes]=await Promise.all([
@@ -214,7 +216,7 @@ function friendBackLabel(){
 function friendHeader(title,sub,backMode){
   const backAction=backMode==='close'?'closeModal()':backMode?'renderFriendHub()':'';
   const backBtn=backAction?`<button class="modal-back client-detail-back-top" onclick="${backAction}" style="margin-bottom:8px;">${friendBackLabel()}</button>`:'';
-  const bottomBack=backAction?`<div class="client-detail-bottom-back"><button class="btn btn-primary" onclick="${backAction}">${friendBackLabel()}</button></div>`:'';
+  const bottomBack=backAction&&backMode!=='hub-chat'?`<div class="client-detail-bottom-back"><button class="btn btn-primary" onclick="${backAction}">${friendBackLabel()}</button></div>`:'';
   return `<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:16px;">
     <div>${backBtn}
       <div class="modal-title" style="margin-bottom:4px;">${friendEsc(title)}</div>${sub?`<div style="font-size:12px;color:var(--text2);">${friendEsc(sub)}</div>`:''}</div>
@@ -225,6 +227,7 @@ function friendHeader(title,sub,backMode){
 function renderFriendHub(){
   const el=document.getElementById('friendDetailContent');
   const ctx=_friendDetail;if(!el||!ctx)return;
+  _friendDetailView='hub';window._friendDetailView='hub';
   const name=ctx.profile?.display_name||friendName(ctx.inv);
   const monthStart=new Date();monthStart.setDate(1);monthStart.setHours(0,0,0,0);
   const monthWorkouts=ctx.workouts.filter(w=>new Date(w.date)>=monthStart);
@@ -262,6 +265,7 @@ function friendRecords(workouts){
 function renderFriendRecords(){
   const el=document.getElementById('friendDetailContent'),ctx=_friendDetail;if(!el||!ctx)return;
   const records=friendRecords(ctx.workouts);
+  _friendDetailView='records';window._friendDetailView='records';
   el.style.display='block';el.style.padding='0';
   el.innerHTML=friendHeader('Records',ctx.profile?.display_name||friendName(ctx.inv),'hub')+
     (records.length?records.map(r=>`<div class="workout-row" style="cursor:default;">
@@ -279,12 +283,17 @@ function stopFriendChatRealtime(){
 async function renderFriendChat(){
   const el=document.getElementById('friendDetailContent'),ctx=_friendDetail;if(!el||!ctx||!sb)return;
   stopFriendChatRealtime();
+  _friendDetailView='chat';window._friendDetailView='chat';
   el.style.display='block';el.style.padding='0';
-  el.innerHTML=friendHeader('Chat',ctx.profile?.display_name||friendName(ctx.inv),'hub')+`
-    <div id="friendChatMessages" class="friend-chat-messages"></div>
-    <div class="friend-chat-input-bar">
+  el.innerHTML=friendHeader('Chat',ctx.profile?.display_name||friendName(ctx.inv),'hub-chat')+`
+    <div id="friendChatMessages" class="chat-messages friend-chat-messages"></div>
+    <div class="chat-input-bar friend-chat-input-bar">
       <textarea id="friendChatInput" rows="1" maxlength="2000" placeholder="${tt({pl:'Napisz wiadomość...',en:'Write a message...',de:'Nachricht schreiben...',es:'Escribe un mensaje...'})}" style="min-height:44px;max-height:110px;resize:none;"></textarea>
       <button class="btn btn-primary" onclick="sendFriendMessage()" style="width:auto;min-width:86px;height:44px;padding:0 16px;">${tt({pl:'Wyślij',en:'Send',de:'Senden',es:'Enviar'})}</button>
+    </div>
+    <div class="chat-bottom-actions">
+      <button class="btn btn-ghost" onclick="clearFriendChat()">${tt({pl:'Clear chat',en:'Clear chat',de:'Chat löschen',es:'Limpiar chat'})}</button>
+      <button class="btn btn-primary" onclick="renderFriendHub()">${friendBackLabel()}</button>
     </div>`;
   await loadFriendMessages();
   _friendChatChannel=sb.channel('bs-friend-chat-'+ctx.inv.id)
@@ -292,6 +301,30 @@ async function renderFriendChat(){
     .subscribe();
 }
 window.renderFriendChat=renderFriendChat;
+
+async function clearFriendChat(){
+  const ctx=_friendDetail;if(!ctx||!sb)return;
+  if(!confirm(tt({pl:'Wyczyścić cały chat?',en:'Clear the whole chat?',de:'Gesamten Chat löschen?',es:'¿Limpiar todo el chat?'})))return;
+  const{error}=await sb.from('friend_messages').delete().eq('invitation_id',ctx.inv.id);
+  if(error){showSyncToast(error.message,'error');return;}
+  await loadFriendMessages();
+  showSyncToast(tt({pl:'Chat wyczyszczony',en:'Chat cleared',de:'Chat gelöscht',es:'Chat limpiado'}),'success');
+}
+window.clearFriendChat=clearFriendChat;
+
+async function openFriendChatFromNotification(invId){
+  if(!invId||!sb||!S.user)return showScreen('friends');
+  closeModal();
+  showScreen('friends');
+  const{data:inv,error}=await sb.from('friend_invitations').select('*').eq('id',invId).single();
+  if(error||!inv){showSyncToast(error?.message||'Chat unavailable','error');return;}
+  const exists=_friendInvitations.find(i=>i.id===inv.id);
+  if(!exists)_friendInvitations.unshift(inv);
+  else Object.assign(exists,inv);
+  await openFriendProfile(inv.id);
+  await renderFriendChat();
+}
+window.openFriendChatFromNotification=openFriendChatFromNotification;
 
 async function loadFriendMessages(){
   const ctx=_friendDetail,list=document.getElementById('friendChatMessages');if(!ctx||!list||!sb)return;
@@ -322,7 +355,7 @@ function rememberFriendNotification(payload){
   const m=payload?.new;
   if(!m||m.sender_id===S.user?.id)return;
   if(typeof addAppNotification==='function'){
-    addAppNotification({type:'friend_message',title:'Friends',body:(m.message||'').slice(0,120),at:m.created_at,action:"showScreen('friends')"});
+    addAppNotification({type:'friend_message',title:'Friends',body:(m.message||'').slice(0,120),at:m.created_at,invitationId:m.invitation_id,action:`openFriendChatFromNotification('${friendEsc(m.invitation_id)}')`});
   }
   if(typeof showSyncToast==='function')showSyncToast(tt({pl:'Nowa wiadomość od frienda',en:'New friend message',de:'Neue Friend-Nachricht',es:'Nuevo mensaje de friend'}),'info');
 }

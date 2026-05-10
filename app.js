@@ -1358,6 +1358,10 @@ function openNotificationItem(id){
     openChatFromNotification(item.invitationId);
     return;
   }
+  if(item?.type==='friend_message'&&item.invitationId&&typeof openFriendChatFromNotification==='function'){
+    openFriendChatFromNotification(item.invitationId);
+    return;
+  }
   if(item?.action){
     try{new Function(item.action)();}catch(e){console.warn('notification action failed',e);}
   }
@@ -1879,7 +1883,12 @@ function setupBackButton(){
       renderClientHub();
       return;
     }
-    // 3) Close any modal/popup
+    // 3) Friend detail subview -> return to friend hub before closing the full-screen friend card
+    if(S.modal&&window._friendDetailView&&window._friendDetailView!=='hub'){
+      renderFriendHub();
+      return;
+    }
+    // 4) Close any modal/popup
     if(S.modal){
       const returnScreen=S.modal._returnScreen;
       closeModal();
@@ -1893,7 +1902,7 @@ function setupBackButton(){
 
     const active=document.querySelector('.screen.active')?.id?.replace('screen-','');
 
-    // 4) Active workout — double-back asks for confirmation
+    // 5) Active workout — double-back asks for confirmation
     if(active==='workouts'&&S.activeWorkout){
       const now=Date.now();
       if(now-_lastBackOnWorkouts<2500){
@@ -1905,7 +1914,7 @@ function setupBackButton(){
       return;
     }
 
-    // 5) Any screen other than dashboard → go home
+    // 6) Any screen other than dashboard → go home
     if(active!=='dashboard'){
       window._bsHandlingBack=true;
       showScreen('dashboard');
@@ -1913,7 +1922,7 @@ function setupBackButton(){
       return;
     }
 
-    // 6) On dashboard — double-press to exit app
+    // 7) On dashboard — double-press to exit app
     const now=Date.now();
     if(now-_lastBackOnDash<2500){
       openExitConfirmModal();
