@@ -207,12 +207,19 @@ async function openFriendProfile(invId){
 }
 window.openFriendProfile=openFriendProfile;
 
-function friendHeader(title,sub,back){
+function friendBackLabel(){
+  return String(t('backBtn')||'Back').replace(/^[\s←‹<\-]+/,'').trim()||'Back';
+}
+
+function friendHeader(title,sub,backMode){
+  const backAction=backMode==='close'?'closeModal()':backMode?'renderFriendHub()':'';
+  const backBtn=backAction?`<button class="modal-back client-detail-back-top" onclick="${backAction}" style="margin-bottom:8px;">${friendBackLabel()}</button>`:'';
+  const bottomBack=backAction?`<div class="client-detail-bottom-back"><button class="btn btn-primary" onclick="${backAction}">${friendBackLabel()}</button></div>`:'';
   return `<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:16px;">
-    <div>${back?`<button class="modal-back client-detail-back-top" onclick="renderFriendHub()" style="margin-bottom:8px;">${t('backBtn')}</button>`:''}
+    <div>${backBtn}
       <div class="modal-title" style="margin-bottom:4px;">${friendEsc(title)}</div>${sub?`<div style="font-size:12px;color:var(--text2);">${friendEsc(sub)}</div>`:''}</div>
     <button class="rm-btn" onclick="closeModal()" style="width:34px;height:34px;font-size:18px;">✕</button>
-  </div>${back?`<div class="client-detail-bottom-back"><button class="btn btn-primary" onclick="renderFriendHub()">${t('backBtn')}</button></div>`:''}`;
+  </div>${bottomBack}`;
 }
 
 function renderFriendHub(){
@@ -223,7 +230,7 @@ function renderFriendHub(){
   const monthWorkouts=ctx.workouts.filter(w=>new Date(w.date)>=monthStart);
   const monthVolume=monthWorkouts.reduce((a,w)=>a+(+(w.volume_kg||0)),0);
   el.style.display='block';el.style.padding='0';
-  el.innerHTML=friendHeader(name,ctx.profile?.email||friendEmail(ctx.inv),false)+`
+  el.innerHTML=friendHeader(name,ctx.profile?.email||friendEmail(ctx.inv),'close')+`
     <div class="stats-grid" style="grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:18px;">
       <div class="stat-card"><div class="stat-top"><span class="stat-label">${tt({pl:'Miesiąc',en:'Month',de:'Monat',es:'Mes'})}</span></div><div class="stat-value">${monthWorkouts.length}</div><div class="stat-unit">${tt({pl:'treningi',en:'workouts',de:'Trainings',es:'entrenos'})}</div></div>
       <div class="stat-card"><div class="stat-top"><span class="stat-label">${t('volume')}</span></div><div class="stat-value">${fmtVol(monthVolume)}</div><div class="stat-unit">${unitVol()}</div></div>
@@ -256,7 +263,7 @@ function renderFriendRecords(){
   const el=document.getElementById('friendDetailContent'),ctx=_friendDetail;if(!el||!ctx)return;
   const records=friendRecords(ctx.workouts);
   el.style.display='block';el.style.padding='0';
-  el.innerHTML=friendHeader('Records',ctx.profile?.display_name||friendName(ctx.inv),true)+
+  el.innerHTML=friendHeader('Records',ctx.profile?.display_name||friendName(ctx.inv),'hub')+
     (records.length?records.map(r=>`<div class="workout-row" style="cursor:default;">
       <div class="workout-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><path d="M6 4v16M18 4v16M3 12h18"/></svg></div>
       <div class="workout-row-info"><div class="workout-row-name">${friendEsc(r.name)}</div><div class="workout-row-meta">${dispW(r.weight)}${unitW()} × ${r.reps} · e1RM ${dispW(r.score)}${unitW()} · ${r.date||''}</div></div>
@@ -273,9 +280,9 @@ async function renderFriendChat(){
   const el=document.getElementById('friendDetailContent'),ctx=_friendDetail;if(!el||!ctx||!sb)return;
   stopFriendChatRealtime();
   el.style.display='block';el.style.padding='0';
-  el.innerHTML=friendHeader('Chat',ctx.profile?.display_name||friendName(ctx.inv),true)+`
-    <div id="friendChatMessages" style="min-height:260px;max-height:calc(100dvh - 220px);overflow-y:auto;padding:4px 2px 12px;"></div>
-    <div style="display:flex;gap:8px;align-items:flex-end;position:sticky;bottom:0;background:var(--bg);padding-top:10px;">
+  el.innerHTML=friendHeader('Chat',ctx.profile?.display_name||friendName(ctx.inv),'hub')+`
+    <div id="friendChatMessages" class="friend-chat-messages"></div>
+    <div class="friend-chat-input-bar">
       <textarea id="friendChatInput" rows="1" maxlength="2000" placeholder="${tt({pl:'Napisz wiadomość...',en:'Write a message...',de:'Nachricht schreiben...',es:'Escribe un mensaje...'})}" style="min-height:44px;max-height:110px;resize:none;"></textarea>
       <button class="btn btn-primary" onclick="sendFriendMessage()" style="width:auto;min-width:86px;height:44px;padding:0 16px;">${tt({pl:'Wyślij',en:'Send',de:'Senden',es:'Enviar'})}</button>
     </div>`;
@@ -314,6 +321,9 @@ window.sendFriendMessage=sendFriendMessage;
 function rememberFriendNotification(payload){
   const m=payload?.new;
   if(!m||m.sender_id===S.user?.id)return;
-  addAppNotification({type:'friend_message',title:'Friends',body:(m.message||'').slice(0,120),at:m.created_at,action:"showScreen('friends')"});
+  if(typeof addAppNotification==='function'){
+    addAppNotification({type:'friend_message',title:'Friends',body:(m.message||'').slice(0,120),at:m.created_at,action:"showScreen('friends')"});
+  }
+  if(typeof showSyncToast==='function')showSyncToast(tt({pl:'Nowa wiadomość od frienda',en:'New friend message',de:'Neue Friend-Nachricht',es:'Nuevo mensaje de friend'}),'info');
 }
 window.rememberFriendNotification=rememberFriendNotification;

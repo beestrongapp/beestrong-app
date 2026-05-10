@@ -1437,7 +1437,7 @@ function openManualWorkout(dateStr){
 
       const tplSel=S.templates.map(tp2=>`<option value="${tp2.id}" ${tp2.id===window.mwTplId?'selected':''}>${tp2.name}</option>`).join('');
       ov.innerHTML=`<div class="modal" style="max-height:92dvh;display:flex;flex-direction:column;">
-        <button class="modal-back" onclick="window.mwMode='pick';window.mwExercises=[];window.renderMw()">← ${L?'Wróć':'Back'}</button>
+        <button class="modal-back" onclick="window.mwMode='pick';window.mwExercises=[];window.renderMw()">${L?'Wróć':'Back'}</button>
         <div class="modal-title">${L?'Z szablonu':'From Template'}</div>
         <label class="form-label">${t('date')}</label>
         <div style="margin-bottom:10px;"><input type="date" value="${window.mwDate}" oninput="window.mwDate=this.value"/></div>
@@ -1490,7 +1490,7 @@ function openManualWorkout(dateStr){
       }).join('');
 
       ov.innerHTML=`<div class="modal" style="max-height:92dvh;display:flex;flex-direction:column;">
-        <button class="modal-back" onclick="window.mwMode='pick';window.mwExercises=[];window.renderMw()">← ${L?'Wróć':'Back'}</button>
+        <button class="modal-back" onclick="window.mwMode='pick';window.mwExercises=[];window.renderMw()">${L?'Wróć':'Back'}</button>
         <div class="modal-title">${L?'Własny trening':'Custom Workout'}</div>
         <label class="form-label">${t('date')}</label>
         <div style="margin-bottom:10px;"><input type="date" value="${window.mwDate}" oninput="window.mwDate=this.value"/></div>
