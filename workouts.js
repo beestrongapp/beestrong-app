@@ -1143,6 +1143,10 @@ function proCardHtml(){
   const proActiveBorder=isDark?'rgba(0,200,83,0.35)':'rgba(0,105,55,0.38)';
   const proCoachBg=isDark?'linear-gradient(135deg,rgba(0,200,83,0.08),rgba(245,197,66,0.08))':'#d3c48f';
   const proCoachBorder=isDark?'rgba(245,197,66,0.45)':'rgba(130,96,18,0.42)';
+  const proTitleColor=isDark?'#00e676':'#006b3a';
+  const proSubColor=isDark?'var(--text2)':'#24352b';
+  const coachTitleColor=isDark?'var(--yellow)':'#6c5200';
+  const coachBtnColor=isDark?'#00e676':'#005f36';
 
   // Not logged in
   if(!S.user){
@@ -1174,19 +1178,19 @@ function proCardHtml(){
     return `<div style="display:flex;align-items:center;gap:10px;background:${proCoachBg};border:1px solid ${proCoachBorder};border-radius:12px;padding:12px 14px;margin-bottom:14px;">
       ${logoImg}
       <div style="flex:1;min-width:0;">
-        <div style="font-size:14px;font-weight:700;"><span style="color:#00e676;">BeeStrong Pro</span> <span style="color:var(--yellow);">+ Coach Subscription</span></div>
-        <div style="font-size:12px;color:var(--text2);">${tt({pl:'Aktywne — dziękujemy!',en:'Active — thank you!',de:'Aktiv — danke!',es:'Activo — ¡gracias!'})}</div>
+        <div style="font-size:14px;font-weight:800;"><span style="color:${proTitleColor};">BeeStrong Pro</span> <span style="color:${coachTitleColor};">+ Coach Subscription</span></div>
+        <div style="font-size:12px;color:${proSubColor};font-weight:500;">${tt({pl:'Aktywne — dziękujemy!',en:'Active — thank you!',de:'Aktiv — danke!',es:'Activo — ¡gracias!'})}</div>
       </div>
     </div>`;
   }
 
   // PRO only active
-  const coachBtn=` <button class="btn btn-sm" onclick="showCoachModeInfo()" style="font-size:10px;padding:5px 10px;flex-shrink:0;background:rgba(0,200,83,0.12);color:#00e676;border:1px solid rgba(0,200,83,0.38);font-weight:700;letter-spacing:0.3px;">Get Coach Mode</button>`;
+  const coachBtn=` <button class="btn btn-sm" onclick="showCoachModeInfo()" style="font-size:10px;padding:5px 10px;flex-shrink:0;background:rgba(0,120,62,0.12);color:${coachBtnColor};border:1px solid rgba(0,120,62,0.38);font-weight:800;letter-spacing:0.3px;">Get Coach Mode</button>`;
   return `<div style="display:flex;align-items:center;gap:10px;background:${proActiveBg};border:1px solid ${proActiveBorder};border-radius:12px;padding:12px 14px;margin-bottom:14px;">
     ${logoImg}
     <div style="flex:1;min-width:0;">
-      <div style="font-size:14px;font-weight:700;color:#00e676;">BeeStrong Pro</div>
-      <div style="font-size:12px;color:var(--text2);">${tt({pl:'Aktywne — dziękujemy!',en:'Active — thank you!',de:'Aktiv — danke!',es:'Activo — ¡gracias!'})}</div>
+      <div style="font-size:14px;font-weight:800;color:${proTitleColor};">BeeStrong Pro</div>
+      <div style="font-size:12px;color:${proSubColor};font-weight:500;">${tt({pl:'Aktywne — dziękujemy!',en:'Active — thank you!',de:'Aktiv — danke!',es:'Activo — ¡gracias!'})}</div>
     </div>
     ${coachBtn}
   </div>`;

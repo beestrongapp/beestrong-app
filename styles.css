@@ -206,7 +206,7 @@ input:focus,textarea:focus{outline:none;border-color:var(--accent);}
 .spinner{width:26px;height:26px;border:2px solid var(--bg4);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
 #screen-dashboard{position:relative;}
-#screen-dashboard::before{content:'';position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:min(95vw,560px);height:min(95vw,560px);background:var(--dash-logo-bg, url('./logo.jpg')) center/contain no-repeat;opacity:0.75;pointer-events:none;z-index:0;}
+#screen-dashboard::before{content:'';position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:min(95vw,560px);height:min(95vw,560px);background:var(--dash-logo-bg, url('./logo.jpg')) center/contain no-repeat;opacity:0.18;pointer-events:none;z-index:0;}
 #screen-dashboard > *{position:relative;z-index:1;}
 body:not(.light) #screen-dashboard::before{background:url('./logo.jpg') center/contain no-repeat;}
 body.light #screen-dashboard::before{background:url('./light_logo.png') center/contain no-repeat;}
@@ -253,7 +253,7 @@ body.workout-active .mobile-fab-overlay{display:none!important;}
 @keyframes syncPulse{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.5);opacity:0.5;}}
 /* ── Mobile brand header (hidden on desktop, visible on mobile dashboard) ── */
 .mobile-brand{display:none;align-items:center;gap:10px;padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:16px;justify-content:space-between;}
-.mobile-brand-logo{width:42px;height:42px;border-radius:11px;object-fit:cover;flex-shrink:0;}
+.mobile-brand-logo{width:52px;height:52px;border-radius:13px;object-fit:cover;flex-shrink:0;}
 .mobile-brand-copy{flex:1;min-width:0;}
 .mobile-brand-name{font-size:20px;font-weight:900;color:var(--accent);letter-spacing:0;display:block;line-height:1.08;}
 .mobile-brand-sub{font-size:12px;font-weight:500;color:var(--text3);letter-spacing:0;display:block;margin-top:1px;}

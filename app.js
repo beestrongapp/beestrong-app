@@ -385,7 +385,6 @@ window.setProgressTab=function(tab){
   if(!['lifts','templates','records'].includes(tab))return;
   _progressTab=tab;
   renderProgress();
-  document.getElementById('progressContent')?.scrollIntoView({block:'start'});
 };
 function handleProgressTabEvent(e){
   const btn=e.target.closest?.('[data-progress-tab]');
