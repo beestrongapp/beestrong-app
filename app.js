@@ -10,20 +10,6 @@ function renderDashboard(){
   const dashStats=document.getElementById('dashStats');
   if(dashStats)dashStats.innerHTML='';
 
-  // Streak
-  const streak=getWorkoutStreak();
-  const sb=document.getElementById('streakBanner');
-  if(sb){
-    if(streak>=2){
-      sb.classList.add('visible');
-      document.getElementById('streakCount').textContent=streak;
-      const days=tt({pl:streak===1?'dzień':'dni',en:streak===1?'day':'days',de:streak===1?'Tag':'Tage',es:streak===1?'día':'días'});
-      document.getElementById('streakLabel').textContent=tt({pl:`${days} z rzędu! Tak trzymaj 💪`,en:`${days} in a row! Keep it up 💪`,de:`${days} in Folge! Weiter so 💪`,es:`${days} seguidos! ¡Sigue así 💪`});
-    } else {
-      sb.classList.remove('visible');
-    }
-  }
-
   // Quick Access label
   const qaLbl=document.getElementById('lblQuickAccess');
   if(qaLbl)qaLbl.textContent=t('quickAccess');
@@ -61,7 +47,11 @@ function renderDashboard(){
       action:"showScreen('programs')",
     },
   ];
-  const minimalTiles=standardTiles.filter((_,i)=>[0,1,2,3].includes(i));
+  const minimalTiles=standardTiles.filter((_,i)=>[0,1,2,3,4].includes(i)).concat([{
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="22" height="22"><path d="M6.5 6.5h11"/><path d="M6.5 17.5h11"/><rect x="2" y="9" width="3" height="6" rx="0.5"/><rect x="19" y="9" width="3" height="6" rx="0.5"/><rect x="5" y="7" width="2" height="10" rx="0.5"/><rect x="17" y="7" width="2" height="10" rx="0.5"/></svg>',
+    labelKey:{pl:'Ćwiczenia',en:'Exercises',de:'Übungen',es:'Ejercicios'},
+    action:"showScreen('exercises')",
+  }]);
   const QA_TILES=S.layoutMode==='minimal'?minimalTiles:standardTiles;
   const qaGrid=document.getElementById('quickAccessGrid');
   if(qaGrid){
@@ -75,6 +65,7 @@ function renderDashboard(){
   // Recent workouts
   const recent=Object.entries(S.workouts).sort((a,b)=>{const da=a[1].date||a[0].split('_')[0];const db=b[1].date||b[0].split('_')[0];return db>da?1:db<da?-1:b[0]>a[0]?1:-1;}).slice(0,5);
   const el=document.getElementById('recentWorkouts');
+  if(!el)return;
   if(!recent.length){el.innerHTML=`<div class="empty-state">${t('noWorkouts')}</div>`;return;}
   el.innerHTML=recent.map(([k,w])=>{const dateStr=w.date||k.split('_')[0];const[y,m,d]=dateStr.split('-');return`<div class="workout-row" onclick="showWorkoutSummary('${k}')"><div class="workout-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><path d="M6 4v16M18 4v16M3 12h18M3 7h3M18 7h3M3 17h3M18 17h3"/></svg></div><div class="workout-row-info"><div class="workout-row-name">${displayWorkoutName(w)}</div><div class="workout-row-meta">${d}.${m}.${y} · ${w.duration} min · ${fmtVol(w.volume)}${unitVol()}</div></div><div>${typeTagHtml(w.types)}</div></div>`;}).join('');
 }
@@ -97,6 +88,18 @@ function renderCalendar(){
       <div class="cal-stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 4v16M18 4v16M3 12h18"/></svg></div><div><strong>${wCount}</strong><span>${tt({pl:'treningi',en:'workouts',de:'Trainings',es:'entrenamientos'})}</span></div></div>
       <div class="cal-stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg></div><div><strong>${wTime}</strong><span>${t('minutes')}</span></div></div>
       <div class="cal-stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg></div><div><strong>${fmtVol(wVol)}</strong><span>${unitVol()}</span></div></div>`;
+  }
+  const streak=getWorkoutStreak();
+  const streakEl=document.getElementById('calendarStreakBanner');
+  if(streakEl){
+    if(streak>=2){
+      streakEl.classList.add('visible');
+      document.getElementById('calendarStreakCount').textContent=streak;
+      const days=tt({pl:streak===1?'dzień':'dni',en:streak===1?'day':'days',de:streak===1?'Tag':'Tage',es:streak===1?'día':'días'});
+      document.getElementById('calendarStreakLabel').textContent=tt({pl:`${days} z rzędu! Tak trzymaj 💪`,en:`${days} in a row! Keep it up 💪`,de:`${days} in Folge! Weiter so 💪`,es:`${days} seguidos! ¡Sigue así 💪`});
+    } else {
+      streakEl.classList.remove('visible');
+    }
   }
 
   const g=document.getElementById('calGrid');
@@ -1219,6 +1222,18 @@ function renderSettings(){
     ${settingsRows.map((row,i)=>{
       const isUnits=row.key==='units';
       const isTheme=row.key==='theme';
+      const isLayout=row.key==='layout';
+      if(isLayout){
+        const isOn=S.layoutMode==='minimal';
+        return`<div style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--bg2);transition:background 0.12s;${i>0?'border-top:1px solid var(--border);':''}">
+          <div style="width:36px;height:36px;border-radius:10px;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;color:var(--accent);flex-shrink:0;">${row.icon}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:14px;font-weight:600;">${row.label}</div>
+            <div style="font-size:12px;color:var(--text2);margin-top:2px;">${row.value}</div>
+          </div>
+          <div class="toggle-switch ${isOn?'on':''}" onclick="event.stopPropagation();setLayoutMode('${isOn?'standard':'minimal'}')"><div class="toggle-knob"></div></div>
+        </div>`;
+      }
       if(isUnits){
         const isOn=S.units==='imperial';
         return`<div style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--bg2);transition:background 0.12s;${i>0?'border-top:1px solid var(--border);':''}">
@@ -1442,12 +1457,16 @@ function openMoreMenu(){
   const ov=document.createElement('div');ov.className='modal-overlay';
   ov.innerHTML=`<div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-title">More</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;">
+      <div class="modal-title" style="margin-bottom:0;">More</div>
+      <button class="rm-btn" onclick="closeModal()" style="width:34px;height:34px;font-size:18px;">✕</button>
+    </div>
     ${items.map(item=>`<div onclick="closeModal();showScreen('${item.screen}')" style="display:flex;align-items:center;gap:14px;padding:14px 12px;border-radius:12px;cursor:pointer;border:1px solid var(--border);background:var(--bg3);margin-bottom:8px;">
       <span style="width:36px;height:36px;border-radius:10px;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;color:var(--accent);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="18" height="18">${item.icon}</svg></span>
       <span style="font-size:15px;font-weight:700;">${item.label}</span>
     </div>`).join('')}
   </div>`;
+  ov.addEventListener('click',e=>{if(e.target===ov)closeModal();});
   document.body.appendChild(ov);S.modal=ov;
 }
 window.toggleMobileFabMenu=toggleMobileFabMenu;
@@ -1522,7 +1541,7 @@ window.openSettingsLayout=openSettingsLayout;
 window.setLayoutMode=function(mode){
   S.layoutMode=mode==='minimal'?'minimal':'standard';
   saveAll();
-  closeModal();
+  if(S.modal)closeModal();
   renderDashboard();
   renderSettings();
 };
