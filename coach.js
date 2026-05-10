@@ -791,7 +791,7 @@ function clientDetailName(ctx){
 
 function clientDetailHeader(title,sub,back){
   const backBtn=back?`<button class="modal-back client-detail-back-top" onclick="renderClientHub()" style="margin-bottom:8px;">${t('backBtn')}</button>`:'';
-  const bottomBack=back?`<div class="client-detail-bottom-back"><button class="btn btn-ghost" onclick="renderClientHub()">${t('backBtn')}</button></div>`:'';
+  const bottomBack=back?`<div class="client-detail-bottom-back"><button class="btn btn-primary" onclick="renderClientHub()">${t('backBtn')}</button></div>`:'';
   return `<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:16px;">
     <div>
       ${backBtn}
