@@ -378,7 +378,11 @@ window.showRecordDetail=function(name){
   document.body.appendChild(ov);S.modal=ov;
 };
 
-window.setProgressTab=tab=>{_progressTab=tab;renderProgress()};
+window.setProgressTab=function(tab){
+  _progressTab=tab;
+  renderProgress();
+  document.getElementById('progressContent')?.scrollIntoView({block:'start'});
+};
 window.setProgressGk=gk=>{_progressGk=gk;renderProgress();};
 window.toggleProgressEquip=eq=>{
   if(eq==='__all__'){_progressEquip.clear();}
@@ -1189,8 +1193,8 @@ function renderSettings(){
     },
     {
       key:'layout',
-      label:tt({pl:'Layout Home',en:'Home layout',de:'Home-Layout',es:'Layout inicio'}),
-      value:S.layoutMode==='minimal'?tt({pl:'Minimal',en:'Minimal',de:'Minimal',es:'Minimal'}):tt({pl:'Standard + menu',en:'Standard + menu',de:'Standard + Menü',es:'Estándar + menú'}),
+      label:tt({pl:'Layout aplikacji',en:'App layout',de:'App-Layout',es:'Layout de app'}),
+      value:S.layoutMode==='minimal'?tt({pl:'Minimal',en:'Minimal',de:'Minimal',es:'Minimal'}):tt({pl:'Standard',en:'Standard',de:'Standard',es:'Estándar'}),
       icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="18" height="7" rx="1"/></svg>',
       action:'openSettingsLayout'
     },
@@ -1328,6 +1332,12 @@ function renderNotifications(){
   markLocalNotificationsRead(chatItems);
 }
 
+function renderFriends(){
+  const el=document.getElementById('friendsContent');
+  if(!el)return;
+  el.innerHTML=`<div class="empty-state">${tt({pl:'Sekcja Friends zostanie podłączona później.',en:'Friends section will be connected later.',de:'Friends-Bereich wird später verbunden.',es:'La sección Friends se conectará más tarde.'})}</div>`;
+}
+
 function openNotificationItem(id){
   const entries=ld('bs-notifications-v1',[]);
   const item=entries.find(n=>n.id===id);
@@ -1439,10 +1449,14 @@ function closeMobileFabMenu(){
 }
 function runFabAction(action){
   closeMobileFabMenu();
-  if(action==='quick'){startQuickWorkout();return;}
-  if(action==='template'){openNewTemplate();return;}
-  if(action==='measure'){openSettingsMeasurements();return;}
-  if(action==='plan'){showScreen('calendar');switchCalTab('plan');return;}
+  if(action==='exercises'){showScreen('exercises');return;}
+  if(action==='friends'){showScreen('friends');return;}
+  if(action==='notifications'){showScreen('notifications');return;}
+  if(action==='coach'){
+    if(isPro()){showScreen('coaches');return;}
+    showPaywall('coach');
+    return;
+  }
 }
 function openMoreMenu(){
   closeMobileFabMenu();
@@ -1522,11 +1536,11 @@ function openSettingsLayout(){
   const ov=document.createElement('div');ov.className='modal-overlay';
   const options=[
     {val:'minimal',label:tt({pl:'Minimal',en:'Minimal',de:'Minimal',es:'Minimal'}),desc:tt({pl:'Mniej skrótów na Home, spokojniejszy ekran.',en:'Fewer Home shortcuts, calmer screen.',de:'Weniger Home-Shortcuts, ruhigerer Bildschirm.',es:'Menos accesos en inicio.'})},
-    {val:'standard',label:tt({pl:'Standard + menu',en:'Standard + menu',de:'Standard + Menü',es:'Estándar + menú'}),desc:tt({pl:'Pełny Quick Access i dolny przycisk +.',en:'Full Quick Access and bottom + action.',de:'Voller Schnellzugriff und + Menü.',es:'Acceso completo y botón +.'})},
+    {val:'standard',label:tt({pl:'Standard',en:'Standard',de:'Standard',es:'Estándar'}),desc:tt({pl:'Pełny Quick Access i dolny przycisk +.',en:'Full Quick Access and bottom + action.',de:'Voller Schnellzugriff und + Menü.',es:'Acceso completo y botón +.'})},
   ];
   ov.innerHTML=`<div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-title">${tt({pl:'Layout Home',en:'Home layout',de:'Home-Layout',es:'Layout inicio'})}</div>
+    <div class="modal-title">${tt({pl:'Layout aplikacji',en:'App layout',de:'App-Layout',es:'Layout de app'})}</div>
     ${options.map(o=>`
       <div onclick="setLayoutMode('${o.val}')" style="display:flex;align-items:center;gap:14px;padding:14px 12px;border-radius:12px;cursor:pointer;background:${S.layoutMode===o.val?'var(--accent-dim)':'none'};border:1px solid ${S.layoutMode===o.val?'var(--accent)':'var(--border)'};margin-bottom:8px;transition:all 0.12s;">
         <span style="width:38px;height:38px;border-radius:10px;background:var(--bg3);display:flex;align-items:center;justify-content:center;color:var(--accent);font-weight:800;">${o.val==='minimal'?'M':'+'}</span>

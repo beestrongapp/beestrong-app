@@ -132,6 +132,7 @@ function showScreen(name){
   // Profile screen removed — its content lives in Settings now (renderSettings handles measurements + Pro card)
   if(name==='settings')renderSettings();
   if(name==='notifications')renderNotifications();
+  if(name==='friends')renderFriends();
   if(name==='clients')renderClients();
   if(name==='coaches')renderUserCoaches();
   if(name==='admin')renderAdmin();
