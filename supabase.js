@@ -474,6 +474,16 @@ function showAuthModal(){
     };}
   }
   document.body.appendChild(ov);S.modal=ov;
+  ov._backHandler=()=>{
+    if(mode==='signup'){
+      mode='signin';
+      error='';
+      render();
+      return true;
+    }
+    closeModal();
+    return true;
+  };
   render();
   setTimeout(()=>document.getElementById('authEmail')?.focus(),200);
 }

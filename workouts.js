@@ -441,6 +441,7 @@ function showExPicker(currentExs,onConfirm){
   </div>`;
 
   document.body.appendChild(ov);S.modal=ov;
+  ov._backHandler=()=>{window.goBackToPicker();return true;};
   renderFilterChips();renderEquipChips();updateList();
 
   // Fetch DB if not yet loaded
@@ -1019,16 +1020,11 @@ function finishWorkout(){
 }
 function cancelWorkout(){stopTimer();S.activeWorkout=null;document.body.classList.remove('workout-active');renderWorkout();}
 
-// Back-button guard: push a history state when workout starts, intercept popstate
+// Back-button guard: central popstate handling lives in app.js
 function pushWorkoutHistory(){
-  history.pushState({bsWorkout:true},'');
+  if(typeof ensureBackTrap==='function')ensureBackTrap({workout:true});
+  else history.pushState({bsWorkout:true},'');
 }
-window.addEventListener('popstate',e=>{
-  if(S.activeWorkout){
-    history.pushState({bsWorkout:true},''); // put state back so back still works
-    showWorkoutBackConfirm();
-  }
-});
 function showWorkoutBackConfirm(){
   closeModal();
   const ov=document.createElement('div');ov.className='modal-overlay';
@@ -1370,6 +1366,16 @@ function openManualWorkout(dateStr){
   ov.className='modal-overlay';
   document.body.appendChild(ov);
   S.modal=ov;
+  ov._backHandler=()=>{
+    if(window.mwMode&&window.mwMode!=='pick'){
+      window.mwMode='pick';
+      window.mwExercises=[];
+      window.renderMw();
+      return true;
+    }
+    window.closeMw();
+    return true;
+  };
 
   window.renderMw=function(){
     const mode=window.mwMode;
@@ -1632,6 +1638,15 @@ function finishQuickWorkout(){
 function showSaveAsTemplateModal(wo,dateKey,prs=[]){
   closeModal();
   const ov=document.createElement('div');ov.className='modal-overlay';
+  ov._saveTplStep='choice';
+  ov._backHandler=()=>{
+    if(ov._saveTplStep==='name'){
+      showSaveAsTemplateModal(wo,dateKey,prs);
+      return true;
+    }
+    closeModal();
+    return true;
+  };
   ov.innerHTML=`<div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title" style="margin-bottom:20px;">${t('saveAsTemplate')}</div>
@@ -1641,13 +1656,14 @@ function showSaveAsTemplateModal(wo,dateKey,prs=[]){
     </div>
   </div>`;
   window.promptSaveTemplate=()=>{
+    ov._saveTplStep='name';
     ov.querySelector('.modal').innerHTML=`
       <div class="modal-handle"></div>
       <div class="modal-title">${t('enterTemplateName')}</div>
       <div style="margin-bottom:14px;"><input type="text" id="quickTplName" placeholder="np. Push A" style="font-size:15px;"/></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-        <button class="btn btn-ghost" onclick="dontSaveTemplate('${k}')">${t('cancelTemplate')}</button>
-        <button class="btn btn-primary" onclick="confirmSaveTemplate('${k}')">${t('saveTemplate')}</button>
+        <button class="btn btn-ghost" onclick="dontSaveTemplate('${dateKey}')">${t('cancelTemplate')}</button>
+        <button class="btn btn-primary" onclick="confirmSaveTemplate('${dateKey}')">${t('saveTemplate')}</button>
       </div>`;
     setTimeout(()=>document.getElementById('quickTplName')?.focus(),100);
   };

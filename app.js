@@ -763,6 +763,7 @@ function showTplModal(id){
   window.delTpl=tid=>{S.templates=S.templates.filter(x=>x.id!==tid);closeModal();renderTemplates();saveAll();};
   renderTplModal();
   document.body.appendChild(ov);S.modal=ov;
+  ov._backHandler=()=>{closeModal();return true;};
   S._tplRender=renderTplModal;
 }
 
@@ -1062,6 +1063,7 @@ function planAddCustom(date){
       </div>
     </div>`;
     document.body.appendChild(ov);S.modal=ov;
+    ov._backHandler=()=>{closeModal();return true;};
     setTimeout(()=>{if(!savedName)document.getElementById('planCName')?.focus();},60);
   }
   window._planCPickEx=()=>{
@@ -1869,6 +1871,18 @@ function ensureBackTrap(extra){
 }
 window.ensureBackTrap=ensureBackTrap;
 
+function runModalBackHandler(){
+  if(!S.modal||typeof S.modal._backHandler!=='function')return false;
+  try{
+    const handled=S.modal._backHandler();
+    return handled!==false;
+  }catch(e){
+    console.warn('modal back handler failed',e);
+    return false;
+  }
+}
+window.runModalBackHandler=runModalBackHandler;
+
 function setupBackButton(){
   try{history.replaceState({bs:true,sentinel:true},'',`${location.pathname}${location.search}#bs-root`);}catch(e){}
   ensureBackTrap();
@@ -1878,17 +1892,19 @@ function setupBackButton(){
     ensureBackTrap();
     // 1) Close detail modal
     if(S.detailModal){closeDetailModal();return;}
-    // 2) Client detail subview -> return to client hub before closing the full-screen client card
+    // 2) Let complex modals consume Back before generic modal closing
+    if(runModalBackHandler())return;
+    // 3) Client detail subview -> return to client hub before closing the full-screen client card
     if(S.modal&&window._clientDetailData&&window._clientDetailView&&window._clientDetailView!=='hub'){
       renderClientHub();
       return;
     }
-    // 3) Friend detail subview -> return to friend hub before closing the full-screen friend card
+    // 4) Friend detail subview -> return to friend hub before closing the full-screen friend card
     if(S.modal&&window._friendDetailView&&window._friendDetailView!=='hub'){
       renderFriendHub();
       return;
     }
-    // 4) Close any modal/popup
+    // 5) Close any modal/popup
     if(S.modal){
       const returnScreen=S.modal._returnScreen;
       closeModal();
@@ -1902,7 +1918,7 @@ function setupBackButton(){
 
     const active=document.querySelector('.screen.active')?.id?.replace('screen-','');
 
-    // 5) Active workout — double-back asks for confirmation
+    // 6) Active workout — double-back asks for confirmation
     if(active==='workouts'&&S.activeWorkout){
       const now=Date.now();
       if(now-_lastBackOnWorkouts<2500){
@@ -1914,7 +1930,7 @@ function setupBackButton(){
       return;
     }
 
-    // 6) Any screen other than dashboard → go home
+    // 7) Any screen other than dashboard → go home
     if(active!=='dashboard'){
       window._bsHandlingBack=true;
       showScreen('dashboard');
@@ -1922,7 +1938,7 @@ function setupBackButton(){
       return;
     }
 
-    // 7) On dashboard — double-press to exit app
+    // 8) On dashboard — double-press to exit app
     const now=Date.now();
     if(now-_lastBackOnDash<2500){
       openExitConfirmModal();

@@ -91,6 +91,7 @@ function openProgramEditor(programId){
   }
 
   document.body.appendChild(ov);S.modal=ov;
+  ov._backHandler=()=>{closeModal();return true;};
   render();
 
   // Read input fields back into draft (called before re-render or save)
@@ -202,6 +203,7 @@ function openProgramTplEditor(draftProgram,tplIdx,onClose){
   }
 
   document.body.appendChild(ov);S.modal=ov;
+  ov._backHandler=()=>{window.ptCancel();return true;};
   render();
 
   function syncFromInputs(){
@@ -534,6 +536,16 @@ async function openUserCoachDetail(invId){
   </div>`;
   ov._cleanup=()=>stopCoachChatRealtime();
   document.body.appendChild(ov);S.modal=ov;
+  ov._userCoachInvId=invId;
+  ov._userCoachView='hub';
+  ov._backHandler=()=>{
+    if(ov._userCoachView==='chat'){
+      openUserCoachDetail(ov._userCoachInvId);
+      return true;
+    }
+    closeModal();
+    return true;
+  };
   try{
     const{data:inv,error}=await sb.from('coach_invitations').select('*').eq('id',invId).single();
     if(error||!inv)throw error||new Error('not found');
@@ -755,6 +767,14 @@ async function openClientDetail(invId){
     <div id="clientDetailContent" style="display:flex;align-items:center;justify-content:center;padding:40px 0;"><div class="spinner"></div></div>
   </div>`;
   ov._cleanup=()=>{stopCoachChatRealtime();window._clientDetailData=null;window._clientDetailView=null;};
+  ov._backHandler=()=>{
+    if(window._clientDetailData&&window._clientDetailView&&window._clientDetailView!=='hub'){
+      renderClientHub();
+      return true;
+    }
+    closeModal();
+    return true;
+  };
   document.body.appendChild(ov);S.modal=ov;
 
   try{
@@ -1112,6 +1132,10 @@ async function sendCoachChatMessage(inputId){
 async function renderUserCoachChat(invId){
   const content=document.getElementById('userCoachDetailContent');
   if(!content||!sb)return;
+  if(S.modal){
+    S.modal._userCoachInvId=invId;
+    S.modal._userCoachView='chat';
+  }
   content.style.display='block';
   content.style.padding='0';
   content.innerHTML=`<div style="display:flex;justify-content:center;padding:40px 0;"><div class="spinner"></div></div>`;

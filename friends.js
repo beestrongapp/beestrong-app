@@ -191,6 +191,14 @@ async function openFriendProfile(invId){
   ov.className='modal-overlay client-detail-overlay';
   ov.innerHTML=`<div class="modal client-detail-modal"><div id="friendDetailContent" style="display:flex;justify-content:center;padding:40px 0;"><div class="spinner"></div></div></div>`;
   ov._cleanup=()=>{stopFriendChatRealtime();_friendDetail=null;_friendDetailView=null;window._friendDetailView=null;};
+  ov._backHandler=()=>{
+    if(window._friendDetailView&&window._friendDetailView!=='hub'){
+      renderFriendHub();
+      return true;
+    }
+    closeModal();
+    return true;
+  };
   document.body.appendChild(ov);S.modal=ov;
   if(window._bsHistoryReady&&!window._bsHandlingBack&&typeof ensureBackTrap==='function')ensureBackTrap({modal:'friend-detail'});
   try{
