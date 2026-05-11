@@ -1739,6 +1739,7 @@ function updateNotificationBadge(){
 window.openNotificationItem=openNotificationItem;
 
 function toggleMobileFabMenu(){
+  updateFabMenuVisibility();
   const open=document.body.classList.toggle('fab-open');
   document.getElementById('mobileFabBtn')?.setAttribute('aria-expanded',open?'true':'false');
 }
@@ -1750,12 +1751,23 @@ function runFabAction(action){
   closeMobileFabMenu();
   if(action==='exercises'){showScreen('exercises');return;}
   if(action==='friends'){showScreen('friends');return;}
-  if(action==='notifications'){showScreen('notifications');return;}
-  if(action==='coach'){
-    if(isPro()){showScreen('coaches');return;}
+  if(action==='chat'){showScreen('chat');return;}
+  if(action==='clients'){
+    if(S.coachMode&&isCoachAllowed()){showScreen('clients');return;}
     showPaywall('coach');
     return;
   }
+  if(action==='coach'){
+    if(isPro()||S.coachMode){showScreen('coaches');return;}
+    showPaywall('coach');
+    return;
+  }
+}
+function updateFabMenuVisibility(){
+  const canCoach=!!(S.user&&(isPro()||S.coachMode));
+  const canClients=!!(S.user&&S.coachMode&&isCoachAllowed());
+  document.querySelectorAll('.fab-pro-only').forEach(el=>el.classList.toggle('is-hidden',!canCoach));
+  document.querySelectorAll('.fab-coach-only').forEach(el=>el.classList.toggle('is-hidden',!canClients));
 }
 function openMoreMenu(){
   closeMobileFabMenu();
@@ -1785,6 +1797,7 @@ function openMoreMenu(){
 window.toggleMobileFabMenu=toggleMobileFabMenu;
 window.closeMobileFabMenu=closeMobileFabMenu;
 window.runFabAction=runFabAction;
+window.updateFabMenuVisibility=updateFabMenuVisibility;
 window.openMoreMenu=openMoreMenu;
 
 function adminChangelogHtml(){

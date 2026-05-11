@@ -17,12 +17,13 @@ function friendEsc(v){return String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;',
 async function renderFriends(){
   const el=document.getElementById('friendsContent');
   if(!el)return;
+  const bottomBack=`<div class="screen-bottom-back"><button class="btn btn-primary" onclick="showScreen('dashboard')">${t('backBtn')}</button></div>`;
   if(!S.user){
-    el.innerHTML=`<div class="empty-state">${tt({pl:'Zaloguj się, aby używać Friends.',en:'Sign in to use Friends.',de:'Melde dich an, um Friends zu nutzen.',es:'Inicia sesión para usar Friends.'})}</div>`;
+    el.innerHTML=`<div class="empty-state">${tt({pl:'Zaloguj się, aby używać Friends.',en:'Sign in to use Friends.',de:'Melde dich an, um Friends zu nutzen.',es:'Inicia sesión para usar Friends.'})}</div>${bottomBack}`;
     return;
   }
   if(!sb){
-    el.innerHTML=`<div class="empty-state">${tt({pl:'Supabase nie jest dostępny.',en:'Supabase is not available.',de:'Supabase ist nicht verfügbar.',es:'Supabase no está disponible.'})}</div>`;
+    el.innerHTML=`<div class="empty-state">${tt({pl:'Supabase nie jest dostępny.',en:'Supabase is not available.',de:'Supabase ist nicht verfügbar.',es:'Supabase no está disponible.'})}</div>${bottomBack}`;
     return;
   }
   el.innerHTML=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
@@ -30,7 +31,8 @@ async function renderFriends(){
     <button class="btn btn-primary" onclick="searchFriendByEmail()" style="width:auto;padding:12px 16px;">${tt({pl:'Szukaj',en:'Search',de:'Suchen',es:'Buscar'})}</button>
   </div>
   <div id="friendSearchResult"></div>
-  <div id="friendsList"><div style="display:flex;justify-content:center;padding:34px 0;"><div class="spinner"></div></div></div>`;
+  <div id="friendsList"><div style="display:flex;justify-content:center;padding:34px 0;"><div class="spinner"></div></div></div>
+  ${bottomBack}`;
   await loadFriends();
 }
 window.renderFriends=renderFriends;
@@ -71,6 +73,50 @@ function renderFriendsList(){
   }
   list.innerHTML=html;
 }
+
+async function renderChatList(){
+  const el=document.getElementById('chatContent');
+  if(!el)return;
+  const bottomBack=`<div class="screen-bottom-back"><button class="btn btn-primary" onclick="showScreen('dashboard')">${t('backBtn')}</button></div>`;
+  if(!S.user){
+    el.innerHTML=`<div class="empty-state">${tt({pl:'Zaloguj się, aby używać Chat.',en:'Sign in to use Chat.',de:'Melde dich an, um Chat zu nutzen.',es:'Inicia sesión para usar Chat.'})}</div>${bottomBack}`;
+    return;
+  }
+  if(!sb){
+    el.innerHTML=`<div class="empty-state">${tt({pl:'Supabase nie jest dostępny.',en:'Supabase is not available.',de:'Supabase ist nicht verfügbar.',es:'Supabase no está disponible.'})}</div>${bottomBack}`;
+    return;
+  }
+  el.innerHTML=`<div style="display:flex;justify-content:center;padding:34px 0;"><div class="spinner"></div></div>${bottomBack}`;
+  try{
+    const[asInviter,asInvitee]=await Promise.all([
+      sb.from('friend_invitations').select('*').eq('inviter_id',S.user.id).eq('status','accepted').order('created_at',{ascending:false}),
+      sb.from('friend_invitations').select('*').eq('invitee_id',S.user.id).eq('status','accepted').order('created_at',{ascending:false}),
+    ]);
+    if(asInviter.error)throw asInviter.error;
+    if(asInvitee.error)throw asInvitee.error;
+    const byId=new Map([...(asInviter.data||[]),...(asInvitee.data||[])].map(i=>[i.id,i]));
+    const rows=[...byId.values()];
+    _friendInvitations=rows;
+    if(!rows.length){
+      el.innerHTML=`<div class="empty-state">${tt({pl:'Brak aktywnych czatów.',en:'No active chats yet.',de:'Noch keine aktiven Chats.',es:'Sin chats activos todavía.'})}</div>${bottomBack}`;
+      return;
+    }
+    el.innerHTML=`<div class="section-label">Chat</div>${rows.map(inv=>`
+      <div class="client-card" onclick="openFriendDirectChat('${friendEsc(inv.id)}')">
+        <div style="width:40px;height:40px;border-radius:50%;background:var(--accent);color:var(--btn-text);display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0;">${friendEsc(friendName(inv))[0]?.toUpperCase()||'C'}</div>
+        <div class="client-card-info"><div class="client-card-name">${friendEsc(friendName(inv))}</div><div class="client-card-meta">${friendEsc(friendEmail(inv)||'')}</div></div>
+      </div>`).join('')}${bottomBack}`;
+  }catch(e){
+    el.innerHTML=`<div style="color:var(--red);padding:12px;">${friendEsc(e.message||'Chat unavailable')}</div>${bottomBack}`;
+  }
+}
+window.renderChatList=renderChatList;
+
+async function openFriendDirectChat(invId){
+  await openFriendProfile(invId);
+  await renderFriendChat();
+}
+window.openFriendDirectChat=openFriendDirectChat;
 
 function friendCardHtml(inv,needsAction){
   const name=friendEsc(friendName(inv));

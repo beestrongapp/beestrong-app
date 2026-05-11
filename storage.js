@@ -190,6 +190,7 @@ function showScreen(name){
   if(name==='profile')renderSettings();
   if(name==='notifications')renderNotifications();
   if(name==='friends')renderFriends();
+  if(name==='chat')renderChatList();
   if(name==='clients')renderClients();
   if(name==='coaches')renderUserCoaches();
   if(name==='admin')renderAdmin();
