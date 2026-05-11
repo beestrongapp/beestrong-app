@@ -1289,20 +1289,24 @@ function renderSettings(){
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="color:var(--text3);flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>`;
   };
+  const subscriptionTitle=tt({pl:'Subskrypcja',en:'Subscription',de:'Abo',es:'Suscripción'});
+  const preferencesTitle=tt({pl:'Preferencje',en:'Preferences',de:'Einstellungen',es:'Preferencias'});
+  const contactTitle=tt({pl:'Kontakt',en:'Contact',de:'Kontakt',es:'Contacto'});
+  const whatsNewTitle=tt({pl:'Co nowego',en:"What's new",de:'Was ist neu',es:'Novedades'});
+  const privacyTitle=tt({pl:'Polityka prywatności',en:'Privacy Policy',de:'Datenschutz',es:'Política de privacidad'});
   window._profileSections={
     login:{title:tt({pl:'Login and data',en:'Login and data',de:'Login und Daten',es:'Login y datos'}),rows:null},
-    subscription:{title:'Subscription',rows:null},
-    preferences:{title:'Preferences',rows:null},
+    subscription:{title:subscriptionTitle,rows:null},
+    preferences:{title:preferencesTitle,rows:null},
     measurements:{title:tt({pl:'Body measurements',en:'Body measurements',de:'Körpermaße',es:'Medidas corporales'}),rows:null},
-    contact:{title:'Contact',rows:null},
-    whatsnew:{title:"What's new",rows:null},
-    privacy:{title:'Privacy Policy',rows:null},
+    contact:{title:contactTitle,rows:null},
+    whatsnew:{title:whatsNewTitle,rows:null},
+    privacy:{title:privacyTitle,rows:null},
   };
-  const hubRow=(id,label,value,path)=>`<div onclick="openProfileSection('${id}')" style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);cursor:pointer;margin-bottom:10px;">
+  const hubRow=(id,label,path)=>`<div onclick="openProfileSection('${id}')" style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);cursor:pointer;margin-bottom:10px;">
         <div style="width:38px;height:38px;border-radius:10px;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;color:var(--accent);flex-shrink:0;">${svg(path)}</div>
         <div style="flex:1;min-width:0;">
           <div style="font-size:15px;font-weight:800;">${label}</div>
-          <div style="font-size:12px;color:var(--text2);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${value}</div>
         </div>
       </div>`;
 
@@ -1320,11 +1324,9 @@ function renderSettings(){
     {key:'account',label:loginTitle,value:S.user?`${S.user.email} · ${dataState}`:`${accountState} · ${dataState}`,icon:svg(icon.account),action:S.user?'showAccountModal':'showAuthModal'},
     {key:'name',label:lang==='pl'?'Imię':'Name',value:localStorage.getItem('bs-username')||'—',icon:svg(icon.name),action:'openSettingsName'},
   ];
-  const subscriptionTitle='Subscription';
   const subscriptionRows=[
     {key:'subscription',label:subscriptionTitle,value:`${subscriptionLabel} · ${tt({pl:'zobacz porównanie planów',en:'view plan comparison',de:'Pläne vergleichen',es:'ver comparación'})}`,icon:svg(icon.card),action:'openSubscriptionModal'},
   ];
-  const preferencesTitle='Preferences';
   const preferenceRows=[
     {key:'layout',label:tt({pl:'App Layout',en:'App layout',de:'App-Layout',es:'Layout de app'}),value:S.layoutMode==='minimal'?tt({pl:'Minimal',en:'Minimal',de:'Minimal',es:'Minimal'}):tt({pl:'Standard',en:'Standard',de:'Standard',es:'Estándar'}),icon:svg(icon.layout),action:'openSettingsLayout'},
     {key:'theme',label:tt({pl:'Theme colour',en:'Theme colour',de:'Farbschema',es:'Tema'}),value:isDark?t('darkTheme'):t('lightTheme'),icon:svg(icon.theme),action:'openSettingsTheme'},
@@ -1349,9 +1351,9 @@ function renderSettings(){
   window._profileSections.subscription={title:subscriptionTitle,rows:subscriptionRows};
   window._profileSections.preferences={title:preferencesTitle,rows:preferenceRows};
   window._profileSections.measurements={title:measurementsTitle,rows:measurementRows};
-  window._profileSections.contact={title:'Contact',rows:contactRows};
-  window._profileSections.whatsnew={title:"What's new",rows:whatsNewRows};
-  window._profileSections.privacy={title:'Privacy Policy',rows:privacyRows};
+  window._profileSections.contact={title:contactTitle,rows:contactRows};
+  window._profileSections.whatsnew={title:whatsNewTitle,rows:whatsNewRows};
+  window._profileSections.privacy={title:privacyTitle,rows:privacyRows};
 
   const adminChangelog=isAdmin()?adminChangelogHtml():'';
   const versionLbl=`<div style="margin:24px 0 40px;padding:12px;text-align:center;font-size:11px;color:var(--text3);">BeeStrong Gym Tracker · v1.0</div>`;
@@ -1375,15 +1377,15 @@ function renderSettings(){
 
   el.innerHTML=proCardHtml()
     +`<div style="margin-bottom:38px;">`
-    +hubRow('login',loginTitle,S.user?S.user.email:dataState,icon.account)
-    +hubRow('subscription',subscriptionTitle,`${subscriptionLabel} · ${tt({pl:'plan konta',en:'account plan',de:'Kontoplan',es:'plan de cuenta'})}`,icon.card)
+    +hubRow('login',loginTitle,icon.account)
+    +hubRow('subscription',subscriptionTitle,icon.card)
     +`</div><div style="margin-bottom:38px;">`
-    +hubRow('preferences',preferencesTitle,`${S.layoutMode==='minimal'?'Minimal':'Standard'} · ${isDark?t('darkTheme'):t('lightTheme')} · ${S.units==='imperial'?'Imperial':'Metric'}`,icon.layout)
-    +hubRow('measurements',measurementsTitle,measValue,icon.measure)
+    +hubRow('preferences',preferencesTitle,icon.layout)
+    +hubRow('measurements',measurementsTitle,icon.measure)
     +`</div><div style="margin-bottom:8px;">`
-    +hubRow('contact','Contact',tt({pl:'Wkrótce',en:'Coming soon',de:'Bald verfügbar',es:'Próximamente'}),icon.contact)
-    +hubRow('whatsnew',"What's new",tt({pl:'Zmiany z ostatniego update',en:'Latest update notes',de:'Letzte Update-Notizen',es:'Notas del último update'}),icon.news)
-    +hubRow('privacy','Privacy Policy',tt({pl:'Wkrótce',en:'Coming soon',de:'Bald verfügbar',es:'Próximamente'}),icon.privacy)
+    +hubRow('contact',contactTitle,icon.contact)
+    +hubRow('whatsnew',whatsNewTitle,icon.news)
+    +hubRow('privacy',privacyTitle,icon.privacy)
     +`</div>`
     +adminChangelog
     +versionLbl;
@@ -1441,12 +1443,14 @@ function profileSubscriptionHtml(){
       tt({pl:'Podstawowe treningi i pomiary',en:'Basic workouts and measurements',de:'Basis-Trainings und Messungen',es:'Entrenos y medidas básicos'}),
       tt({pl:'Brak cloud backup',en:'No cloud backup',de:'Kein Cloud-Backup',es:'Sin backup en nube'}),
     ]},
-    {name:'PRO',sub:tt({pl:'Backup i funkcje premium',en:'Backup and premium tools',de:'Backup und Premium-Funktionen',es:'Backup y funciones premium'}),items:[
+    {name:'PRO',sub:tt({pl:'Jednorazowy zakup',en:'One-time purchase',de:'Einmalkauf',es:'Compra única'}),items:[
+      tt({pl:'Płacisz raz i zachowujesz dostęp PRO',en:'Pay once and keep PRO access',de:'Einmal zahlen und PRO-Zugang behalten',es:'Pagas una vez y mantienes PRO'}),
       tt({pl:'Cloud backup dla treningów, szablonów i pomiarów',en:'Cloud backup for workouts, templates and measurements',de:'Cloud-Backup für Trainings, Vorlagen und Messungen',es:'Backup de entrenos, plantillas y medidas'}),
       tt({pl:'Pełny dostęp do funkcji PRO',en:'Full PRO feature access',de:'Voller PRO-Zugriff',es:'Acceso completo PRO'}),
       tt({pl:'Synchronizacja po ważnych akcjach',en:'Sync after important actions',de:'Sync nach wichtigen Aktionen',es:'Sync tras acciones importantes'}),
     ]},
-    {name:'COACH',sub:tt({pl:'PRO + praca z klientami',en:'PRO + client tools',de:'PRO + Klienten-Tools',es:'PRO + herramientas de clientes'}),items:[
+    {name:'COACH',sub:tt({pl:'Miesięczna subskrypcja',en:'Monthly subscription',de:'Monatliches Abo',es:'Suscripción mensual'}),items:[
+      tt({pl:'Subskrypcja odnawiana miesięcznie',en:'Monthly recurring subscription',de:'Monatlich wiederkehrendes Abo',es:'Suscripción mensual recurrente'}),
       tt({pl:'Wszystko z PRO',en:'Everything in PRO',de:'Alles aus PRO',es:'Todo lo de PRO'}),
       tt({pl:'Klienci, przypisywanie planów i programów',en:'Clients, assignments and programs',de:'Klienten, Zuweisungen und Programme',es:'Clientes, asignaciones y programas'}),
       tt({pl:'Chat coach-klient i podgląd postępów',en:'Coach-client chat and progress view',de:'Coach-Klient-Chat und Fortschrittsansicht',es:'Chat coach-cliente y vista de progreso'}),
