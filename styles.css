@@ -48,7 +48,7 @@ body.light .mobile-nav-item.active{color:#f0cf78;}
 .mobile-nav-item svg{width:22px;height:22px;flex-shrink:0;}
 .mobile-nav-item .nav-label{max-width:52px;overflow:hidden;text-overflow:ellipsis;}
 .mobile-fab-btn{width:68px;height:68px;border-radius:50%;border:1px solid rgba(255,255,255,0.18);background:radial-gradient(circle at 35% 30%,#f5d47b,var(--accent));color:#1a1a1af5;font-size:13px;line-height:1;font-weight:900;display:flex;align-items:center;justify-content:center;align-self:flex-start;margin:-32px 4px 0;box-shadow:0 12px 32px rgba(201,169,110,0.32),0 0 0 8px rgba(201,169,110,0.08);cursor:pointer;transition:transform 0.22s ease,box-shadow 0.22s ease;z-index:103;font-family:inherit;flex:0 0 68px;text-transform:uppercase;letter-spacing:0;}
-body.light .mobile-fab-btn{background:#31405c;color:#bdc1cb;box-shadow:0 12px 34px rgba(50,130,190,0.46),0 0 0 10px rgba(49,105,138,0.22);}
+body.light .mobile-fab-btn{background:#31405c;color:#bdc1cb;box-shadow:0 12px 34px rgba(49,105,138,0.46),0 0 0 10px rgba(49,105,138,0.22);}
 .mobile-fab-btn span{display:block;transform:none;transition:transform 0.22s ease;}
 body.fab-open .mobile-fab-btn{transform:scale(1.04);}
 body.fab-open .mobile-fab-btn span{transform:none;}
