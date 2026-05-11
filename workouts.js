@@ -1206,7 +1206,7 @@ function openAddMeasure(){
     const date=document.getElementById('measDate').value;if(!date)return;
     const rec={};MEASURE_TYPES.forEach(mt=>{const v=document.getElementById('meas_'+mt.key).value;if(v!=='')rec[mt.key]=mt.key==='weight_k'?inputToKg(parseFloat(v)):inputToCm(parseFloat(v));});
     if(!Object.keys(rec).length)return;
-    S.measurements[date]=rec;saveAll();if(typeof syncQueuedCloudChanges==='function')syncQueuedCloudChanges();closeModal();renderSettings();openSettingsMeasurements();
+    S.measurements[date]=rec;saveAll();if(typeof syncQueuedCloudChanges==='function')syncQueuedCloudChanges();closeModal();renderSettings();if(typeof isProfileMeasurementsSection!=='function'||!isProfileMeasurementsSection())openSettingsMeasurements();
   };
   document.body.appendChild(ov);S.modal=ov;
 }
@@ -1216,7 +1216,7 @@ function deleteMeasurement(date){
   delete S.measurements[date];
   saveAll();if(typeof syncQueuedCloudChanges==='function')syncQueuedCloudChanges();
   renderSettings();
-  openSettingsMeasurements();
+  if(typeof isProfileMeasurementsSection!=='function'||!isProfileMeasurementsSection())openSettingsMeasurements();
 }
 
 function showMonthChart(){

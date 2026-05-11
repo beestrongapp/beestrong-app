@@ -1304,7 +1304,6 @@ function renderSettings(){
           <div style="font-size:15px;font-weight:800;">${label}</div>
           <div style="font-size:12px;color:var(--text2);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${value}</div>
         </div>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" style="color:var(--text3);flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>`;
 
   const accountState=S.user
@@ -1360,24 +1359,25 @@ function renderSettings(){
   if(_profileSectionView){
     const section=window._profileSections?.[_profileSectionView];
     if(section){
-      el.innerHTML=`<div style="margin-bottom:14px;">
-        <button class="btn btn-ghost" onclick="backToProfileHub()" style="width:auto;padding:9px 13px;font-size:13px;">${tt({pl:'Wróć',en:'Back',de:'Zurück',es:'Volver'})}</button>
-      </div>
-      <div style="font-size:20px;font-weight:900;margin-bottom:14px;">${section.title}</div>
-      <div style="border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border);background:var(--bg2);">
-        ${(section.rows||[]).map((row,i)=>profileRow(row,i)).join('')}
-      </div>
-      ${versionLbl}`;
+      const backBar=`<div class="settings-bottom-bar"><button class="btn btn-primary" onclick="backToProfileHub()" style="width:100%;font-size:15px;padding:14px;">${tt({pl:'Wróć',en:'Back',de:'Zurück',es:'Volver'})}</button></div>`;
+      let sectionBody='';
+      if(_profileSectionView==='login')sectionBody=profileLoginDataHtml(dataState);
+      else if(_profileSectionView==='subscription')sectionBody=profileSubscriptionHtml();
+      else if(_profileSectionView==='measurements')sectionBody=profileMeasurementsHtml();
+      else if(['contact','whatsnew','privacy'].includes(_profileSectionView))sectionBody=profileInfoSectionHtml(_profileSectionView);
+      else sectionBody=`<div style="border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border);background:var(--bg2);">${(section.rows||[]).map((row,i)=>profileRow(row,i)).join('')}</div>`;
+      el.innerHTML=`<div style="font-size:20px;font-weight:900;margin-bottom:18px;">${section.title}</div>${sectionBody}<div style="height:96px;"></div>${versionLbl}${backBar}`;
+      if(_profileSectionView==='measurements')renderBodyCharts();
       return;
     }
     _profileSectionView=null;
   }
 
   el.innerHTML=proCardHtml()
-    +`<div style="margin-bottom:26px;">`
+    +`<div style="margin-bottom:38px;">`
     +hubRow('login',loginTitle,S.user?S.user.email:dataState,icon.account)
     +hubRow('subscription',subscriptionTitle,`${subscriptionLabel} · ${tt({pl:'plan konta',en:'account plan',de:'Kontoplan',es:'plan de cuenta'})}`,icon.card)
-    +`</div><div style="margin-bottom:26px;">`
+    +`</div><div style="margin-bottom:38px;">`
     +hubRow('preferences',preferencesTitle,`${S.layoutMode==='minimal'?'Minimal':'Standard'} · ${isDark?t('darkTheme'):t('lightTheme')} · ${S.units==='imperial'?'Imperial':'Metric'}`,icon.layout)
     +hubRow('measurements',measurementsTitle,measValue,icon.measure)
     +`</div><div style="margin-bottom:8px;">`
@@ -1402,6 +1402,104 @@ function backToProfileHub(){
 }
 window.openProfileSection=openProfileSection;
 window.backToProfileHub=backToProfileHub;
+
+function profileActionCard(title,subtitle,action,extraStyle=''){
+  return `<div onclick="${action}" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;cursor:pointer;margin-bottom:10px;${extraStyle}">
+    <div style="min-width:0;">
+      <div style="font-size:14px;font-weight:800;">${title}</div>
+      <div style="font-size:12px;color:var(--text2);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${subtitle}</div>
+    </div>
+  </div>`;
+}
+
+function profileLoginDataHtml(dataState){
+  if(!S.user){
+    return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;margin-bottom:14px;">
+      <div style="font-size:14px;font-weight:800;margin-bottom:6px;">${tt({pl:'Nie jesteś zalogowany',en:'You are signed out',de:'Du bist abgemeldet',es:'No has iniciado sesión'})}</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.45;margin-bottom:14px;">${dataState}</div>
+      <button class="btn btn-primary" onclick="showAuthModal()" style="width:100%;">${tt({pl:'Zaloguj się',en:'Log in',de:'Einloggen',es:'Login'})}</button>
+    </div>`;
+  }
+  const cloudHint=cloudSyncAllowed()
+    ?tt({pl:'Backup dostępny dla tego konta',en:'Backup available for this account',de:'Backup für dieses Konto verfügbar',es:'Backup disponible para esta cuenta'})
+    :tt({pl:'Cloud backup wymaga PRO / COACH',en:'Cloud backup requires PRO / COACH',de:'Cloud-Backup benötigt PRO / COACH',es:'Cloud backup requiere PRO / COACH'});
+  return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;margin-bottom:18px;">
+    <div style="font-size:13px;color:var(--text3);font-weight:800;text-transform:uppercase;margin-bottom:8px;">${tt({pl:'Zalogowany jako',en:'Signed in as',de:'Angemeldet als',es:'Sesión iniciada como'})}</div>
+    <div style="font-size:15px;font-weight:800;word-break:break-all;">${S.user.email||''}</div>
+    <div style="font-size:12px;color:var(--text2);margin-top:6px;">${dataState}</div>
+  </div>
+  ${profileActionCard(tt({pl:'Imię',en:'Name',de:'Name',es:'Nombre'}),localStorage.getItem('bs-username')||'—','openSettingsName()')}
+  ${profileActionCard(tt({pl:'Wyślij do chmury',en:'Upload to cloud',de:'In Cloud hochladen',es:'Subir a la nube'}),cloudHint,'profileUploadToCloud()')}
+  ${profileActionCard(tt({pl:'Pobierz z chmury',en:'Download from cloud',de:'Aus Cloud herunterladen',es:'Descargar de la nube'}),tt({pl:'Nadpisuje lokalne dane chmurą',en:'Overwrites local with cloud data',de:'Überschreibt lokal mit Cloud-Daten',es:'Sobrescribe local con datos de nube'}),'profileDownloadFromCloud()')}
+  <button class="btn btn-danger" onclick="profileSignOut()" style="width:100%;margin-top:8px;">${tt({pl:'Wyloguj się',en:'Sign out',de:'Abmelden',es:'Cerrar sesión'})}</button>`;
+}
+
+function profileSubscriptionHtml(){
+  const plans=[
+    {name:'FREE',sub:tt({pl:'Dane lokalne',en:'Local data',de:'Lokale Daten',es:'Datos locales'}),items:[
+      tt({pl:'Dane zapisane tylko na urządzeniu',en:'Data stored on this device only',de:'Daten nur auf diesem Gerät',es:'Datos solo en este dispositivo'}),
+      tt({pl:'Podstawowe treningi i pomiary',en:'Basic workouts and measurements',de:'Basis-Trainings und Messungen',es:'Entrenos y medidas básicos'}),
+      tt({pl:'Brak cloud backup',en:'No cloud backup',de:'Kein Cloud-Backup',es:'Sin backup en nube'}),
+    ]},
+    {name:'PRO',sub:tt({pl:'Backup i funkcje premium',en:'Backup and premium tools',de:'Backup und Premium-Funktionen',es:'Backup y funciones premium'}),items:[
+      tt({pl:'Cloud backup dla treningów, szablonów i pomiarów',en:'Cloud backup for workouts, templates and measurements',de:'Cloud-Backup für Trainings, Vorlagen und Messungen',es:'Backup de entrenos, plantillas y medidas'}),
+      tt({pl:'Pełny dostęp do funkcji PRO',en:'Full PRO feature access',de:'Voller PRO-Zugriff',es:'Acceso completo PRO'}),
+      tt({pl:'Synchronizacja po ważnych akcjach',en:'Sync after important actions',de:'Sync nach wichtigen Aktionen',es:'Sync tras acciones importantes'}),
+    ]},
+    {name:'COACH',sub:tt({pl:'PRO + praca z klientami',en:'PRO + client tools',de:'PRO + Klienten-Tools',es:'PRO + herramientas de clientes'}),items:[
+      tt({pl:'Wszystko z PRO',en:'Everything in PRO',de:'Alles aus PRO',es:'Todo lo de PRO'}),
+      tt({pl:'Klienci, przypisywanie planów i programów',en:'Clients, assignments and programs',de:'Klienten, Zuweisungen und Programme',es:'Clientes, asignaciones y programas'}),
+      tt({pl:'Chat coach-klient i podgląd postępów',en:'Coach-client chat and progress view',de:'Coach-Klient-Chat und Fortschrittsansicht',es:'Chat coach-cliente y vista de progreso'}),
+    ]},
+  ];
+  return `<div style="display:grid;gap:12px;">${plans.map(p=>`<div style="border:1px solid var(--border);background:var(--bg2);border-radius:12px;padding:15px;">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:8px;">
+      <div style="font-size:16px;font-weight:900;color:var(--accent);">${p.name}</div>
+      <div style="font-size:11px;color:var(--text3);font-weight:800;text-transform:uppercase;">${p.sub}</div>
+    </div>
+    ${p.items.map(it=>`<div style="font-size:13px;color:var(--text2);line-height:1.45;padding:6px 0;border-top:1px solid var(--border);">${it}</div>`).join('')}
+  </div>`).join('')}</div>`;
+}
+
+function profileMeasurementsHtml(){
+  return `${bodyMeasurementsHtml(true)}<button class="btn btn-primary" onclick="openAddMeasure()" style="width:100%;font-size:15px;padding:14px;margin-top:14px;">+ ${t('addMeasure')}</button>`;
+}
+
+function profileInfoSectionHtml(id){
+  const body={
+    contact:tt({pl:'Sekcja Contact zostanie dodana później.',en:'Contact will be added later.',de:'Kontakt wird später hinzugefügt.',es:'Contact se añadirá más tarde.'}),
+    whatsnew:tt({pl:'Tutaj będzie opis zmian z ostatniego update.',en:'Latest update notes will live here.',de:'Hier erscheinen die letzten Update-Notizen.',es:'Aquí estarán las notas del último update.'}),
+    privacy:tt({pl:'Privacy Policy zostanie dodana później.',en:'Privacy Policy will be added later.',de:'Privacy Policy wird später hinzugefügt.',es:'Privacy Policy se añadirá más tarde.'}),
+  }[id]||'';
+  return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;font-size:13px;color:var(--text2);line-height:1.5;">${body}</div>`;
+}
+
+async function profileUploadToCloud(){
+  if(!cloudSyncAllowed())return showSyncToast(tt({pl:'Cloud sync jest tylko dla PRO / COACH.',en:'Cloud sync is only for PRO / COACH.',de:'Cloud Sync ist nur für PRO / COACH.',es:'Cloud sync es solo para PRO / COACH.'}),'error');
+  showSyncToast(tt({pl:'Wysyłanie...',en:'Uploading...',de:'Hochladen...',es:'Subiendo...'}));
+  if(typeof queueAllCloudData==='function')queueAllCloudData();
+  const r=await syncQueuedCloudChanges();
+  if(r.success)showSyncToast(tt({pl:'Wysłano ✓',en:'Uploaded ✓',de:'Hochgeladen ✓',es:'Subido ✓'}),'success');
+  else showSyncToast((tt({pl:'Błąd: ',en:'Error: ',de:'Fehler: ',es:'Error: '}))+(r.error||''),'error');
+}
+async function profileDownloadFromCloud(){
+  if(!cloudSyncAllowed())return showSyncToast(tt({pl:'Cloud sync jest tylko dla PRO / COACH.',en:'Cloud sync is only for PRO / COACH.',de:'Cloud Sync ist nur für PRO / COACH.',es:'Cloud sync es solo para PRO / COACH.'}),'error');
+  if(!confirm(tt({pl:'Pobrać dane z chmury? Nadpisze lokalne.',en:'Download cloud data? This overwrites local data.',de:'Cloud-Daten herunterladen? Lokale Daten werden überschrieben.',es:'¿Descargar datos de la nube? Sobrescribe los locales.'})))return;
+  showSyncToast(tt({pl:'Pobieranie...',en:'Downloading...',de:'Herunterladen...',es:'Descargando...'}));
+  const r=await pullAllFromCloud();
+  if(r.success)showSyncToast(tt({pl:'Pobrano ✓',en:'Downloaded ✓',de:'Heruntergeladen ✓',es:'Descargado ✓'}),'success');
+  else showSyncToast((tt({pl:'Błąd: ',en:'Error: ',de:'Fehler: ',es:'Error: '}))+(r.error||''),'error');
+}
+async function profileSignOut(){
+  await bsSignOut();
+  _profileSectionView=null;
+  renderSettings();
+}
+window.profileUploadToCloud=profileUploadToCloud;
+window.profileDownloadFromCloud=profileDownloadFromCloud;
+window.profileSignOut=profileSignOut;
+function isProfileMeasurementsSection(){return _profileSectionView==='measurements';}
+window.isProfileMeasurementsSection=isProfileMeasurementsSection;
 
 function openSubscriptionModal(){
   closeModal();
