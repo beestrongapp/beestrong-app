@@ -1214,6 +1214,7 @@ window.startPlannedWorkout=startPlannedWorkout;
 window.switchCalTab=switchCalTab;
 
 // ===== PROFILE =====
+let _profileSectionView=null;
 function renderSettings(){
   const el=document.getElementById('settingsContent');
   if(!el)return;
@@ -1356,45 +1357,51 @@ function renderSettings(){
   const adminChangelog=isAdmin()?adminChangelogHtml():'';
   const versionLbl=`<div style="margin:24px 0 40px;padding:12px;text-align:center;font-size:11px;color:var(--text3);">BeeStrong Gym Tracker · v1.0</div>`;
 
+  if(_profileSectionView){
+    const section=window._profileSections?.[_profileSectionView];
+    if(section){
+      el.innerHTML=`<div style="margin-bottom:14px;">
+        <button class="btn btn-ghost" onclick="backToProfileHub()" style="width:auto;padding:9px 13px;font-size:13px;">${tt({pl:'Wróć',en:'Back',de:'Zurück',es:'Volver'})}</button>
+      </div>
+      <div style="font-size:20px;font-weight:900;margin-bottom:14px;">${section.title}</div>
+      <div style="border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border);background:var(--bg2);">
+        ${(section.rows||[]).map((row,i)=>profileRow(row,i)).join('')}
+      </div>
+      ${versionLbl}`;
+      return;
+    }
+    _profileSectionView=null;
+  }
+
   el.innerHTML=proCardHtml()
+    +`<div style="margin-bottom:26px;">`
     +hubRow('login',loginTitle,S.user?S.user.email:dataState,icon.account)
     +hubRow('subscription',subscriptionTitle,`${subscriptionLabel} · ${tt({pl:'plan konta',en:'account plan',de:'Kontoplan',es:'plan de cuenta'})}`,icon.card)
+    +`</div><div style="margin-bottom:26px;">`
     +hubRow('preferences',preferencesTitle,`${S.layoutMode==='minimal'?'Minimal':'Standard'} · ${isDark?t('darkTheme'):t('lightTheme')} · ${S.units==='imperial'?'Imperial':'Metric'}`,icon.layout)
     +hubRow('measurements',measurementsTitle,measValue,icon.measure)
+    +`</div><div style="margin-bottom:8px;">`
     +hubRow('contact','Contact',tt({pl:'Wkrótce',en:'Coming soon',de:'Bald verfügbar',es:'Próximamente'}),icon.contact)
     +hubRow('whatsnew',"What's new",tt({pl:'Zmiany z ostatniego update',en:'Latest update notes',de:'Letzte Update-Notizen',es:'Notas del último update'}),icon.news)
     +hubRow('privacy','Privacy Policy',tt({pl:'Wkrótce',en:'Coming soon',de:'Bald verfügbar',es:'Próximamente'}),icon.privacy)
+    +`</div>`
     +adminChangelog
     +versionLbl;
 }
 
 function openProfileSection(id){
-  const section=window._profileSections?.[id];
-  if(!section)return;
-  closeModal();
-  const ov=document.createElement('div');ov.className='modal-overlay';
-  const rows=section.rows||[];
-  ov.innerHTML=`<div class="modal" style="max-height:88vh;display:flex;flex-direction:column;">
-    <div class="modal-handle"></div>
-    <div class="modal-title">${section.title}</div>
-    <div style="overflow-y:auto;flex:1;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--bg2);">
-      ${rows.map((row,i)=>profileSectionModalRow(row,i)).join('')}
-    </div>
-  </div>`;
-  ov.addEventListener('click',e=>{if(e.target===ov)closeModal();});
-  document.body.appendChild(ov);S.modal=ov;
+  if(!window._profileSections?.[id])return;
+  _profileSectionView=id;
+  renderSettings();
+  document.querySelector('.main')?.scrollTo?.({top:0,behavior:'smooth'});
 }
-function profileSectionModalRow(row,i){
-  return `<div onclick="${row.action}()" style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--bg2);cursor:pointer;${i>0?'border-top:1px solid var(--border);':''}">
-    <div style="width:36px;height:36px;border-radius:10px;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;color:var(--accent);flex-shrink:0;">${row.icon}</div>
-    <div style="flex:1;min-width:0;">
-      <div style="font-size:14px;font-weight:700;">${row.label}</div>
-      <div style="font-size:12px;color:var(--text2);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${row.value}</div>
-    </div>
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="color:var(--text3);flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
-  </div>`;
+function backToProfileHub(){
+  _profileSectionView=null;
+  renderSettings();
+  document.querySelector('.main')?.scrollTo?.({top:0,behavior:'smooth'});
 }
 window.openProfileSection=openProfileSection;
+window.backToProfileHub=backToProfileHub;
 
 function openSubscriptionModal(){
   closeModal();
