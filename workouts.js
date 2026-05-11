@@ -314,7 +314,7 @@ const DEFAULT_TEMPLATES=[
 
 // When false: all Pro gates disabled (everyone has full access). Flip to true when wiring IAP for release.
 const PAYWALL_ACTIVE=true;
-const PRO_PRICE='£4.99';
+const PRO_PRICE='£5.99';
 
 // Emails that may enable Coach Mode. Add/remove here as needed.
 const COACH_WHITELIST=[
@@ -613,9 +613,9 @@ function showCoachModeInfo(){
       </div>`).join('')}
     </div>
     <div style="background:rgba(0,200,83,0.08);border:1px solid rgba(0,200,83,0.30);border-radius:10px;padding:12px 14px;margin-bottom:18px;font-size:12px;color:var(--text2);line-height:1.5;">
-      ${tt({pl:'Coach Mode jest dostępny dla wybranych trenerów. Skontaktuj się z nami pod adresem',en:'Coach Mode is available for selected trainers. Contact us at',de:'Coach Mode ist für ausgewählte Trainer verfügbar. Kontaktiere uns unter',es:'El modo Coach está disponible para entrenadores seleccionados. Contáctanos en'})}
-      <strong style="color:#00e676;">beestrong@beestrongapp.com</strong>
+      ${tt({pl:'Coach Mode to subskrypcja dla trenerów za £19.99 miesięcznie. Odblokowuje klientów, programy, chat i podgląd progresu.',en:'Coach Mode is a trainer subscription at £19.99 per month. It unlocks clients, programs, chat, and progress visibility.',de:'Coach Mode ist ein Trainer-Abo fuer £19.99 pro Monat. Es schaltet Kunden, Programme, Chat und Fortschrittsansicht frei.',es:'Coach Mode es una suscripcion para entrenadores por £19.99 al mes. Desbloquea clientes, programas, chat y vista de progreso.'})}
     </div>
+    <button class="btn btn-primary" onclick="subscribeCoach()" style="width:100%;margin-bottom:10px;">SUBSCRIBE</button>
     <button class="btn btn-ghost" onclick="closeModal()">${tt({pl:'Zamknij',en:'Close',de:'Schließen',es:'Cerrar'})}</button>
   </div>`;
   document.body.appendChild(ov);S.modal=ov;

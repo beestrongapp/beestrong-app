@@ -1456,30 +1456,31 @@ function profileLoginDataHtml(dataState){
 
 function profileSubscriptionHtml(){
   const plans=[
-    {name:'FREE',sub:tt({pl:'Dane lokalne',en:'Local data',de:'Lokale Daten',es:'Datos locales'}),items:[
-      tt({pl:'Dane zapisane tylko na urządzeniu',en:'Data stored on this device only',de:'Daten nur auf diesem Gerät',es:'Datos solo en este dispositivo'}),
-      tt({pl:'Podstawowe treningi i pomiary',en:'Basic workouts and measurements',de:'Basis-Trainings und Messungen',es:'Entrenos y medidas básicos'}),
-      tt({pl:'Brak cloud backup',en:'No cloud backup',de:'Kein Cloud-Backup',es:'Sin backup en nube'}),
+    {name:'FREE',price:'£0',sub:tt({pl:'Start bez zobowiązań',en:'Start without commitment',de:'Ohne Verpflichtung starten',es:'Empieza sin compromiso'}),cta:null,items:[
+      tt({pl:'Podstawowy tracker treningów, historia i kalendarz.',en:'Core workout tracking, history, and calendar.',de:'Basis-Workout-Tracking, Historie und Kalender.',es:'Registro basico, historial y calendario.'}),
+      tt({pl:'Szablony treningowe, podstawowe pomiary i tryb offline.',en:'Workout templates, basic measurements, and offline mode.',de:'Trainingsvorlagen, Basismessungen und Offline-Modus.',es:'Plantillas, medidas basicas y modo offline.'}),
+      tt({pl:'Dodawanie znajomych i dane zapisane lokalnie na urządzeniu.',en:'Add friends and keep data stored locally on your device.',de:'Freunde hinzufuegen und Daten lokal auf dem Geraet speichern.',es:'Anade amigos y guarda datos localmente en tu dispositivo.'}),
     ]},
-    {name:'PRO',sub:tt({pl:'Jednorazowy zakup',en:'One-time purchase',de:'Einmalkauf',es:'Compra única'}),items:[
-      tt({pl:'Płacisz raz i zachowujesz dostęp PRO',en:'Pay once and keep PRO access',de:'Einmal zahlen und PRO-Zugang behalten',es:'Pagas una vez y mantienes PRO'}),
-      tt({pl:'Cloud backup dla treningów, szablonów i pomiarów',en:'Cloud backup for workouts, templates and measurements',de:'Cloud-Backup für Trainings, Vorlagen und Messungen',es:'Backup de entrenos, plantillas y medidas'}),
-      tt({pl:'Pełny dostęp do funkcji PRO',en:'Full PRO feature access',de:'Voller PRO-Zugriff',es:'Acceso completo PRO'}),
-      tt({pl:'Synchronizacja po ważnych akcjach',en:'Sync after important actions',de:'Sync nach wichtigen Aktionen',es:'Sync tras acciones importantes'}),
+    {name:'PRO',price:'£5.99',sub:tt({pl:'Jednorazowy zakup',en:'One-time purchase',de:'Einmalkauf',es:'Compra unica'}),cta:{label:'BUY',action:'buyPro()'},items:[
+      tt({pl:'Wszystko z FREE oraz pełna appka dla osoby trenującej solo.',en:'Everything in FREE plus the full solo training experience.',de:'Alles aus FREE plus die volle Solo-Trainingserfahrung.',es:'Todo lo de FREE mas la experiencia completa para entrenar solo.'}),
+      tt({pl:'Nielimitowane szablony, pełna baza ćwiczeń i filtrowanie po sprzęcie.',en:'Unlimited templates, full exercise database, and equipment filters.',de:'Unbegrenzte Vorlagen, volle Uebungsdatenbank und Geraetefilter.',es:'Plantillas ilimitadas, base completa de ejercicios y filtros por equipo.'}),
+      tt({pl:'Zaawansowana analityka, pełne pomiary ciała, eksport i cloud backup.',en:'Advanced analytics, full body measurements, export, and cloud backup.',de:'Erweiterte Analysen, alle Koerpermessungen, Export und Cloud-Backup.',es:'Analitica avanzada, todas las medidas corporales, exportacion y backup en nube.'}),
+      tt({pl:'Płacisz raz i zachowujesz Pro na zawsze.',en:'Pay once and keep Pro forever.',de:'Einmal zahlen und Pro dauerhaft behalten.',es:'Paga una vez y conserva Pro para siempre.'}),
     ]},
-    {name:'COACH',sub:tt({pl:'Miesięczna subskrypcja',en:'Monthly subscription',de:'Monatliches Abo',es:'Suscripción mensual'}),items:[
-      tt({pl:'Subskrypcja odnawiana miesięcznie',en:'Monthly recurring subscription',de:'Monatlich wiederkehrendes Abo',es:'Suscripción mensual recurrente'}),
-      tt({pl:'Wszystko z PRO',en:'Everything in PRO',de:'Alles aus PRO',es:'Todo lo de PRO'}),
-      tt({pl:'Klienci, przypisywanie planów i programów',en:'Clients, assignments and programs',de:'Klienten, Zuweisungen und Programme',es:'Clientes, asignaciones y programas'}),
-      tt({pl:'Chat coach-klient i podgląd postępów',en:'Coach-client chat and progress view',de:'Coach-Klient-Chat und Fortschrittsansicht',es:'Chat coach-cliente y vista de progreso'}),
+    {name:'COACH',price:'£19.99 / month',sub:tt({pl:'Miesięczna subskrypcja',en:'Monthly subscription',de:'Monatliches Abo',es:'Suscripcion mensual'}),cta:{label:'SUBSCRIBE',action:'subscribeCoach()'},items:[
+      tt({pl:'Wszystko z PRO oraz narzędzia dla trenera personalnego.',en:'Everything in PRO plus tools for personal trainers.',de:'Alles aus PRO plus Tools fuer Personal Trainer.',es:'Todo lo de PRO mas herramientas para entrenadores personales.'}),
+      tt({pl:'Lista klientów, zaproszenia email i przypisywanie programów.',en:'Client list, email invitations, and program assignments.',de:'Klientenliste, E-Mail-Einladungen und Programmzuweisung.',es:'Lista de clientes, invitaciones por email y asignacion de programas.'}),
+      tt({pl:'Podgląd treningów, pomiarów i progresu klienta po zaakceptowaniu zaproszenia.',en:'View client workouts, measurements, and progress after an accepted invite.',de:'Workouts, Messungen und Fortschritt des Kunden nach akzeptierter Einladung sehen.',es:'Ver entrenamientos, medidas y progreso del cliente tras aceptar la invitacion.'}),
+      tt({pl:'Chat coach-klient i uporządkowana sieć klientów w jednym miejscu.',en:'Coach-client chat and an organised client network in one place.',de:'Coach-Klient-Chat und organisiertes Kundennetzwerk an einem Ort.',es:'Chat coach-cliente y red de clientes organizada en un solo lugar.'}),
     ]},
   ];
-  return `<div style="display:grid;gap:12px;">${plans.map(p=>`<div style="border:1px solid var(--border);background:var(--bg2);border-radius:12px;padding:15px;">
+  return `<div style="display:grid;gap:12px;">${plans.map(p=>`<div style="border:1px solid ${p.name==='PRO'?'var(--accent-line)':'var(--border)'};background:${p.name==='PRO'?'linear-gradient(180deg,var(--accent-dim),var(--bg2))':'var(--bg2)'};border-radius:12px;padding:15px;">
     <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:8px;">
       <div style="font-size:16px;font-weight:900;color:var(--accent);">${p.name}</div>
-      <div style="font-size:11px;color:var(--text3);font-weight:800;text-transform:uppercase;">${p.sub}</div>
+      <div style="text-align:right;"><div style="font-size:17px;font-weight:900;color:var(--text);">${p.price}</div><div style="font-size:10px;color:var(--text3);font-weight:800;text-transform:uppercase;">${p.sub}</div></div>
     </div>
     ${p.items.map(it=>`<div style="font-size:13px;color:var(--text2);line-height:1.45;padding:6px 0;border-top:1px solid var(--border);">${it}</div>`).join('')}
+    ${p.cta?`<button class="btn ${p.name==='PRO'?'btn-primary':'btn-ghost'}" onclick="${p.cta.action}" style="width:100%;margin-top:12px;font-size:13px;">${p.cta.label}</button>`:''}
   </div>`).join('')}</div>`;
 }
 
@@ -1795,32 +1796,33 @@ function openSubscriptionModal(){
   closeModal();
   const ov=document.createElement('div');ov.className='modal-overlay';
   const plans=[
-    {name:'FREE',sub:tt({pl:'Dane lokalne',en:'Local data',de:'Lokale Daten',es:'Datos locales'}),items:[
-      tt({pl:'Dane zapisane tylko na urządzeniu',en:'Data stored on this device only',de:'Daten nur auf diesem Gerät',es:'Datos solo en este dispositivo'}),
-      tt({pl:'Podstawowe treningi i pomiary',en:'Basic workouts and measurements',de:'Basis-Trainings und Messungen',es:'Entrenos y medidas básicos'}),
-      tt({pl:'Brak cloud backup',en:'No cloud backup',de:'Kein Cloud-Backup',es:'Sin backup en nube'}),
+    {name:'FREE',price:'£0',sub:tt({pl:'Start bez zobowiązań',en:'Start without commitment',de:'Ohne Verpflichtung starten',es:'Empieza sin compromiso'}),items:[
+      tt({pl:'Tracker, szablony, historia, kalendarz i tryb offline.',en:'Tracker, templates, history, calendar, and offline mode.',de:'Tracker, Vorlagen, Historie, Kalender und Offline-Modus.',es:'Tracker, plantillas, historial, calendario y modo offline.'}),
+      tt({pl:'Podstawowe pomiary ciała i dodawanie znajomych.',en:'Basic body measurements and adding friends.',de:'Basismessungen und Freunde hinzufuegen.',es:'Medidas basicas y anadir amigos.'}),
+      tt({pl:'Dane zapisane lokalnie na urządzeniu.',en:'Data stored locally on your device.',de:'Daten lokal auf deinem Geraet.',es:'Datos guardados localmente en tu dispositivo.'}),
     ]},
-    {name:'PRO',sub:tt({pl:'Backup i funkcje premium',en:'Backup and premium tools',de:'Backup und Premium-Funktionen',es:'Backup y funciones premium'}),items:[
-      tt({pl:'Cloud backup dla treningów, szablonów i pomiarów',en:'Cloud backup for workouts, templates and measurements',de:'Cloud-Backup für Trainings, Vorlagen und Messungen',es:'Backup de entrenos, plantillas y medidas'}),
-      tt({pl:'Pełny dostęp do funkcji PRO',en:'Full PRO feature access',de:'Voller PRO-Zugriff',es:'Acceso completo PRO'}),
-      tt({pl:'Synchronizacja po ważnych akcjach',en:'Sync after important actions',de:'Sync nach wichtigen Aktionen',es:'Sync tras acciones importantes'}),
+    {name:'PRO',price:'£5.99',sub:tt({pl:'Jednorazowy zakup',en:'One-time purchase',de:'Einmalkauf',es:'Compra unica'}),cta:{label:'BUY',action:'buyPro()'},items:[
+      tt({pl:'Wszystko z FREE oraz pełna appka solo.',en:'Everything in FREE plus the full solo app.',de:'Alles aus FREE plus die volle Solo-App.',es:'Todo lo de FREE mas la app completa solo.'}),
+      tt({pl:'Nielimitowane szablony, pełna baza ćwiczeń i filtrowanie po sprzęcie.',en:'Unlimited templates, full exercise database, and equipment filters.',de:'Unbegrenzte Vorlagen, volle Uebungsdatenbank und Geraetefilter.',es:'Plantillas ilimitadas, base completa de ejercicios y filtros por equipo.'}),
+      tt({pl:'Analityka, pełne pomiary, eksport, cloud backup i brak reklam.',en:'Analytics, full measurements, export, cloud backup, and no ads.',de:'Analysen, alle Messungen, Export, Cloud-Backup und werbefrei.',es:'Analitica, medidas completas, exportacion, backup en nube y sin anuncios.'}),
     ]},
-    {name:'COACH',sub:tt({pl:'PRO + praca z klientami',en:'PRO + client tools',de:'PRO + Klienten-Tools',es:'PRO + herramientas de clientes'}),items:[
-      tt({pl:'Wszystko z PRO',en:'Everything in PRO',de:'Alles aus PRO',es:'Todo lo de PRO'}),
-      tt({pl:'Klienci, przypisywanie planów i programów',en:'Clients, assignments and programs',de:'Klienten, Zuweisungen und Programme',es:'Clientes, asignaciones y programas'}),
-      tt({pl:'Chat coach-klient i podgląd postępów',en:'Coach-client chat and progress view',de:'Coach-Klient-Chat und Fortschrittsansicht',es:'Chat coach-cliente y vista de progreso'}),
+    {name:'COACH',price:'£19.99 / month',sub:tt({pl:'Miesięczna subskrypcja',en:'Monthly subscription',de:'Monatliches Abo',es:'Suscripcion mensual'}),cta:{label:'SUBSCRIBE',action:'subscribeCoach()'},items:[
+      tt({pl:'Wszystko z PRO oraz Coach Mode.',en:'Everything in PRO plus Coach Mode.',de:'Alles aus PRO plus Coach Mode.',es:'Todo lo de PRO mas Coach Mode.'}),
+      tt({pl:'Klienci, zaproszenia email, programy i podgląd progresu.',en:'Clients, email invites, programs, and progress visibility.',de:'Klienten, E-Mail-Einladungen, Programme und Fortschrittsansicht.',es:'Clientes, invitaciones por email, programas y vista de progreso.'}),
+      tt({pl:'Chat coach-klient i sieć klientów w jednym miejscu.',en:'Coach-client chat and client network in one place.',de:'Coach-Klient-Chat und Kundennetzwerk an einem Ort.',es:'Chat coach-cliente y red de clientes en un solo lugar.'}),
     ]},
   ];
   ov.innerHTML=`<div class="modal" style="max-height:88vh;display:flex;flex-direction:column;">
     <div class="modal-handle"></div>
-    <div class="modal-title">Subscription</div>
+    <div class="modal-title">${tt({pl:'Subskrypcje',en:'Subscriptions',de:'Abos',es:'Suscripciones'})}</div>
     <div style="overflow-y:auto;display:grid;gap:10px;padding-bottom:8px;">
-      ${plans.map(p=>`<div style="border:1px solid var(--border);background:var(--bg2);border-radius:12px;padding:14px;">
+      ${plans.map(p=>`<div style="border:1px solid ${p.name==='PRO'?'var(--accent-line)':'var(--border)'};background:${p.name==='PRO'?'linear-gradient(180deg,var(--accent-dim),var(--bg2))':'var(--bg2)'};border-radius:12px;padding:14px;">
         <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:8px;">
           <div style="font-size:16px;font-weight:900;color:var(--accent);">${p.name}</div>
-          <div style="font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase;">${p.sub}</div>
+          <div style="text-align:right;"><div style="font-size:17px;font-weight:900;color:var(--text);">${p.price}</div><div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;">${p.sub}</div></div>
         </div>
         ${p.items.map(it=>`<div style="font-size:13px;color:var(--text2);line-height:1.4;padding:5px 0;border-top:1px solid var(--border);">${it}</div>`).join('')}
+        ${p.cta?`<button class="btn ${p.name==='PRO'?'btn-primary':'btn-ghost'}" onclick="${p.cta.action}" style="width:100%;margin-top:12px;font-size:13px;">${p.cta.label}</button>`:''}
       </div>`).join('')}
     </div>
     <div style="padding-top:12px;border-top:1px solid var(--border);">
@@ -1831,6 +1833,16 @@ function openSubscriptionModal(){
   document.body.appendChild(ov);S.modal=ov;
 }
 window.openSubscriptionModal=openSubscriptionModal;
+
+window.subscribeCoach=function(){
+  // TODO: wire to Google Play Billing subscription SKU once TWA billing is configured.
+  alert(tt({
+    pl:'Subskrypcja Coach nie jest jeszcze podłączona. Następny krok to Google Play Billing.',
+    en:'Coach subscription is not wired yet. Next step is Google Play Billing.',
+    de:'Coach-Abo ist noch nicht verbunden. Naechster Schritt ist Google Play Billing.',
+    es:'La suscripcion Coach aun no esta conectada. El siguiente paso es Google Play Billing.'
+  }));
+};
 
 function openProfilePlaceholder(title,body){
   closeModal();
