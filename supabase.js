@@ -48,8 +48,8 @@ function initSupabase(){
         S.user={id:session.user.id,email:session.user.email,name:(session.user.user_metadata?.display_name||'').trim()};
         if(S.coachMode&&!isCoachAllowed()){S.coachMode=false;saveAll();}
         if(!wasLoggedIn&&(event==='SIGNED_IN'||event==='INITIAL_SESSION')){
-          if(event==='SIGNED_IN'){setTimeout(()=>{postLoginSyncFlow();upsertProfile();syncProfileFlags();checkPendingInvitations();setupRealtimeSubscriptions();},400);}
-          if(event==='INITIAL_SESSION')setTimeout(()=>{upsertProfile();syncProfileFlags();checkPendingInvitations();setupRealtimeSubscriptions();autoSyncFromCloud();},600);
+          if(event==='SIGNED_IN'){setTimeout(async()=>{await upsertProfile();await syncProfileFlags();await postLoginSyncFlow();checkPendingInvitations();setupRealtimeSubscriptions();},400);}
+          if(event==='INITIAL_SESSION')setTimeout(async()=>{await upsertProfile();await syncProfileFlags();checkPendingInvitations();setupRealtimeSubscriptions();autoSyncFromCloud();},600);
         }
       } else {
         S.user=null;
@@ -78,13 +78,12 @@ async function bsSignOut(){
 }
 
 // ===== CLOUD SYNC =====
-// Strategy (MVP): wholesale push/pull. Push deletes user's remote rows then re-inserts
-// from local. Pull replaces local state with cloud rows. Last-write-wins per device.
-// Auto-push on every save is intentionally NOT wired yet — user triggers sync manually
-// or via the first-login flow. Adding deltas + queue is the next iteration.
+// Manual full upload/download is kept for account tools, but normal app saves use
+// the delta queue below. FREE users stay local-only; PRO/COACH users sync deltas.
 
 async function pushAllToCloud(){
   if(!sb||!S.user)return{error:'not_signed_in'};
+  if(typeof cloudSyncAllowed==='function'&&!cloudSyncAllowed())return{error:'cloud_sync_requires_pro'};
   const uid=S.user.id;
   try{
     // Templates
@@ -185,6 +184,7 @@ async function pushAllToCloud(){
 
 async function pullAllFromCloud(){
   if(!sb||!S.user)return{error:'not_signed_in'};
+  if(typeof cloudSyncAllowed==='function'&&!cloudSyncAllowed())return{error:'cloud_sync_requires_pro'};
   const uid=S.user.id;
   try{
     const[tplsRes,woRes,mRes,pRes,ccRes,assignRes]=await Promise.all([
@@ -206,7 +206,7 @@ async function pullAllFromCloud(){
 
     // Templates — keep cloud UUID as local id for stable references
     S.templates=(tplsRes.data||[]).map(t=>({
-      id:t.id,
+      id:t.local_key&&/^\d+$/.test(String(t.local_key))?+t.local_key:(t.local_key||t.id),
       name:t.name,
       types:t.types||[],
       restDefault:t.rest_default||90,
@@ -216,7 +216,7 @@ async function pullAllFromCloud(){
     S.workouts={};
     (woRes.data||[]).forEach(w=>{
       const ts=w.created_at?new Date(w.created_at).getTime():Date.now();
-      const key=`${w.date}_${ts}`;
+      const key=w.local_key||`${w.date}_${ts}`;
       S.workouts[key]={
         templateId:w.template_id||null,
         name:w.name||'',
@@ -242,7 +242,7 @@ async function pullAllFromCloud(){
     });
     // Programs (custom only — built-ins stay in code)
     S.programs=(pRes.data||[]).map(p=>({
-      id:p.id,
+      id:p.local_key||p.id,
       builtin:false,
       shareCode:p.share_code||null,
       name:p.name,
@@ -296,7 +296,10 @@ async function pullAllFromCloud(){
         createdAt:c.invited_at||new Date().toISOString(),
       }));
     }
+    _suppressCloudQueue=true;
     saveAll();
+    _suppressCloudQueue=false;
+    if(typeof resetCloudSyncSnapshot==='function')resetCloudSyncSnapshot();
     // Re-render every screen
     if(typeof renderDashboard==='function')renderDashboard();
     if(typeof renderCalendar==='function')renderCalendar();
@@ -362,13 +365,20 @@ function showSyncToast(msg,kind){
 // Cloud data always wins when both sides have data (auto-sync keeps them in sync going forward).
 async function postLoginSyncFlow(){
   if(!sb||!S.user)return;
+  if(typeof cloudSyncAllowed==='function'&&!cloudSyncAllowed())return;
+  const queued=syncQueueLoad();
+  if(queued.length){
+    const pushed=await syncQueuedCloudChanges();
+    if(pushed?.error)return;
+  }
   const remoteHas=await checkRemoteHasData();
   const localHas=localHasData();
   // Case 1: nothing on either side → nothing to do
   if(!remoteHas&&!localHas)return;
   // Case 2: remote empty, local has data → silently push to cloud
   if(!remoteHas&&localHas){
-    const r=await pushAllToCloud();
+    if(typeof queueAllCloudData==='function')queueAllCloudData();
+    const r=await syncQueuedCloudChanges();
     if(r.success){
       showSyncToast(tt({pl:'Dane wysłane do chmury ✓',en:'Data uploaded to cloud ✓',de:'Daten in Cloud hochgeladen ✓',es:'Datos subidos a la nube ✓'}),'success');
     }
@@ -386,6 +396,107 @@ async function postLoginSyncFlow(){
 
 window.pushAllToCloud=pushAllToCloud;
 window.pullAllFromCloud=pullAllFromCloud;
+
+function syncQueueRow(entity,key,payload){
+  const uid=S.user.id;
+  if(entity==='templates')return{
+    user_id:uid,
+    local_key:String(key),
+    name:payload?.name||'',
+    types:Array.isArray(payload?.types)?payload.types:[],
+    rest_default:payload?.restDefault||90,
+    exercises:payload?.exercises||[],
+  };
+  if(entity==='workouts')return{
+    user_id:uid,
+    local_key:String(key),
+    name:payload?.name||'',
+    name_key:payload?.nameKey||null,
+    types:Array.isArray(payload?.types)?payload.types:[],
+    date:payload?.date||String(key).split('_')[0]||today(),
+    duration_min:payload?.duration||0,
+    volume_kg:payload?.volume||0,
+    exercises:payload?.exercises||[],
+  };
+  if(entity==='measurements')return{
+    user_id:uid,
+    date:String(key),
+    weight_kg:payload?.weight_k!=null?payload.weight_k:null,
+    chest_cm:payload?.chest_m!=null?payload.chest_m:null,
+    waist_cm:payload?.waist!=null?payload.waist:null,
+    hips_cm:payload?.hips!=null?payload.hips:null,
+    arm_cm:payload?.arm!=null?payload.arm:null,
+    thigh_cm:payload?.thigh!=null?payload.thigh:null,
+  };
+  if(entity==='programs')return{
+    owner_id:uid,
+    local_key:String(key),
+    share_code:payload?.shareCode||null,
+    name:typeof payload?.name==='object'?payload.name:{en:payload?.name||'',pl:payload?.name||''},
+    short:typeof payload?.short==='object'?payload.short:null,
+    description:typeof payload?.description==='object'?payload.description:null,
+    level:payload?.level||null,
+    duration_weeks:payload?.duration||8,
+    days_per_week:payload?.daysPerWeek||3,
+    types:Array.isArray(payload?.types)?payload.types:[],
+    templates:payload?.templates||[],
+  };
+  return null;
+}
+
+async function applyQueuedCloudChange(item){
+  const entity=item.entity;
+  const key=String(item.key||'');
+  if(!key)return{success:true};
+  if(item.action==='delete'){
+    if(entity==='templates')return await sb.from('templates').delete().eq('user_id',S.user.id).eq('local_key',key);
+    if(entity==='workouts')return await sb.from('workouts').delete().eq('user_id',S.user.id).eq('local_key',key);
+    if(entity==='measurements')return await sb.from('measurements').delete().eq('user_id',S.user.id).eq('date',key);
+    if(entity==='programs')return await sb.from('programs').delete().eq('owner_id',S.user.id).eq('local_key',key);
+    return{success:true};
+  }
+  const row=syncQueueRow(entity,key,item.payload);
+  if(!row)return{success:true};
+  row.updated_at=item.queuedAt||new Date().toISOString();
+  if(entity==='templates')return await sb.from('templates').upsert(row,{onConflict:'user_id,local_key'});
+  if(entity==='workouts')return await sb.from('workouts').upsert(row,{onConflict:'user_id,local_key'});
+  if(entity==='measurements')return await sb.from('measurements').upsert(row,{onConflict:'user_id,date'});
+  if(entity==='programs')return await sb.from('programs').upsert(row,{onConflict:'owner_id,local_key'});
+  return{success:true};
+}
+
+let _syncQueueBusy=false;
+async function syncQueuedCloudChanges(){
+  if(_syncQueueBusy)return{busy:true};
+  if(!sb||!S.user)return{error:'not_signed_in'};
+  if(typeof cloudSyncAllowed==='function'&&!cloudSyncAllowed())return{error:'cloud_sync_requires_pro'};
+  if(navigator.onLine===false)return{error:'offline'};
+  let q=syncQueueLoad();
+  if(!q.length)return{success:true,count:0};
+  _syncQueueBusy=true;
+  const remaining=[];
+  let sent=0;
+  try{
+    for(const item of q){
+      const res=await applyQueuedCloudChange(item);
+      if(res?.error){
+        remaining.push(item);
+        console.warn('queued sync failed:',item.entity,item.action,res.error);
+      }else{
+        sent++;
+      }
+    }
+    syncQueueSave(remaining);
+    return remaining.length?{error:'partial_sync_failed',sent,remaining:remaining.length}:{success:true,count:sent};
+  }catch(e){
+    console.warn('syncQueuedCloudChanges failed',e);
+    syncQueueSave(q);
+    return{error:e.message||'sync_failed'};
+  }finally{
+    _syncQueueBusy=false;
+  }
+}
+window.syncQueuedCloudChanges=syncQueuedCloudChanges;
 
 function showAuthModal(){
   closeModal();
@@ -517,7 +628,7 @@ function showAccountModal(){
     <div style="font-size:14px;color:var(--text2);margin-bottom:22px;word-break:break-all;">${S.user.email}</div>
     <div style="display:flex;flex-direction:column;gap:8px;text-align:left;">
       <button class="btn btn-ghost" id="acctPush" style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;text-align:left;">
-        <span><strong>${tt({pl:'Wyślij do chmury',en:'Upload to cloud',de:'In Cloud hochladen',es:'Subir a la nube'})}</strong><br><span style="font-size:11px;color:var(--text3);font-weight:400;">${tt({pl:'Nadpisuje dane w chmurze lokalnymi',en:'Overwrites cloud with local data',de:'Überschreibt Cloud mit lokalen Daten',es:'Sobrescribe la nube con datos locales'})}</span></span>
+        <span><strong>${tt({pl:'Wyślij do chmury',en:'Upload to cloud',de:'In Cloud hochladen',es:'Subir a la nube'})}</strong><br><span style="font-size:11px;color:var(--text3);font-weight:400;">${tt({pl:'Wysyła tylko zmienione rekordy',en:'Uploads changed records only',de:'Lädt nur geänderte Datensätze hoch',es:'Sube solo registros cambiados'})}</span></span>
         <span style="font-size:18px;color:var(--accent);">↑</span>
       </button>
       <button class="btn btn-ghost" id="acctPull" style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;text-align:left;">
@@ -530,14 +641,22 @@ function showAccountModal(){
   </div>`;
   document.body.appendChild(ov);S.modal=ov;
   document.getElementById('acctPush').onclick=async()=>{
-    if(!confirm(tt({pl:'Wysłać lokalne dane do chmury? Nadpisze dane w chmurze.',en:'Upload local data to cloud? This overwrites cloud data.',de:'Lokale Daten in die Cloud hochladen? Cloud-Daten werden überschrieben.',es:'¿Subir datos locales a la nube? Sobrescribe los datos en la nube.'})))return;
+    if(!cloudSyncAllowed()){
+      showSyncToast(tt({pl:'Cloud sync jest tylko dla PRO / COACH.',en:'Cloud sync is only for PRO / COACH.',de:'Cloud Sync ist nur für PRO / COACH.',es:'Cloud sync es solo para PRO / COACH.'}),'error');
+      return;
+    }
     closeModal();
     showSyncToast(tt({pl:'Wysyłanie...',en:'Uploading...',de:'Hochladen...',es:'Subiendo...'}));
-    const r=await pushAllToCloud();
+    if(typeof queueAllCloudData==='function')queueAllCloudData();
+    const r=await syncQueuedCloudChanges();
     if(r.success)showSyncToast(tt({pl:'Wysłano ✓',en:'Uploaded ✓',de:'Hochgeladen ✓',es:'Subido ✓'}),'success');
     else showSyncToast((tt({pl:'Błąd: ',en:'Error: ',de:'Fehler: ',es:'Error: '}))+(r.error||''),'error');
   };
   document.getElementById('acctPull').onclick=async()=>{
+    if(!cloudSyncAllowed()){
+      showSyncToast(tt({pl:'Cloud sync jest tylko dla PRO / COACH.',en:'Cloud sync is only for PRO / COACH.',de:'Cloud Sync ist nur für PRO / COACH.',es:'Cloud sync es solo para PRO / COACH.'}),'error');
+      return;
+    }
     if(!confirm(tt({pl:'Pobrać dane z chmury? Nadpisze lokalne.',en:'Download cloud data? This overwrites local data.',de:'Cloud-Daten herunterladen? Lokale Daten werden überschrieben.',es:'¿Descargar datos de la nube? Sobrescribe los locales.'})))return;
     closeModal();
     showSyncToast(tt({pl:'Pobieranie...',en:'Downloading...',de:'Herunterladen...',es:'Descargando...'}));
@@ -563,12 +682,19 @@ let _realtimeChannels=[];
 
 async function autoSyncFromCloud(){
   if(!sb||!S.user)return;
+  if(typeof cloudSyncAllowed==='function'&&!cloudSyncAllowed())return;
   const now=Date.now();
   if(now-_lastAutoSync<120000)return; // 2 min cooldown
   _lastAutoSync=now;
   // Show subtle indicator
   const ind=document.getElementById('autoSyncDot');
   if(ind)ind.classList.add('syncing');
+  const pushed=await syncQueuedCloudChanges();
+  if(pushed?.error&&pushed.error!=='offline'&&pushed.error!=='cloud_sync_requires_pro'){
+    if(ind)ind.classList.remove('syncing');
+    console.warn('autoSync push error:',pushed.error);
+    return;
+  }
   const r=await pullAllFromCloud();
   if(ind)ind.classList.remove('syncing');
   if(r.error)console.warn('autoSync error:',r.error);
@@ -634,5 +760,8 @@ function setupRealtimeSubscriptions(){
 // Auto-sync when tab becomes visible
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='visible')autoSyncFromCloud();
+  else syncQueuedCloudChanges();
 });
+window.addEventListener('online',()=>{syncQueuedCloudChanges();});
+window.addEventListener('pagehide',()=>{syncQueuedCloudChanges();});
 

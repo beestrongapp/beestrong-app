@@ -1016,7 +1016,7 @@ function finishWorkout(){
   let volume=0;w.exercises.forEach(ex=>ex.sets.forEach(s=>{if(s.done&&s.weight>0)volume+=s.weight*s.reps;}));
   const k=today()+'_'+Date.now();
   S.workouts[k]={templateId:w.templateId,name:w.name,nameKey:w.nameKey||null,types:w.types,volume,duration,date:today(),exercises:w.exercises.map(ex=>({id:ex.id,pl:ex.pl,en:ex.en,name:ex.name,sup:ex.sup,gk:ex.gk,equipment:ex.equipment,sets:ex.sets}))};
-  S.activeWorkout=null;document.body.classList.remove('workout-active');saveAll();showWorkoutSummary(k,prs);showScreen('dashboard');
+  S.activeWorkout=null;document.body.classList.remove('workout-active');saveAll();if(typeof syncQueuedCloudChanges==='function')syncQueuedCloudChanges();showWorkoutSummary(k,prs);showScreen('dashboard');
 }
 function cancelWorkout(){stopTimer();S.activeWorkout=null;document.body.classList.remove('workout-active');renderWorkout();}
 
@@ -1239,7 +1239,7 @@ function openAddMeasure(){
     const date=document.getElementById('measDate').value;if(!date)return;
     const rec={};MEASURE_TYPES.forEach(mt=>{const v=document.getElementById('meas_'+mt.key).value;if(v!=='')rec[mt.key]=mt.key==='weight_k'?inputToKg(parseFloat(v)):inputToCm(parseFloat(v));});
     if(!Object.keys(rec).length)return;
-    S.measurements[date]=rec;saveAll();closeModal();renderSettings();openSettingsMeasurements();
+    S.measurements[date]=rec;saveAll();if(typeof syncQueuedCloudChanges==='function')syncQueuedCloudChanges();closeModal();renderSettings();openSettingsMeasurements();
   };
   document.body.appendChild(ov);S.modal=ov;
 }
@@ -1247,7 +1247,7 @@ function openAddMeasure(){
 function deleteMeasurement(date){
   if(!confirm(lang==='pl'?'Usunąć ten pomiar?':'Delete this measurement?'))return;
   delete S.measurements[date];
-  saveAll();
+  saveAll();if(typeof syncQueuedCloudChanges==='function')syncQueuedCloudChanges();
   renderSettings();
   openSettingsMeasurements();
 }
@@ -1348,7 +1348,7 @@ function deleteWorkout(key){
   if(!confirm(lang==='pl'?`Usunąć ten trening?`:`Delete this workout?`))return;
   delete S.workouts[key];
   if(S.selectedDate&&key.startsWith(S.selectedDate)){}
-  saveAll();closeModal();renderCalendar();renderDashboard();
+  saveAll();if(typeof syncQueuedCloudChanges==='function')syncQueuedCloudChanges();closeModal();renderCalendar();renderDashboard();
 }
 
 function openManualWorkout(dateStr){
@@ -1573,7 +1573,7 @@ function openManualWorkout(dateStr){
     exercises.forEach(ex=>ex.sets.forEach(s=>{if(s.weight>0)volume+=s.weight*s.reps;}));
     const k=date+'_'+Date.now();
     S.workouts[k]={templateId,name,nameKey,types,volume,duration:window.mwDuration,date,exercises};
-    saveAll();
+    saveAll();if(typeof syncQueuedCloudChanges==='function')syncQueuedCloudChanges();
     window.closeMw();
     S.selectedDate=date;
     renderCalendar();renderDashboard();
@@ -1631,7 +1631,7 @@ function finishQuickWorkout(){
       sets:Array.isArray(ex.sets)?ex.sets:[]}))};
   S.workouts[k]=wo;
   S.activeWorkout=null;
-  saveAll();
+  saveAll();if(typeof syncQueuedCloudChanges==='function')syncQueuedCloudChanges();
   showSaveAsTemplateModal(wo,k,prs);
 }
 

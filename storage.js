@@ -2,6 +2,9 @@ const TYPE_LIST=['upper','lower','fbw','chest','back','biceps','triceps','legs',
 
 const sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}};
 const ld=(k,d)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}};
+const SYNC_QUEUE_KEY='bs-sync-queue-v1';
+let _cloudSyncSnapshot=null;
+let _suppressCloudQueue=false;
 
 // ===== SUPABASE CONFIG =====
 // Anon key is public-by-design — RLS policies in DB protect user data.
@@ -43,6 +46,7 @@ function loadData(){
   S.units=ld('bs-units-v1','metric');
   S.layoutMode=localStorage.getItem('bs-layout-mode-v1')||'standard';
   S.weekPlan=ld('bs-week-plan-v1',{});
+  resetCloudSyncSnapshot();
   S.loaded=true;
   applyLang();applyTheme();updateCoachNav();updateProCoachNav();updateAdminNav();
   renderCalendar();renderDashboard();renderTemplates();renderWorkout();renderProgress();renderSettings();
@@ -91,10 +95,61 @@ function showNamePrompt(){
   };
 }
 
+function stableJson(v){
+  if(v===null||typeof v!=='object')return JSON.stringify(v);
+  if(Array.isArray(v))return'['+v.map(stableJson).join(',')+']';
+  return'{'+Object.keys(v).sort().map(k=>JSON.stringify(k)+':'+stableJson(v[k])).join(',')+'}';
+}
+
+function syncLocalKey(v){return String(v==null?'':v);}
+function cloudSyncAllowed(){
+  return !!(S.user&&sb&&(S.isPro||S.coachMode||(typeof isCoachAllowed==='function'&&isCoachAllowed())));
+}
+function syncQueueLoad(){return ld(SYNC_QUEUE_KEY,[]);}
+function syncQueueSave(q){sv(SYNC_QUEUE_KEY,Array.isArray(q)?q:[]);}
+function queueCloudChange(entity,key,action,payload){
+  if(!cloudSyncAllowed()||_suppressCloudQueue)return;
+  const localKey=syncLocalKey(key);
+  if(!localKey)return;
+  let q=syncQueueLoad().filter(it=>!(it.entity===entity&&syncLocalKey(it.key)===localKey));
+  q.push({entity,key:localKey,action,payload:action==='delete'?null:payload,queuedAt:new Date().toISOString()});
+  syncQueueSave(q);
+}
+function snapshotCloudData(){
+  const snap={templates:{},workouts:{},measurements:{},programs:{}};
+  (S.templates||[]).forEach(tp=>{snap.templates[syncLocalKey(tp.id)]=stableJson(tp);});
+  Object.entries(S.workouts||{}).forEach(([k,w])=>{snap.workouts[syncLocalKey(k)]=stableJson(w);});
+  Object.entries(S.measurements||{}).forEach(([date,rec])=>{snap.measurements[syncLocalKey(date)]=stableJson(rec);});
+  (S.programs||[]).filter(p=>!p.builtin).forEach(p=>{snap.programs[syncLocalKey(p.id)]=stableJson(p);});
+  return snap;
+}
+function resetCloudSyncSnapshot(){_cloudSyncSnapshot=snapshotCloudData();}
+function enqueueChangedCloudData(){
+  if(!cloudSyncAllowed()||_suppressCloudQueue){resetCloudSyncSnapshot();return;}
+  const prev=_cloudSyncSnapshot||snapshotCloudData();
+  const next=snapshotCloudData();
+  Object.entries(next.templates).forEach(([id,hash])=>{if(prev.templates[id]!==hash){const tp=(S.templates||[]).find(x=>syncLocalKey(x.id)===id);queueCloudChange('templates',id,'upsert',tp);}});
+  Object.keys(prev.templates).forEach(id=>{if(!(id in next.templates))queueCloudChange('templates',id,'delete');});
+  Object.entries(next.workouts).forEach(([key,hash])=>{if(prev.workouts[key]!==hash)queueCloudChange('workouts',key,'upsert',S.workouts[key]);});
+  Object.keys(prev.workouts).forEach(key=>{if(!(key in next.workouts))queueCloudChange('workouts',key,'delete');});
+  Object.entries(next.measurements).forEach(([date,hash])=>{if(prev.measurements[date]!==hash)queueCloudChange('measurements',date,'upsert',S.measurements[date]);});
+  Object.keys(prev.measurements).forEach(date=>{if(!(date in next.measurements))queueCloudChange('measurements',date,'delete');});
+  Object.entries(next.programs).forEach(([id,hash])=>{if(prev.programs[id]!==hash){const p=(S.programs||[]).find(x=>syncLocalKey(x.id)===id);queueCloudChange('programs',id,'upsert',p);}});
+  Object.keys(prev.programs).forEach(id=>{if(!(id in next.programs))queueCloudChange('programs',id,'delete');});
+  _cloudSyncSnapshot=next;
+}
+function queueAllCloudData(){
+  if(!cloudSyncAllowed())return;
+  (S.templates||[]).forEach(tp=>queueCloudChange('templates',tp.id,'upsert',tp));
+  Object.entries(S.workouts||{}).forEach(([k,w])=>queueCloudChange('workouts',k,'upsert',w));
+  Object.entries(S.measurements||{}).forEach(([date,rec])=>queueCloudChange('measurements',date,'upsert',rec));
+  (S.programs||[]).filter(p=>!p.builtin).forEach(p=>queueCloudChange('programs',p.id,'upsert',p));
+  resetCloudSyncSnapshot();
+}
 function saveAll(){
   sv('bs-tpl-v4',S.templates);sv('bs-wo-v4',S.workouts);sv('bs-meas-v1',S.measurements);sv('bs-ispro-v1',S.isPro);sv('bs-coach-v1',S.coachMode);sv('bs-programs-v1',S.programs);sv('bs-clients-v1',S.clients);sv('bs-default-rest-v1',S.defaultRest);sv('bs-units-v1',S.units);sv('bs-week-plan-v1',S.weekPlan||{});if(S.layoutMode)localStorage.setItem('bs-layout-mode-v1',S.layoutMode);if(S.goal)localStorage.setItem('bs-goal-v1',S.goal);if(S.level)localStorage.setItem('bs-level-v1',S.level);
-  const p=document.getElementById('savePill');p.classList.add('show');setTimeout(()=>p.classList.remove('show'),1800);
-  if(S.user&&sb)pushAllToCloud().catch(e=>console.warn('auto-push failed',e));
+  const p=document.getElementById('savePill');if(p){p.classList.add('show');setTimeout(()=>p.classList.remove('show'),1800);}
+  enqueueChangedCloudData();
 }
 
 function showScreen(name){

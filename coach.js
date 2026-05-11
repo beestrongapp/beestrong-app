@@ -141,7 +141,7 @@ function openProgramEditor(programId){
     } else {
       S.programs.push(draft);
     }
-    saveAll();
+    saveAll();if(typeof syncQueuedCloudChanges==='function')syncQueuedCloudChanges();
     closeModal();
     renderPrograms();
   };
@@ -264,7 +264,7 @@ function openProgramTplEditor(draftProgram,tplIdx,onClose){
 window.deleteProgram=function(pid){
   if(!confirm(tt({pl:'Usunąć ten program?',en:'Delete this program?',de:'Dieses Programm löschen?',es:'¿Eliminar este programa?'})))return;
   S.programs=(S.programs||[]).filter(p=>String(p.id)!==String(pid));
-  saveAll();
+  saveAll();if(typeof syncQueuedCloudChanges==='function')syncQueuedCloudChanges();
   _expandedProgramId=null;
   renderPrograms();
 };

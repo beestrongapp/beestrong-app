@@ -768,9 +768,9 @@ function showTplModal(id){
     });
     const newT={id:tData.id,name,types:curTypes,restDefault:rest,exercises:finalExs};
     if(id){const i=S.templates.findIndex(x=>x.id===id);S.templates[i]=newT;}else S.templates.push(newT);
-    closeModal();renderTemplates();saveAll();
+    closeModal();renderTemplates();saveAll();if(typeof syncQueuedCloudChanges==='function')syncQueuedCloudChanges();
   };
-  window.delTpl=tid=>{S.templates=S.templates.filter(x=>x.id!==tid);closeModal();renderTemplates();saveAll();};
+  window.delTpl=tid=>{S.templates=S.templates.filter(x=>x.id!==tid);closeModal();renderTemplates();saveAll();if(typeof syncQueuedCloudChanges==='function')syncQueuedCloudChanges();};
   renderTplModal();
   document.body.appendChild(ov);S.modal=ov;
   ov._backHandler=()=>{closeModal();return true;};
