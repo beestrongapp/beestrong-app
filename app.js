@@ -2182,12 +2182,19 @@ function setupBackButton(){
     }
     // 4) User coach subview -> return to coach hub before leaving the Coach screen
     if(window._userCoachDetailInvId&&window._userCoachView&&window._userCoachView!=='hub'){
-      openUserCoachDetail(window._userCoachDetailInvId);
+      window._bsHandlingBack=true;
+      openUserCoachDetail(window._userCoachDetailInvId).finally(()=>{
+        window._bsHandlingBack=false;
+        ensureBackTrap({screen:'coaches',view:'user-coach-hub'});
+      });
       return;
     }
     // 5) User coach hub -> return to the Coach list before leaving the Coach screen
     if(window._userCoachDetailInvId&&window._userCoachView==='hub'){
+      window._bsHandlingBack=true;
       renderUserCoaches();
+      window._bsHandlingBack=false;
+      ensureBackTrap({screen:'coaches'});
       return;
     }
     // 6) Friend detail subview -> return to friend hub before closing the full-screen friend card

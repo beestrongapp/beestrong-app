@@ -536,6 +536,7 @@ async function openUserCoachDetail(invId){
   stopCoachChatRealtime();
   window._userCoachDetailInvId=invId;
   window._userCoachView='hub';
+  if(window._bsHistoryReady&&!window._bsHandlingBack&&typeof ensureBackTrap==='function')ensureBackTrap({screen:'coaches',view:'user-coach-hub',invId});
   const el=document.getElementById('coachesContent');
   if(!el)return;
   el.innerHTML=`<div id="userCoachDetailContent" style="display:flex;align-items:center;justify-content:center;padding:40px 0;"><div class="spinner"></div></div>`;
@@ -755,6 +756,7 @@ async function openClientDetail(invId){
   closeModal();
   window._clientDetailData=null;
   window._clientDetailView=null;
+  if(window._bsHistoryReady&&!window._bsHandlingBack&&typeof ensureBackTrap==='function')ensureBackTrap({screen:'clients',view:'client-detail-hub',invId});
   const ov=document.createElement('div');ov.className='modal-overlay';
   ov.classList.add('client-detail-overlay');
   ov.innerHTML=`<div class="modal client-detail-modal">
@@ -878,6 +880,7 @@ function renderClientWorkoutsView(){
   const ctx=window._clientDetailData,el=document.getElementById('clientDetailContent');
   if(!ctx||!el)return;
   window._clientDetailView='workouts';
+  if(window._bsHistoryReady&&!window._bsHandlingBack&&typeof ensureBackTrap==='function')ensureBackTrap({screen:'clients',view:'client-workouts'});
   el.style.display='block';
   el.style.padding='0';
   let html=clientDetailHeader(t('workout'),clientDetailName(ctx),true);
@@ -900,6 +903,7 @@ function renderClientWorkoutDetail(idx){
   const ctx=window._clientDetailData,el=document.getElementById('clientDetailContent');
   if(!ctx||!el)return;
   window._clientDetailView='workout-detail';
+  if(window._bsHistoryReady&&!window._bsHandlingBack&&typeof ensureBackTrap==='function')ensureBackTrap({screen:'clients',view:'client-workout-detail'});
   el.style.display='block';
   el.style.padding='0';
   const w=ctx.workouts[idx];
@@ -929,6 +933,7 @@ async function renderClientMeasurementsView(){
   const ctx=window._clientDetailData,el=document.getElementById('clientDetailContent');
   if(!ctx||!el)return;
   window._clientDetailView='measurements';
+  if(window._bsHistoryReady&&!window._bsHandlingBack&&typeof ensureBackTrap==='function')ensureBackTrap({screen:'clients',view:'client-measurements'});
   el.style.display='block';
   el.style.padding='0';
   let html=clientDetailHeader(tt({pl:'Pomiary',en:'Measurements',de:'Messungen',es:'Medidas'}),clientDetailName(ctx),true);
@@ -979,6 +984,7 @@ function renderClientProgressView(){
   const ctx=window._clientDetailData,el=document.getElementById('clientDetailContent');
   if(!ctx||!el)return;
   window._clientDetailView='progress';
+  if(window._bsHistoryReady&&!window._bsHandlingBack&&typeof ensureBackTrap==='function')ensureBackTrap({screen:'clients',view:'client-progress'});
   el.style.display='block';
   el.style.padding='0';
   const workouts=ctx.workouts||[];
@@ -1018,6 +1024,7 @@ function renderClientChatPlaceholder(){
   const ctx=window._clientDetailData,el=document.getElementById('clientDetailContent');
   if(!ctx||!el)return;
   window._clientDetailView='chat';
+  if(window._bsHistoryReady&&!window._bsHandlingBack&&typeof ensureBackTrap==='function')ensureBackTrap({screen:'clients',view:'client-chat'});
   el.style.display='block';
   el.style.padding='0';
   renderCoachChat({
@@ -1056,6 +1063,7 @@ async function renderClientNotesView(){
   const ctx=window._clientDetailData,el=document.getElementById('clientDetailContent');
   if(!ctx||!el||!sb)return;
   window._clientDetailView='notes';
+  if(window._bsHistoryReady&&!window._bsHandlingBack&&typeof ensureBackTrap==='function')ensureBackTrap({screen:'clients',view:'client-notes'});
   el.style.display='block';
   el.style.padding='0';
   el.innerHTML=clientDetailHeader(tt({pl:'Notatki',en:'Notes',de:'Notizen',es:'Notas'}),clientDetailName(ctx),true)+`<div style="display:flex;justify-content:center;padding:30px 0;"><div class="spinner"></div></div>`;
@@ -1076,6 +1084,7 @@ async function renderClientPaymentsView(){
   const ctx=window._clientDetailData,el=document.getElementById('clientDetailContent');
   if(!ctx||!el||!sb)return;
   window._clientDetailView='payments';
+  if(window._bsHistoryReady&&!window._bsHandlingBack&&typeof ensureBackTrap==='function')ensureBackTrap({screen:'clients',view:'client-payments'});
   el.style.display='block';
   el.style.padding='0';
   el.innerHTML=clientDetailHeader(tt({pl:'Płatności',en:'Payments',de:'Zahlungen',es:'Pagos'}),clientDetailName(ctx),true)+`<div style="display:flex;justify-content:center;padding:30px 0;"><div class="spinner"></div></div>`;
@@ -1097,6 +1106,7 @@ async function renderCoachNotesView(){
   const ctx=window._clientDetailData,el=document.getElementById('clientDetailContent');
   if(!ctx||!el||!sb)return;
   window._clientDetailView='notes';
+  if(window._bsHistoryReady&&!window._bsHandlingBack&&typeof ensureBackTrap==='function')ensureBackTrap({screen:'clients',view:'coach-notes'});
   el.style.display='block';
   el.style.padding='0';
   const title=tt({pl:'Notatki',en:'Notes',de:'Notizen',es:'Notas'});
@@ -1145,6 +1155,7 @@ async function renderCoachPaymentsView(){
   const ctx=window._clientDetailData,el=document.getElementById('clientDetailContent');
   if(!ctx||!el||!sb)return;
   window._clientDetailView='payments';
+  if(window._bsHistoryReady&&!window._bsHandlingBack&&typeof ensureBackTrap==='function')ensureBackTrap({screen:'clients',view:'coach-payments'});
   el.style.display='block';
   el.style.padding='0';
   const title=tt({pl:'Płatności',en:'Payments',de:'Zahlungen',es:'Pagos'});
@@ -1322,6 +1333,7 @@ async function renderUserCoachChat(invId){
   if(!content||!sb)return;
   window._userCoachDetailInvId=invId;
   window._userCoachView='chat';
+  if(window._bsHistoryReady&&!window._bsHandlingBack&&typeof ensureBackTrap==='function')ensureBackTrap({screen:'coaches',view:'user-coach-chat',invId});
   content.style.display='block';
   content.style.padding='0';
   content.innerHTML=`<div style="display:flex;justify-content:center;padding:40px 0;"><div class="spinner"></div></div>`;
@@ -1348,6 +1360,7 @@ async function renderUserCoachPayments(invId){
   if(!content||!sb)return;
   window._userCoachDetailInvId=invId;
   window._userCoachView='payments';
+  if(window._bsHistoryReady&&!window._bsHandlingBack&&typeof ensureBackTrap==='function')ensureBackTrap({screen:'coaches',view:'user-coach-payments',invId});
   content.innerHTML=`<div style="display:flex;justify-content:center;padding:40px 0;"><div class="spinner"></div></div>`;
   const{data:inv,error:invErr}=await sb.from('coach_invitations').select('*').eq('id',invId).single();
   if(invErr||!inv){content.innerHTML=`<div style="color:var(--red);padding:16px;">${invErr?.message||'Payments unavailable'}</div>`;return;}
@@ -1371,6 +1384,7 @@ async function renderUserCoachNotes(invId){
   if(!content||!sb)return;
   window._userCoachDetailInvId=invId;
   window._userCoachView='notes';
+  if(window._bsHistoryReady&&!window._bsHandlingBack&&typeof ensureBackTrap==='function')ensureBackTrap({screen:'coaches',view:'user-coach-notes',invId});
   content.innerHTML=`<div style="display:flex;justify-content:center;padding:40px 0;"><div class="spinner"></div></div>`;
   const{data:inv,error:invErr}=await sb.from('coach_invitations').select('*').eq('id',invId).single();
   if(invErr||!inv){content.innerHTML=`<div style="color:var(--red);padding:16px;">${invErr?.message||'Notes unavailable'}</div>`;return;}
@@ -1393,6 +1407,7 @@ function renderUserCoachCheckin(invId){
   if(!content)return;
   window._userCoachDetailInvId=invId;
   window._userCoachView='checkin';
+  if(window._bsHistoryReady&&!window._bsHandlingBack&&typeof ensureBackTrap==='function')ensureBackTrap({screen:'coaches',view:'user-coach-checkin',invId});
   const measurements=Object.entries(S.measurements||{}).sort((a,b)=>String(b[0]).localeCompare(String(a[0])));
   content.innerHTML=`<div style="display:flex;justify-content:center;padding:40px 0;"><div class="spinner"></div></div>`;
   sb.from('coach_invitations').select('*').eq('id',invId).single().then(({data:inv,error})=>{
