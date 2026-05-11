@@ -62,14 +62,14 @@ function renderFriendsList(){
   const pendingIn=_friendInvitations.filter(i=>i.status==='pending'&&i.invitee_id===S.user?.id);
   const pendingOut=_friendInvitations.filter(i=>i.status==='pending'&&i.inviter_id===S.user?.id);
   let html=`<div class="section-label">${tt({pl:'Friends',en:'Friends',de:'Friends',es:'Friends'})} (${accepted.length}/3)</div>`;
-  html+=accepted.length?accepted.map(friendCardHtml).join(''):`<div class="empty-state" style="padding:24px 16px;">${tt({pl:'Nie masz jeszcze znajomych.',en:'No friends yet.',de:'Noch keine Freunde.',es:'Aún no tienes amigos.'})}</div>`;
+  html+=accepted.length?accepted.map(inv=>friendCardHtml(inv,false)).join(''):`<div class="empty-state" style="padding:24px 16px;">${tt({pl:'Nie masz jeszcze znajomych.',en:'No friends yet.',de:'Noch keine Freunde.',es:'Aún no tienes amigos.'})}</div>`;
   if(pendingIn.length){
     html+=`<div class="section-label" style="margin-top:16px;">${tt({pl:'Zaproszenia',en:'Invitations',de:'Einladungen',es:'Invitaciones'})}</div>`;
     html+=pendingIn.map(inv=>friendCardHtml(inv,true)).join('');
   }
   if(pendingOut.length){
     html+=`<div class="section-label" style="margin-top:16px;">${tt({pl:'Wysłane',en:'Sent',de:'Gesendet',es:'Enviadas'})}</div>`;
-    html+=pendingOut.map(friendCardHtml).join('');
+    html+=pendingOut.map(inv=>friendCardHtml(inv,false)).join('');
   }
   list.innerHTML=html;
 }
@@ -127,7 +127,7 @@ function friendCardHtml(inv,needsAction){
     <div style="width:40px;height:40px;border-radius:50%;background:var(--accent);color:var(--btn-text);display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0;">${name[0]?.toUpperCase()||'F'}</div>
     <div class="client-card-info"><div class="client-card-name">${name}</div><div class="client-card-meta">${email}</div></div>
     <span class="client-status-badge client-status-${status==='accepted'?'accepted':'pending'}">${statusText}</span>
-    ${needsAction?`<div style="display:flex;gap:6px;margin-left:4px;">
+    ${needsAction&&status==='pending'?`<div style="display:flex;gap:6px;margin-left:4px;">
       <button class="btn btn-sm btn-primary" onclick="event.stopPropagation();acceptFriendInvitation('${inv.id}')" style="font-size:11px;padding:6px 10px;">OK</button>
       <button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();declineFriendInvitation('${inv.id}')" style="font-size:11px;padding:6px 10px;">✕</button>
     </div>`:''}
