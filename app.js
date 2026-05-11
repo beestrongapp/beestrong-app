@@ -1214,6 +1214,7 @@ window.startPlannedWorkout=startPlannedWorkout;
 window.switchCalTab=switchCalTab;
 
 // ===== PROFILE =====
+let _profileOpenSection=null;
 function renderSettings(){
   const el=document.getElementById('settingsContent');
   if(!el)return;
@@ -1288,10 +1289,21 @@ function renderSettings(){
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="color:var(--text3);flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>`;
   };
-  const profileSection=(title,rows)=>`<div style="margin:16px 0 8px;">
-    ${title?`<div style="font-size:12px;color:var(--text3);font-weight:800;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 8px 2px;">${title}</div>`:''}
-    <div style="border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border);">${rows.map(profileRow).join('')}</div>
-  </div>`;
+  const profileSubRows=rows=>`<div style="border-top:1px solid var(--border);">${rows.map((row,i)=>profileRow(row,i)).join('')}</div>`;
+  const accordion=(id,label,value,path,rows)=>{
+    const open=_profileOpenSection===id;
+    return `<div style="border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;background:var(--bg2);margin-bottom:10px;">
+      <div onclick="toggleProfileSection('${id}')" style="display:flex;align-items:center;gap:14px;padding:16px;cursor:pointer;">
+        <div style="width:38px;height:38px;border-radius:10px;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;color:var(--accent);flex-shrink:0;">${svg(path)}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:15px;font-weight:800;">${label}</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${value}</div>
+        </div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" style="color:var(--text3);flex-shrink:0;transform:${open?'rotate(90deg)':'none'};transition:transform 0.15s;"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      ${open?profileSubRows(rows):''}
+    </div>`;
+  };
 
   const accountState=S.user
     ?tt({pl:'Zalogowany',en:'Signed in',de:'Angemeldet',es:'Sesión iniciada'})
@@ -1302,13 +1314,16 @@ function renderSettings(){
   const subscriptionLabel=S.coachMode&&S.user
     ?'COACH'
     :(S.isPro&&S.user?'PRO':'FREE');
+  const loginTitle=tt({pl:'Login and data',en:'Login and data',de:'Login und Daten',es:'Login y datos'});
   const loginRows=[
-    {key:'account',label:tt({pl:'Login and data',en:'Login and data',de:'Login und Daten',es:'Login y datos'}),value:S.user?`${S.user.email} · ${dataState}`:`${accountState} · ${dataState}`,icon:svg(icon.account),action:S.user?'showAccountModal':'showAuthModal'},
+    {key:'account',label:loginTitle,value:S.user?`${S.user.email} · ${dataState}`:`${accountState} · ${dataState}`,icon:svg(icon.account),action:S.user?'showAccountModal':'showAuthModal'},
     {key:'name',label:lang==='pl'?'Imię':'Name',value:localStorage.getItem('bs-username')||'—',icon:svg(icon.name),action:'openSettingsName'},
   ];
+  const subscriptionTitle='Subscription';
   const subscriptionRows=[
-    {key:'subscription',label:'Subscription',value:`${subscriptionLabel} · ${tt({pl:'zobacz porównanie planów',en:'view plan comparison',de:'Pläne vergleichen',es:'ver comparación'})}`,icon:svg(icon.card),action:'openSubscriptionModal'},
+    {key:'subscription',label:subscriptionTitle,value:`${subscriptionLabel} · ${tt({pl:'zobacz porównanie planów',en:'view plan comparison',de:'Pläne vergleichen',es:'ver comparación'})}`,icon:svg(icon.card),action:'openSubscriptionModal'},
   ];
+  const preferencesTitle='Preferences';
   const preferenceRows=[
     {key:'layout',label:tt({pl:'App Layout',en:'App layout',de:'App-Layout',es:'Layout de app'}),value:S.layoutMode==='minimal'?tt({pl:'Minimal',en:'Minimal',de:'Minimal',es:'Minimal'}):tt({pl:'Standard',en:'Standard',de:'Standard',es:'Estándar'}),icon:svg(icon.layout),action:'openSettingsLayout'},
     {key:'theme',label:tt({pl:'Theme colour',en:'Theme colour',de:'Farbschema',es:'Tema'}),value:isDark?t('darkTheme'):t('lightTheme'),icon:svg(icon.theme),action:'openSettingsTheme'},
@@ -1316,12 +1331,17 @@ function renderSettings(){
     {key:'units',label:tt({pl:'Units',en:'Units',de:'Einheiten',es:'Unidades'}),value:S.units==='imperial'?'Imperial (lbs / in)':'Metric (kg / cm)',icon:svg(icon.units),action:'openSettingsUnits'},
     {key:'restTimer',label:tt({pl:'Rest timer',en:'Rest timer',de:'Pausenzeit',es:'Tiempo de descanso'}),value:`${S.defaultRest||90} s`,icon:svg(icon.timer),action:'openSettingsRestTimer'},
   ];
+  const measurementsTitle=tt({pl:'Body measurements',en:'Body measurements',de:'Körpermaße',es:'Medidas corporales'});
   const measurementRows=[
-    {key:'measurements',label:tt({pl:'Body measurements',en:'Body measurements',de:'Körpermaße',es:'Medidas corporales'}),value:measValue,icon:svg(icon.measure),action:'openSettingsMeasurements'},
+    {key:'measurements',label:measurementsTitle,value:measValue,icon:svg(icon.measure),action:'openSettingsMeasurements'},
   ];
-  const infoRows=[
+  const contactRows=[
     {key:'contact',label:'Contact',value:tt({pl:'Wkrótce',en:'Coming soon',de:'Bald verfügbar',es:'Próximamente'}),icon:svg(icon.contact),action:'openProfilePlaceholderContact'},
+  ];
+  const whatsNewRows=[
     {key:'whatsnew',label:"What's new",value:tt({pl:'Zmiany z ostatniego update',en:'Latest update notes',de:'Letzte Update-Notizen',es:'Notas del último update'}),icon:svg(icon.news),action:'openProfilePlaceholderWhatsNew'},
+  ];
+  const privacyRows=[
     {key:'privacy',label:'Privacy Policy',value:tt({pl:'Wkrótce',en:'Coming soon',de:'Bald verfügbar',es:'Próximamente'}),icon:svg(icon.privacy),action:'openProfilePlaceholderPrivacy'},
   ];
 
@@ -1329,14 +1349,22 @@ function renderSettings(){
   const versionLbl=`<div style="margin:24px 0 40px;padding:12px;text-align:center;font-size:11px;color:var(--text3);">BeeStrong Gym Tracker · v1.0</div>`;
 
   el.innerHTML=proCardHtml()
-    +profileSection(tt({pl:'Login and data',en:'Login and data',de:'Login und Daten',es:'Login y datos'}),loginRows)
-    +profileSection('Subscription',subscriptionRows)
-    +profileSection('Preferences',preferenceRows)
-    +profileSection(tt({pl:'Body measurements',en:'Body measurements',de:'Körpermaße',es:'Medidas corporales'}),measurementRows)
-    +profileSection('',infoRows)
+    +accordion('login',loginTitle,S.user?S.user.email:dataState,icon.account,loginRows)
+    +accordion('subscription',subscriptionTitle,`${subscriptionLabel} · ${tt({pl:'plan konta',en:'account plan',de:'Kontoplan',es:'plan de cuenta'})}`,icon.card,subscriptionRows)
+    +accordion('preferences',preferencesTitle,`${S.layoutMode==='minimal'?'Minimal':'Standard'} · ${isDark?t('darkTheme'):t('lightTheme')} · ${S.units==='imperial'?'Imperial':'Metric'}`,icon.layout,preferenceRows)
+    +accordion('measurements',measurementsTitle,measValue,icon.measure,measurementRows)
+    +accordion('contact','Contact',tt({pl:'Wkrótce',en:'Coming soon',de:'Bald verfügbar',es:'Próximamente'}),icon.contact,contactRows)
+    +accordion('whatsnew',"What's new",tt({pl:'Zmiany z ostatniego update',en:'Latest update notes',de:'Letzte Update-Notizen',es:'Notas del último update'}),icon.news,whatsNewRows)
+    +accordion('privacy','Privacy Policy',tt({pl:'Wkrótce',en:'Coming soon',de:'Bald verfügbar',es:'Próximamente'}),icon.privacy,privacyRows)
     +adminChangelog
     +versionLbl;
 }
+
+function toggleProfileSection(id){
+  _profileOpenSection=_profileOpenSection===id?null:id;
+  renderSettings();
+}
+window.toggleProfileSection=toggleProfileSection;
 
 function openSubscriptionModal(){
   closeModal();
