@@ -1351,7 +1351,7 @@ function renderSettings(){
     {key:'whatsnew',label:"What's new",value:tt({pl:'Zmiany z ostatniego update',en:'Latest update notes',de:'Letzte Update-Notizen',es:'Notas del último update'}),icon:svg(icon.news),action:'openProfilePlaceholderWhatsNew'},
   ];
   const privacyRows=[
-    {key:'privacy',label:'Privacy Policy',value:tt({pl:'Wkrótce',en:'Coming soon',de:'Bald verfügbar',es:'Próximamente'}),icon:svg(icon.privacy),action:'openProfilePlaceholderPrivacy'},
+    {key:'privacy',label:'Privacy Policy',value:'beestrongapp.com/privacy.html',icon:svg(icon.privacy),action:'openPrivacyPolicy'},
   ];
   window._profileSections.login={title:loginTitle,rows:loginRows};
   window._profileSections.subscription={title:subscriptionTitle,rows:subscriptionRows};
@@ -1480,13 +1480,33 @@ function profileMeasurementsHtml(){
 }
 
 function profileInfoSectionHtml(id){
+  if(id==='privacy'){
+    return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:12px;">
+      ${tt({
+        pl:'Polityka prywatności BeeStrong opisuje dane konta, dane treningowe, pomiary ciała, Coach Mode, local storage, cloud sync i usuwanie danych.',
+        en:'BeeStrong Privacy Policy covers account data, workout data, body measurements, Coach Mode, local storage, cloud sync, and data deletion.',
+        de:'Die BeeStrong-Datenschutzerklaerung beschreibt Kontodaten, Trainingsdaten, Koerpermessungen, Coach Mode, lokalen Speicher, Cloud Sync und Datenloeschung.',
+        es:'La Politica de privacidad de BeeStrong cubre datos de cuenta, entrenamientos, medidas corporales, Coach Mode, almacenamiento local, cloud sync y eliminacion de datos.'
+      })}
+    </div>
+    ${profileActionCard('Privacy Policy','https://beestrongapp.com/privacy.html','openPrivacyPolicy()')}
+    ${profileActionCard(tt({pl:'Regulamin',en:'Terms of Service',de:'Nutzungsbedingungen',es:'Terminos de servicio'}),'https://beestrongapp.com/terms.html','openTermsOfService()')}`;
+  }
   const body={
     contact:tt({pl:'Sekcja Contact zostanie dodana później.',en:'Contact will be added later.',de:'Kontakt wird später hinzugefügt.',es:'Contact se añadirá más tarde.'}),
     whatsnew:tt({pl:'Tutaj będzie opis zmian z ostatniego update.',en:'Latest update notes will live here.',de:'Hier erscheinen die letzten Update-Notizen.',es:'Aquí estarán las notas del último update.'}),
-    privacy:tt({pl:'Privacy Policy zostanie dodana później.',en:'Privacy Policy will be added later.',de:'Privacy Policy wird später hinzugefügt.',es:'Privacy Policy se añadirá más tarde.'}),
   }[id]||'';
   return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;font-size:13px;color:var(--text2);line-height:1.5;">${body}</div>`;
 }
+
+function openPrivacyPolicy(){
+  window.open('https://beestrongapp.com/privacy.html','_blank','noopener');
+}
+function openTermsOfService(){
+  window.open('https://beestrongapp.com/terms.html','_blank','noopener');
+}
+window.openPrivacyPolicy=openPrivacyPolicy;
+window.openTermsOfService=openTermsOfService;
 
 function profileDeleteAccountHtml(){
   const signedIn=!!S.user;
@@ -1647,7 +1667,7 @@ function openProfilePlaceholder(title,body){
 }
 window.openProfilePlaceholderContact=()=>openProfilePlaceholder('Contact',tt({pl:'Sekcja Contact zostanie dodana później.',en:'Contact will be added later.',de:'Kontakt wird später hinzugefügt.',es:'Contact se añadirá más tarde.'}));
 window.openProfilePlaceholderWhatsNew=()=>openProfilePlaceholder("What's new",tt({pl:'Tutaj będzie opis zmian z ostatniego update.',en:'Latest update notes will live here.',de:'Hier erscheinen die letzten Update-Notizen.',es:'Aquí estarán las notas del último update.'}));
-window.openProfilePlaceholderPrivacy=()=>openProfilePlaceholder('Privacy Policy',tt({pl:'Privacy Policy zostanie dodana później.',en:'Privacy Policy will be added later.',de:'Privacy Policy wird später hinzugefügt.',es:'Privacy Policy se añadirá más tarde.'}));
+window.openProfilePlaceholderPrivacy=openPrivacyPolicy;
 
 function renderNotifications(){
   const el=document.getElementById('notificationsContent');
