@@ -49,14 +49,17 @@ function renderDashboard(){
       action:"showScreen('programs')",
     },
   ];
-  const minimalTiles=standardTiles.filter((_,i)=>[0,1,2,3,4].includes(i)).concat([{
-    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="22" height="22"><path d="M6.5 6.5h11"/><path d="M6.5 17.5h11"/><rect x="2" y="9" width="3" height="6" rx="0.5"/><rect x="19" y="9" width="3" height="6" rx="0.5"/><rect x="5" y="7" width="2" height="10" rx="0.5"/><rect x="17" y="7" width="2" height="10" rx="0.5"/></svg>',
-    labelKey:{pl:'Ćwiczenia',en:'Exercises',de:'Übungen',es:'Ejercicios'},
-    action:"showScreen('exercises')",
-  }]);
-  const QA_TILES=S.layoutMode==='minimal'?minimalTiles:standardTiles;
+  const minimalTiles=[
+    standardTiles[0], // Quick workout
+    standardTiles[3], // Calendar
+    standardTiles[1], // Templates
+    standardTiles[4], // Measurements
+  ];
+  const isMinimalLayout=S.layoutMode==='minimal';
+  const QA_TILES=isMinimalLayout?minimalTiles:standardTiles;
   const qaGrid=document.getElementById('quickAccessGrid');
   if(qaGrid){
+    qaGrid.classList.toggle('quick-access-grid-minimal',isMinimalLayout);
     qaGrid.innerHTML=QA_TILES.map(tile=>`
       <div class="qa-tile${tile.accent?' qa-tile-primary':''}" onclick="${tile.action}">
         <div class="qa-tile-icon">${tile.icon}</div>
