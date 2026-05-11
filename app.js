@@ -1241,6 +1241,7 @@ function renderSettings(){
     contact:'<path d="M4 4h16v12H5.2L4 19.5V4z"/><path d="M8 9h8M8 13h5"/>',
     news:'<path d="M4 4h13a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3V4z"/><path d="M8 8h6M8 12h8M8 16h5"/>',
     privacy:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9.5 12l1.7 1.7 3.6-4.2"/>',
+    delete:'<path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/>',
     name:'<circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>',
   };
   const svg=path=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">${path}</svg>`;
@@ -1297,6 +1298,7 @@ function renderSettings(){
   const contactTitle=tt({pl:'Kontakt',en:'Contact',de:'Kontakt',es:'Contacto'});
   const whatsNewTitle=tt({pl:'Co nowego',en:"What's new",de:'Was ist neu',es:'Novedades'});
   const privacyTitle=tt({pl:'Polityka prywatności',en:'Privacy Policy',de:'Datenschutz',es:'Política de privacidad'});
+  const deleteTitle=tt({pl:'Usuń konto i dane',en:'Delete account and data',de:'Konto und Daten löschen',es:'Eliminar cuenta y datos'});
   window._profileSections={
     login:{title:tt({pl:'Login and data',en:'Login and data',de:'Login und Daten',es:'Login y datos'}),rows:null},
     subscription:{title:subscriptionTitle,rows:null},
@@ -1305,6 +1307,7 @@ function renderSettings(){
     contact:{title:contactTitle,rows:null},
     whatsnew:{title:whatsNewTitle,rows:null},
     privacy:{title:privacyTitle,rows:null},
+    deleteAccount:{title:deleteTitle,rows:null},
   };
   const hubRow=(id,label,path)=>`<div onclick="openProfileSection('${id}')" style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);cursor:pointer;margin-bottom:10px;">
         <div style="width:38px;height:38px;border-radius:10px;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;color:var(--accent);flex-shrink:0;">${svg(path)}</div>
@@ -1357,6 +1360,7 @@ function renderSettings(){
   window._profileSections.contact={title:contactTitle,rows:contactRows};
   window._profileSections.whatsnew={title:whatsNewTitle,rows:whatsNewRows};
   window._profileSections.privacy={title:privacyTitle,rows:privacyRows};
+  window._profileSections.deleteAccount={title:deleteTitle,rows:null};
 
   const adminChangelog=isAdmin()?adminChangelogHtml():'';
   const versionLbl=`<div style="margin:24px 0 40px;padding:12px;text-align:center;font-size:11px;color:var(--text3);">BeeStrong Gym Tracker · v1.0</div>`;
@@ -1369,6 +1373,7 @@ function renderSettings(){
       if(_profileSectionView==='login')sectionBody=profileLoginDataHtml(dataState);
       else if(_profileSectionView==='subscription')sectionBody=profileSubscriptionHtml();
       else if(_profileSectionView==='measurements')sectionBody=profileMeasurementsHtml();
+      else if(_profileSectionView==='deleteAccount')sectionBody=profileDeleteAccountHtml();
       else if(['contact','whatsnew','privacy'].includes(_profileSectionView))sectionBody=profileInfoSectionHtml(_profileSectionView);
       else sectionBody=`<div style="border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border);background:var(--bg2);">${(section.rows||[]).map((row,i)=>profileRow(row,i)).join('')}</div>`;
       el.innerHTML=`<div style="font-size:20px;font-weight:900;margin-bottom:18px;">${section.title}</div>${sectionBody}<div style="height:96px;"></div>${versionLbl}${backBar}`;
@@ -1389,6 +1394,8 @@ function renderSettings(){
     +hubRow('contact',contactTitle,icon.contact)
     +hubRow('whatsnew',whatsNewTitle,icon.news)
     +hubRow('privacy',privacyTitle,icon.privacy)
+    +`</div><div style="margin-bottom:8px;">`
+    +hubRow('deleteAccount',deleteTitle,icon.delete)
     +`</div>`
     +adminChangelog
     +versionLbl;
@@ -1481,6 +1488,81 @@ function profileInfoSectionHtml(id){
   return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;font-size:13px;color:var(--text2);line-height:1.5;">${body}</div>`;
 }
 
+function profileDeleteAccountHtml(){
+  const signedIn=!!S.user;
+  return `<div style="background:rgba(255,92,92,0.08);border:1px solid rgba(255,92,92,0.28);border-radius:var(--radius-lg);padding:18px;margin-bottom:14px;">
+    <div style="font-size:15px;font-weight:900;color:var(--red);margin-bottom:8px;">${tt({pl:'Strefa usuwania',en:'Deletion area',de:'Löschbereich',es:'Zona de eliminación'})}</div>
+    <div style="font-size:13px;color:var(--text2);line-height:1.5;">${tt({
+      pl:'Te akcje są trwałe. Usunięcie danych lokalnych czyści dane na tym urządzeniu. Usunięcie konta usuwa też dane w chmurze, jeśli konto jest zalogowane.',
+      en:'These actions are permanent. Deleting local data clears this device. Deleting the account also removes cloud data when signed in.',
+      de:'Diese Aktionen sind dauerhaft. Lokale Daten werden auf diesem Gerät gelöscht. Das Konto löscht auch Cloud-Daten, wenn du angemeldet bist.',
+      es:'Estas acciones son permanentes. Eliminar datos locales limpia este dispositivo. Eliminar la cuenta también borra datos en la nube si has iniciado sesión.'
+    })}</div>
+  </div>
+  ${profileActionCard(
+    tt({pl:'Usuń dane z tego urządzenia',en:'Delete data from this device',de:'Daten von diesem Gerät löschen',es:'Eliminar datos de este dispositivo'}),
+    tt({pl:'Treningi, szablony, pomiary i ustawienia lokalne',en:'Workouts, templates, measurements and local settings',de:'Trainings, Vorlagen, Messungen und lokale Einstellungen',es:'Entrenos, plantillas, medidas y ajustes locales'}),
+    'profileDeleteLocalData()',
+    'border-color:rgba(255,92,92,0.28);'
+  )}
+  ${signedIn?profileActionCard(
+    tt({pl:'Usuń konto i dane w chmurze',en:'Delete account and cloud data',de:'Konto und Cloud-Daten löschen',es:'Eliminar cuenta y datos en nube'}),
+    S.user.email||tt({pl:'Wymaga zalogowanego konta',en:'Requires signed-in account',de:'Benötigt angemeldetes Konto',es:'Requiere cuenta iniciada'}),
+    'profileDeleteAccountAndCloudData()',
+    'border-color:rgba(255,92,92,0.45);'
+  ):`<div style="font-size:13px;color:var(--text3);padding:12px 4px;">${tt({pl:'Zaloguj się, żeby usunąć konto z chmury.',en:'Sign in to delete the cloud account.',de:'Melde dich an, um das Cloud-Konto zu löschen.',es:'Inicia sesión para eliminar la cuenta en nube.'})}</div>`}`;
+}
+
+function clearLocalBeeStrongData(){
+  Object.keys(localStorage).forEach(k=>{if(k.startsWith('bs-'))localStorage.removeItem(k);});
+  S.templates=[];
+  S.workouts={};
+  S.measurements={};
+  S.programs=[];
+  S.clients=[];
+  S.pendingInvites=[];
+  S.weekPlan={};
+  S.activeWorkout=null;
+  S.isPro=false;
+  S.coachMode=false;
+  S.defaultRest=90;
+  S.units='metric';
+  S.layoutMode='standard';
+  S.goal='strength';
+  S.level='beginner';
+}
+
+async function profileDeleteLocalData(){
+  if(!confirm(tt({pl:'Usunąć wszystkie dane lokalne z tego urządzenia?',en:'Delete all local data from this device?',de:'Alle lokalen Daten von diesem Gerät löschen?',es:'¿Eliminar todos los datos locales de este dispositivo?'})))return;
+  const typed=prompt(tt({pl:'Wpisz USUN, aby potwierdzić.',en:'Type DELETE to confirm.',de:'Tippe DELETE zur Bestätigung.',es:'Escribe DELETE para confirmar.'}));
+  if((typed||'').trim().toUpperCase()!==(lang==='pl'?'USUN':'DELETE'))return;
+  clearLocalBeeStrongData();
+  saveAll();
+  _profileSectionView=null;
+  renderCalendar();renderDashboard();renderTemplates();renderWorkout();renderProgress();renderSettings();renderAccountBadge();
+  showSyncToast(tt({pl:'Dane lokalne usunięte.',en:'Local data deleted.',de:'Lokale Daten gelöscht.',es:'Datos locales eliminados.'}),'success');
+}
+
+async function profileDeleteAccountAndCloudData(){
+  if(!S.user||!sb)return showSyncToast(tt({pl:'Musisz być zalogowany.',en:'You must be signed in.',de:'Du musst angemeldet sein.',es:'Debes iniciar sesión.'}),'error');
+  if(!confirm(tt({pl:'Usunąć konto i wszystkie dane w chmurze? Tego nie da się cofnąć.',en:'Delete account and all cloud data? This cannot be undone.',de:'Konto und alle Cloud-Daten löschen? Dies kann nicht rückgängig gemacht werden.',es:'¿Eliminar cuenta y todos los datos en nube? No se puede deshacer.'})))return;
+  const typed=prompt(tt({pl:'Wpisz USUN KONTO, aby potwierdzić.',en:'Type DELETE ACCOUNT to confirm.',de:'Tippe DELETE ACCOUNT zur Bestätigung.',es:'Escribe DELETE ACCOUNT para confirmar.'}));
+  const expected=lang==='pl'?'USUN KONTO':'DELETE ACCOUNT';
+  if((typed||'').trim().toUpperCase()!==expected)return;
+  showSyncToast(tt({pl:'Usuwanie konta...',en:'Deleting account...',de:'Konto wird gelöscht...',es:'Eliminando cuenta...'}));
+  const{error}=await sb.rpc('delete_my_account');
+  if(error){
+    showSyncToast(`${tt({pl:'Błąd: ',en:'Error: ',de:'Fehler: ',es:'Error: '})}${error.message||error}`,'error');
+    return;
+  }
+  clearLocalBeeStrongData();
+  try{await sb.auth.signOut();}catch(e){}
+  S.user=null;
+  _profileSectionView=null;
+  renderCalendar();renderDashboard();renderTemplates();renderWorkout();renderProgress();renderSettings();renderAccountBadge();updateCoachNav();updateProCoachNav();updateAdminNav();
+  showSyncToast(tt({pl:'Konto i dane usunięte.',en:'Account and data deleted.',de:'Konto und Daten gelöscht.',es:'Cuenta y datos eliminados.'}),'success');
+}
+
 async function profileUploadToCloud(){
   if(!cloudSyncAllowed())return showSyncToast(tt({pl:'Cloud sync jest tylko dla PRO / COACH.',en:'Cloud sync is only for PRO / COACH.',de:'Cloud Sync ist nur für PRO / COACH.',es:'Cloud sync es solo para PRO / COACH.'}),'error');
   showSyncToast(tt({pl:'Wysyłanie...',en:'Uploading...',de:'Hochladen...',es:'Subiendo...'}));
@@ -1505,6 +1587,8 @@ async function profileSignOut(){
 window.profileUploadToCloud=profileUploadToCloud;
 window.profileDownloadFromCloud=profileDownloadFromCloud;
 window.profileSignOut=profileSignOut;
+window.profileDeleteLocalData=profileDeleteLocalData;
+window.profileDeleteAccountAndCloudData=profileDeleteAccountAndCloudData;
 function isProfileMeasurementsSection(){return _profileSectionView==='measurements';}
 window.isProfileMeasurementsSection=isProfileMeasurementsSection;
 
