@@ -36,6 +36,7 @@ function inputToCm(v){return S.units==='imperial'?+(+v/0.3937).toFixed(1):+v;}
 
 function loadData(){
   S.templates=ld('bs-tpl-v4',DEFAULT_TEMPLATES);
+  migrateDefaultTemplates();
   S.workouts=ld('bs-wo-v4',{});
   S.measurements=ld('bs-meas-v1',{});
   S.isPro=ld('bs-ispro-v1',false);
@@ -99,6 +100,27 @@ function stableJson(v){
   if(v===null||typeof v!=='object')return JSON.stringify(v);
   if(Array.isArray(v))return'['+v.map(stableJson).join(',')+']';
   return'{'+Object.keys(v).sort().map(k=>JSON.stringify(k)+':'+stableJson(v[k])).join(',')+'}';
+}
+
+function migrateDefaultTemplates(){
+  const versionKey='bs-default-templates-version-v1';
+  if(localStorage.getItem(versionKey)==='upper-lower-v2')return;
+  const legacyNames=new Set(['Upper A','Lower A','Upper B','Lower B']);
+  const defaultsById=new Map(DEFAULT_TEMPLATES.map(tp=>[String(tp.id),tp]));
+  const next=(S.templates||[]).map(tp=>{
+    const defaultTpl=defaultsById.get(String(tp.id));
+    if(!defaultTpl||!legacyNames.has(tp.name))return tp;
+    const looksLegacy=(tp.exercises||[]).some(ex=>!ex.gk&&!ex.equipment);
+    return looksLegacy?JSON.parse(JSON.stringify(defaultTpl)):tp;
+  });
+  DEFAULT_TEMPLATES.forEach(dt=>{
+    if(!next.some(tp=>String(tp.id)===String(dt.id))){
+      next.push(JSON.parse(JSON.stringify(dt)));
+    }
+  });
+  S.templates=next;
+  localStorage.setItem(versionKey,'upper-lower-v2');
+  sv('bs-tpl-v4',S.templates);
 }
 
 function syncLocalKey(v){return String(v==null?'':v);}
