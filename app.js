@@ -2185,12 +2185,17 @@ function setupBackButton(){
       openUserCoachDetail(window._userCoachDetailInvId);
       return;
     }
-    // 5) Friend detail subview -> return to friend hub before closing the full-screen friend card
+    // 5) User coach hub -> return to the Coach list before leaving the Coach screen
+    if(window._userCoachDetailInvId&&window._userCoachView==='hub'){
+      renderUserCoaches();
+      return;
+    }
+    // 6) Friend detail subview -> return to friend hub before closing the full-screen friend card
     if(S.modal&&window._friendDetailView&&window._friendDetailView!=='hub'){
       renderFriendHub();
       return;
     }
-    // 6) Close any modal/popup
+    // 7) Close any modal/popup
     if(S.modal){
       const returnScreen=S.modal._returnScreen;
       closeModal();
@@ -2204,7 +2209,7 @@ function setupBackButton(){
 
     const active=document.querySelector('.screen.active')?.id?.replace('screen-','');
 
-    // 7) Active workout — double-back asks for confirmation
+    // 8) Active workout — double-back asks for confirmation
     if(active==='workouts'&&S.activeWorkout){
       const now=Date.now();
       if(now-_lastBackOnWorkouts<2500){
@@ -2216,7 +2221,7 @@ function setupBackButton(){
       return;
     }
 
-    // 8) Any screen other than dashboard → go home
+    // 9) Any screen other than dashboard → go home
     if(active!=='dashboard'){
       window._bsHandlingBack=true;
       showScreen('dashboard');
