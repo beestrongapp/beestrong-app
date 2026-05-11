@@ -104,22 +104,20 @@ function stableJson(v){
 
 function migrateDefaultTemplates(){
   const versionKey='bs-default-templates-version-v1';
-  if(localStorage.getItem(versionKey)==='upper-lower-v2')return;
+  if(localStorage.getItem(versionKey)==='upper-lower-v3')return;
   const legacyNames=new Set(['Upper A','Lower A','Upper B','Lower B']);
-  const defaultsById=new Map(DEFAULT_TEMPLATES.map(tp=>[String(tp.id),tp]));
-  const next=(S.templates||[]).map(tp=>{
-    const defaultTpl=defaultsById.get(String(tp.id));
-    if(!defaultTpl||!legacyNames.has(tp.name))return tp;
-    const looksLegacy=(tp.exercises||[]).some(ex=>!ex.gk&&!ex.equipment);
-    return looksLegacy?JSON.parse(JSON.stringify(defaultTpl)):tp;
-  });
+  const next=[...(S.templates||[])];
   DEFAULT_TEMPLATES.forEach(dt=>{
-    if(!next.some(tp=>String(tp.id)===String(dt.id))){
-      next.push(JSON.parse(JSON.stringify(dt)));
+    const clone=JSON.parse(JSON.stringify(dt));
+    const idx=next.findIndex(tp=>String(tp.id)===String(dt.id)||legacyNames.has(tp.name)&&tp.name===dt.name);
+    if(idx>=0){
+      next[idx]=clone;
+    }else{
+      next.push(clone);
     }
   });
   S.templates=next;
-  localStorage.setItem(versionKey,'upper-lower-v2');
+  localStorage.setItem(versionKey,'upper-lower-v3');
   sv('bs-tpl-v4',S.templates);
 }
 
