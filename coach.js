@@ -480,6 +480,7 @@ function renderClients(){
 }
 
 async function renderUserCoaches(){
+  stopCoachChatRealtime();
   const el=document.getElementById('coachesContent');
   if(!el)return;
   if(!S.user){
@@ -530,65 +531,45 @@ function userCoachCardHtml(inv){
 
 async function openUserCoachDetail(invId){
   closeModal();
-  const ov=document.createElement('div');ov.className='modal-overlay';
-  ov.innerHTML=`<div class="modal" style="max-height:86vh;overflow-y:auto;">
-    <div class="modal-handle"></div>
-    <div id="userCoachDetailContent" style="display:flex;align-items:center;justify-content:center;padding:40px 0;"><div class="spinner"></div></div>
-  </div>`;
-  ov._cleanup=()=>stopCoachChatRealtime();
-  document.body.appendChild(ov);S.modal=ov;
-  ov._userCoachInvId=invId;
-  ov._userCoachView='hub';
-  ov._backHandler=()=>{
-    if(ov._userCoachView==='chat'){
-      openUserCoachDetail(ov._userCoachInvId);
-      return true;
-    }
-    closeModal();
-    if(typeof showScreen==='function'){
-      window._bsHandlingBack=true;
-      showScreen('coaches');
-      window._bsHandlingBack=false;
-    }
-    return true;
-  };
-  if(typeof ensureBackTrap==='function')ensureBackTrap({modal:'user-coach-detail',invId});
+  stopCoachChatRealtime();
+  const el=document.getElementById('coachesContent');
+  if(!el)return;
+  el.innerHTML=`<div id="userCoachDetailContent" style="display:flex;align-items:center;justify-content:center;padding:40px 0;"><div class="spinner"></div></div>`;
   try{
     const{data:inv,error}=await sb.from('coach_invitations').select('*').eq('id',invId).single();
     if(error||!inv)throw error||new Error('not found');
-    const coachName=inv.coach_name||inv.coach_email||'Coach';
-    const content=document.getElementById('userCoachDetailContent');
-    content.style.display='block';
-    content.style.padding='0';
-    content.innerHTML=`
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:14px;">
-        <div>
-          <div class="modal-title" style="margin-bottom:4px;">${coachName}</div>
-          <div style="font-size:12px;color:var(--text2);">${inv.coach_email||''}</div>
-        </div>
-        <button class="rm-btn" onclick="closeModal()" style="width:34px;height:34px;font-size:18px;">✕</button>
-      </div>
-      <div class="quick-access-grid" style="grid-template-columns:repeat(2,minmax(0,1fr));margin-bottom:10px;">
-        <div class="qa-tile" onclick="renderUserCoachChat('${inv.id}')">
-          <div class="qa-tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="22" height="22"><path d="M21 15a4 4 0 0 1-4 4H7l-4 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg></div>
-          <div class="qa-tile-label">Chat</div>
-        </div>
-        <div class="qa-tile" onclick="showSyncToast('${tt({pl:'Programy od coacha są w zakładce Programy.',en:'Coach programs are in the Programs tab.',de:'Coach-Programme sind im Programme-Tab.',es:'Los programas del coach están en Programas.'}).replace(/'/g,"\\'")}')">
-          <div class="qa-tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="22" height="22"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 3v18"/></svg></div>
-          <div class="qa-tile-label">${t('programs')}</div>
-        </div>
-        <div class="qa-tile" onclick="showSyncToast('${tt({pl:'Podgląd check-in dodamy później.',en:'Check-in view will be added later.',de:'Check-in kommt später.',es:'Check-in se añadirá más tarde.'}).replace(/'/g,"\\'")}')">
-          <div class="qa-tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="22" height="22"><polyline points="20 6 9 17 4 12"/></svg></div>
-          <div class="qa-tile-label">Check-in</div>
-        </div>
-        <div class="qa-tile" onclick="showSyncToast('${tt({pl:'Notatki coacha dodamy później.',en:'Coach notes will be added later.',de:'Coach-Notizen kommen später.',es:'Notas del coach se añadirán más tarde.'}).replace(/'/g,"\\'")}')">
-          <div class="qa-tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="22" height="22"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="14" y2="17"/></svg></div>
-          <div class="qa-tile-label">${tt({pl:'Notatki',en:'Notes',de:'Notizen',es:'Notas'})}</div>
-        </div>
-      </div>`;
+    renderUserCoachHub(inv);
   }catch(e){
-    document.getElementById('userCoachDetailContent').innerHTML=`<div style="padding:20px;text-align:center;color:var(--red);">${tt({pl:'Nie udało się pobrać danych coacha.',en:'Could not load coach data.',de:'Coach-Daten konnten nicht geladen werden.',es:'No se pudieron cargar los datos del coach.'})}<br><br><button class="btn btn-ghost" onclick="closeModal()">OK</button></div>`;
+    document.getElementById('userCoachDetailContent').innerHTML=`<div style="padding:20px;text-align:center;color:var(--red);">${tt({pl:'Nie udało się pobrać danych coacha.',en:'Could not load coach data.',de:'Coach-Daten konnten nicht geladen werden.',es:'No se pudieron cargar los datos del coach.'})}<br><br><button class="btn btn-ghost" onclick="renderUserCoaches()">OK</button></div>`;
   }
+}
+
+function userCoachHeader(inv,title,sub,backAction){
+  const coachName=inv?.coach_name||inv?.coach_email||'Coach';
+  const back=backAction||'renderUserCoaches()';
+  return `<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:16px;">
+    <div>
+      <button class="modal-back" onclick="${back}" style="margin-bottom:8px;">${t('backBtn')}</button>
+      <div class="modal-title" style="margin-bottom:4px;">${title||coachName}</div>
+      <div style="font-size:12px;color:var(--text2);">${sub||inv?.coach_email||''}</div>
+    </div>
+  </div>`;
+}
+
+function renderUserCoachHub(inv){
+  const content=document.getElementById('userCoachDetailContent');
+  if(!content)return;
+  const coachName=inv.coach_name||inv.coach_email||'Coach';
+  content.style.display='block';
+  content.style.padding='0';
+  content.innerHTML=`
+    ${userCoachHeader(inv,coachName,inv.coach_email||'','renderUserCoaches()')}
+    <div class="quick-access-grid" style="grid-template-columns:repeat(2,minmax(0,1fr));margin-bottom:10px;">
+      ${clientHubTile(`renderUserCoachChat('${inv.id}')`,'Chat','<path d="M21 15a4 4 0 0 1-4 4H7l-4 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/>')}
+      ${clientHubTile(`renderUserCoachPayments('${inv.id}')`,tt({pl:'Płatności',en:'Payments',de:'Zahlungen',es:'Pagos'}),'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/><path d="M7 15h4"/>')}
+      ${clientHubTile(`renderUserCoachCheckin('${inv.id}')`,'Check-in','<polyline points="20 6 9 17 4 12"/>')}
+      ${clientHubTile(`renderUserCoachNotes('${inv.id}')`,tt({pl:'Notatki',en:'Notes',de:'Notizen',es:'Notas'}),'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="14" y2="17"/>')}
+    </div>`;
 }
 
 function filterClients(){
@@ -849,6 +830,8 @@ function renderClientHub(){
       ${clientHubTile('renderClientProgressView()',t('progress'),'<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>')}
       ${clientHubTile('renderClientMeasurementsView()',tt({pl:'Pomiary',en:'Measurements',de:'Messungen',es:'Medidas'}),'<line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><circle cx="12" cy="12" r="4"/>')}
       ${clientHubTile('renderClientChatPlaceholder()',tt({pl:'Chat',en:'Chat',de:'Chat',es:'Chat'}),'<path d="M21 15a4 4 0 0 1-4 4H7l-4 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/>')}
+      ${clientHubTile('renderClientNotesView()',tt({pl:'Notatki',en:'Notes',de:'Notizen',es:'Notas'}),'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="14" y2="17"/>')}
+      ${clientHubTile('renderClientPaymentsView()',tt({pl:'Płatności',en:'Payments',de:'Zahlungen',es:'Pagos'}),'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/><path d="M7 15h4"/>')}
     </div>
     ${renderClientAssignments(ctx)}
     <button class="btn btn-ghost" style="margin-top:20px;width:100%;" onclick="closeModal()">${tt({pl:'Zamknij',en:'Close',de:'Schließen',es:'Cerrar'})}</button>`;
@@ -936,13 +919,35 @@ function renderClientWorkoutDetail(idx){
   el.innerHTML=html;
 }
 
-function renderClientMeasurementsView(){
+async function renderClientMeasurementsView(){
   const ctx=window._clientDetailData,el=document.getElementById('clientDetailContent');
   if(!ctx||!el)return;
   window._clientDetailView='measurements';
   el.style.display='block';
   el.style.padding='0';
   let html=clientDetailHeader(tt({pl:'Pomiary',en:'Measurements',de:'Messungen',es:'Medidas'}),clientDetailName(ctx),true);
+  let checkins=[];
+  if(sb){
+    try{
+      const{data}=await sb.from('coach_checkins').select('*').eq('invitation_id',ctx.inv.id).order('created_at',{ascending:false});
+      checkins=data||[];
+    }catch(e){}
+  }
+  if(checkins.length){
+    const types=(typeof MEASURE_TYPES!=='undefined'?MEASURE_TYPES:[
+      {key:'weight_k'},{key:'chest_m'},{key:'waist'},{key:'hips'},{key:'arm'},{key:'thigh'}
+    ]);
+    html+=`<div class="section-label">${tt({pl:'Check-in od klienta',en:'Client check-ins',de:'Client Check-ins',es:'Check-ins del cliente'})}</div>`;
+    html+=checkins.slice(0,6).map(c=>{
+      const rec=c.measurement_data||{};
+      const parts=types.filter(mt=>rec[mt.key]!=null).map(mt=>`${t(mt.key)}: <strong>${dispMeas(mt.key,+rec[mt.key])}${unitMeas(mt.key)}</strong>`);
+      return `<div style="padding:12px 0;border-bottom:1px solid var(--border);font-size:13px;">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:5px;">${formatIsoDate(c.measurement_date)} · ${c.created_at?new Date(c.created_at).toLocaleDateString():''}</div>
+        <div style="line-height:1.7;">${parts.join(' · ')||t('noData')}</div>
+      </div>`;
+    }).join('');
+    html+=`<div class="section-label" style="margin-top:18px;">${tt({pl:'Wszystkie pomiary',en:'All measurements',de:'Alle Messungen',es:'Todas las medidas'})}</div>`;
+  }
   if(!ctx.measurements.length){
     el.innerHTML=html+`<div class="empty-state">${t('noMeasures')}</div>`;
     return;
@@ -1021,12 +1026,181 @@ function renderClientChatPlaceholder(){
   });
 }
 
+function paymentStatusBadge(p,onclick){
+  const paid=p.status==='paid';
+  return `<button class="client-status-badge" onclick="${onclick||''}" style="border:none;cursor:${onclick?'pointer':'default'};background:${paid?'rgba(80,200,80,0.16)':'rgba(255,190,70,0.18)'};color:${paid?'#3db860':'#d89b17'};">${paid?'Paid':'Pending'}</button>`;
+}
+
+function addMonthsIso(dateStr,months){
+  const[dY,dM,dD]=(dateStr||today()).split('-').map(Number);
+  const d=new Date(dY,dM-1,dD||1);
+  const day=d.getDate();
+  d.setMonth(d.getMonth()+months);
+  if(d.getDate()!==day)d.setDate(0);
+  return d.toISOString().slice(0,10);
+}
+
+function formatIsoDate(iso){
+  if(!iso)return '';
+  const[y,m,d]=iso.split('-');
+  return d&&m&&y?`${d}.${m}.${y}`:iso;
+}
+
+async function renderClientNotesView(){
+  const ctx=window._clientDetailData,el=document.getElementById('clientDetailContent');
+  if(!ctx||!el||!sb)return;
+  window._clientDetailView='notes';
+  el.style.display='block';
+  el.style.padding='0';
+  el.innerHTML=clientDetailHeader(tt({pl:'Notatki',en:'Notes',de:'Notizen',es:'Notas'}),clientDetailName(ctx),true)+`<div style="display:flex;justify-content:center;padding:30px 0;"><div class="spinner"></div></div>`;
+  const{data,error}=await sb.from('coach_client_notes').select('*').eq('invitation_id',ctx.inv.id).order('created_at',{ascending:false});
+  if(error){
+    el.innerHTML=clientDetailHeader(tt({pl:'Notatki',en:'Notes',de:'Notizen',es:'Notas'}),clientDetailName(ctx),true)+`<div style="color:var(--red);padding:14px;">${error.message}</div>`;
+    return;
+  }
+  const notes=data||[];
+  el.innerHTML=clientDetailHeader(tt({pl:'Notatki',en:'Notes',de:'Notizen',es:'Notas'}),clientDetailName(ctx),true)+
+    (notes.length?notes.map(n=>`<div class="ex-card">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:8px;">${n.created_at?new Date(n.created_at).toLocaleDateString():''}</div>
+      <div style="font-size:14px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere;">${chatEsc(n.note)}</div>
+    </div>`).join(''):`<div class="empty-state">${tt({pl:'Brak notatek od coacha.',en:'No coach notes yet.',de:'Noch keine Notizen.',es:'Sin notas.'})}</div>`);
+}
+
+async function renderClientPaymentsView(){
+  const ctx=window._clientDetailData,el=document.getElementById('clientDetailContent');
+  if(!ctx||!el||!sb)return;
+  window._clientDetailView='payments';
+  el.style.display='block';
+  el.style.padding='0';
+  el.innerHTML=clientDetailHeader(tt({pl:'Płatności',en:'Payments',de:'Zahlungen',es:'Pagos'}),clientDetailName(ctx),true)+`<div style="display:flex;justify-content:center;padding:30px 0;"><div class="spinner"></div></div>`;
+  const{data,error}=await sb.from('coach_payments').select('*').eq('invitation_id',ctx.inv.id).order('due_date',{ascending:true});
+  if(error){
+    el.innerHTML=clientDetailHeader(tt({pl:'Płatności',en:'Payments',de:'Zahlungen',es:'Pagos'}),clientDetailName(ctx),true)+`<div style="color:var(--red);padding:14px;">${error.message}</div>`;
+    return;
+  }
+  const rows=data||[];
+  el.innerHTML=clientDetailHeader(tt({pl:'Płatności',en:'Payments',de:'Zahlungen',es:'Pagos'}),clientDetailName(ctx),true)+
+    (rows.length?rows.map(p=>`<div class="workout-row" style="cursor:default;">
+      <div class="workout-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg></div>
+      <div class="workout-row-info"><div class="workout-row-name">${formatIsoDate(p.due_date)}</div><div class="workout-row-meta">${p.paid_at?tt({pl:'Zapłacono',en:'Paid',de:'Bezahlt',es:'Pagado'})+': '+formatIsoDate((p.paid_at||'').slice(0,10)):tt({pl:'Oczekuje',en:'Pending',de:'Ausstehend',es:'Pendiente'})}</div></div>
+      ${paymentStatusBadge(p)}
+    </div>`).join(''):`<div class="empty-state">${tt({pl:'Brak harmonogramu płatności.',en:'No payment schedule yet.',de:'Noch kein Zahlungsplan.',es:'Sin calendario de pagos.'})}</div>`);
+}
+
+async function renderCoachNotesView(){
+  const ctx=window._clientDetailData,el=document.getElementById('clientDetailContent');
+  if(!ctx||!el||!sb)return;
+  window._clientDetailView='notes';
+  el.style.display='block';
+  el.style.padding='0';
+  const title=tt({pl:'Notatki',en:'Notes',de:'Notizen',es:'Notas'});
+  el.innerHTML=clientDetailHeader(title,clientDetailName(ctx),true)+`<div style="display:flex;justify-content:center;padding:30px 0;"><div class="spinner"></div></div>`;
+  const{data,error}=await sb.from('coach_client_notes').select('*').eq('invitation_id',ctx.inv.id).order('created_at',{ascending:false});
+  if(error){
+    el.innerHTML=clientDetailHeader(title,clientDetailName(ctx),true)+`<div style="color:var(--red);padding:14px;">${error.message}</div>`;
+    return;
+  }
+  const notes=data||[];
+  el.innerHTML=clientDetailHeader(title,clientDetailName(ctx),true)+`
+    <textarea id="coachNoteInput" rows="4" maxlength="4000" placeholder="${tt({pl:'Napisz notatkę dla klienta...',en:'Write a note for the client...',de:'Notiz für den Klienten schreiben...',es:'Escribe una nota para el cliente...'})}" style="resize:vertical;margin-bottom:10px;"></textarea>
+    <button class="btn btn-primary" onclick="saveCoachClientNote()" style="width:100%;margin-bottom:18px;">${tt({pl:'Wyślij notatkę',en:'Send note',de:'Notiz senden',es:'Enviar nota'})}</button>
+    ${notes.length?notes.map(n=>`<div class="ex-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;">
+        <div style="font-size:12px;color:var(--text3);">${n.created_at?new Date(n.created_at).toLocaleDateString():''}</div>
+        <button class="rm-btn" onclick="deleteCoachClientNote('${n.id}')" style="width:30px;height:30px;">✕</button>
+      </div>
+      <div style="font-size:14px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere;">${chatEsc(n.note)}</div>
+    </div>`).join(''):`<div class="empty-state">${tt({pl:'Brak notatek.',en:'No notes yet.',de:'Keine Notizen.',es:'Sin notas.'})}</div>`}`;
+}
+
+async function saveCoachClientNote(){
+  const ctx=window._clientDetailData;
+  const note=(document.getElementById('coachNoteInput')?.value||'').trim();
+  if(!ctx||!sb||!S.user||!note)return;
+  const{error}=await sb.from('coach_client_notes').insert({
+    invitation_id:ctx.inv.id,
+    coach_id:S.user.id,
+    client_user_id:ctx.clientId,
+    note,
+  });
+  if(error)return showSyncToast(error.message,'error');
+  showSyncToast(tt({pl:'Notatka wysłana ✓',en:'Note sent ✓',de:'Notiz gesendet ✓',es:'Nota enviada ✓'}),'success');
+  renderCoachNotesView();
+}
+
+async function deleteCoachClientNote(noteId){
+  if(!sb||!noteId)return;
+  const{error}=await sb.from('coach_client_notes').delete().eq('id',noteId).eq('coach_id',S.user.id);
+  if(error)return showSyncToast(error.message,'error');
+  renderCoachNotesView();
+}
+
+async function renderCoachPaymentsView(){
+  const ctx=window._clientDetailData,el=document.getElementById('clientDetailContent');
+  if(!ctx||!el||!sb)return;
+  window._clientDetailView='payments';
+  el.style.display='block';
+  el.style.padding='0';
+  const title=tt({pl:'Płatności',en:'Payments',de:'Zahlungen',es:'Pagos'});
+  el.innerHTML=clientDetailHeader(title,clientDetailName(ctx),true)+`<div style="display:flex;justify-content:center;padding:30px 0;"><div class="spinner"></div></div>`;
+  const{data,error}=await sb.from('coach_payments').select('*').eq('invitation_id',ctx.inv.id).order('due_date',{ascending:true});
+  if(error){
+    el.innerHTML=clientDetailHeader(title,clientDetailName(ctx),true)+`<div style="color:var(--red);padding:14px;">${error.message}</div>`;
+    return;
+  }
+  const rows=data||[];
+  el.innerHTML=clientDetailHeader(title,clientDetailName(ctx),true)+`
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px;margin-bottom:14px;">
+      <label class="form-label">${tt({pl:'Pierwsza płatność',en:'First payment',de:'Erste Zahlung',es:'Primer pago'})}</label>
+      <input id="coachPaymentStartDate" type="date" value="${rows[0]?.due_date||today()}" style="margin-bottom:10px;">
+      <button class="btn btn-primary" onclick="createClientPaymentSchedule()" style="width:100%;">${tt({pl:'Wygeneruj harmonogram',en:'Generate schedule',de:'Plan erstellen',es:'Generar calendario'})}</button>
+    </div>
+    ${rows.length?rows.map(p=>`<div class="workout-row" style="cursor:default;">
+      <div class="workout-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg></div>
+      <div class="workout-row-info"><div class="workout-row-name">${formatIsoDate(p.due_date)}</div><div class="workout-row-meta">${p.paid_at?tt({pl:'Zapłacono',en:'Paid',de:'Bezahlt',es:'Pagado'})+': '+formatIsoDate((p.paid_at||'').slice(0,10)):tt({pl:'Oczekuje',en:'Pending',de:'Ausstehend',es:'Pendiente'})}</div></div>
+      ${paymentStatusBadge(p,`toggleClientPaymentStatus('${p.id}','${p.status||'pending'}')`)}
+    </div>`).join(''):`<div class="empty-state">${tt({pl:'Wpisz pierwszą datę, żeby utworzyć harmonogram.',en:'Enter the first date to create a schedule.',de:'Erstes Datum eingeben.',es:'Introduce la primera fecha.'})}</div>`}`;
+}
+
+async function createClientPaymentSchedule(){
+  const ctx=window._clientDetailData;
+  const start=document.getElementById('coachPaymentStartDate')?.value;
+  if(!ctx||!sb||!S.user||!start)return;
+  const rows=Array.from({length:12},(_,i)=>({
+    invitation_id:ctx.inv.id,
+    coach_id:S.user.id,
+    client_user_id:ctx.clientId,
+    due_date:addMonthsIso(start,i),
+    status:'pending',
+  }));
+  const{error}=await sb.from('coach_payments').upsert(rows,{onConflict:'invitation_id,due_date',ignoreDuplicates:true});
+  if(error)return showSyncToast(error.message,'error');
+  showSyncToast(tt({pl:'Harmonogram wygenerowany ✓',en:'Schedule generated ✓',de:'Plan erstellt ✓',es:'Calendario generado ✓'}),'success');
+  renderCoachPaymentsView();
+}
+
+async function toggleClientPaymentStatus(paymentId,status){
+  if(!sb||!paymentId)return;
+  const next=status==='paid'?'pending':'paid';
+  const{error}=await sb.from('coach_payments').update({status:next,paid_at:next==='paid'?new Date().toISOString():null}).eq('id',paymentId);
+  if(error)return showSyncToast(error.message,'error');
+  renderCoachPaymentsView();
+}
+
 window.renderClientHub=renderClientHub;
 window.renderClientWorkoutsView=renderClientWorkoutsView;
 window.renderClientWorkoutDetail=renderClientWorkoutDetail;
 window.renderClientMeasurementsView=renderClientMeasurementsView;
 window.renderClientProgressView=renderClientProgressView;
 window.renderClientChatPlaceholder=renderClientChatPlaceholder;
+window.renderClientNotesView=renderClientNotesView;
+window.renderClientPaymentsView=renderClientPaymentsView;
+window.renderCoachNotesView=renderCoachNotesView;
+window.renderCoachPaymentsView=renderCoachPaymentsView;
+window.saveCoachClientNote=saveCoachClientNote;
+window.deleteCoachClientNote=deleteCoachClientNote;
+window.createClientPaymentSchedule=createClientPaymentSchedule;
+window.toggleClientPaymentStatus=toggleClientPaymentStatus;
 
 let _coachChatChannel=null;
 let _coachChatContext=null;
@@ -1140,11 +1314,6 @@ async function sendCoachChatMessage(inputId){
 async function renderUserCoachChat(invId){
   const content=document.getElementById('userCoachDetailContent');
   if(!content||!sb)return;
-  if(S.modal){
-    S.modal._userCoachInvId=invId;
-    S.modal._userCoachView='chat';
-  }
-  if(typeof ensureBackTrap==='function')ensureBackTrap({modal:'user-coach-chat',invId});
   content.style.display='block';
   content.style.padding='0';
   content.innerHTML=`<div style="display:flex;justify-content:center;padding:40px 0;"><div class="spinner"></div></div>`;
@@ -1154,27 +1323,104 @@ async function renderUserCoachChat(invId){
     return;
   }
   const title=inv.coach_name||inv.coach_email||'Coach';
-  const header=`<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:16px;">
-    <div>
-      <button class="modal-back" onclick="openUserCoachDetail('${inv.id}')" style="margin-bottom:8px;">${t('backBtn')}</button>
-      <div class="modal-title" style="margin-bottom:4px;">Chat</div>
-      <div style="font-size:12px;color:var(--text2);">${title}</div>
-    </div>
-    <button class="rm-btn" onclick="closeModal()" style="width:34px;height:34px;font-size:18px;">✕</button>
-  </div>`;
   renderCoachChat({
     inv,
     containerId:'userCoachDetailContent',
     title:'Chat',
     subtitle:title,
-    backHtml:header,
+    backHtml:userCoachHeader(inv,'Chat',title,`openUserCoachDetail('${inv.id}')`),
     backAction:`openUserCoachDetail('${inv.id}')`,
     inputId:'userCoachChatInput',
     listId:'userCoachChatMessages',
   });
 }
 
+async function renderUserCoachPayments(invId){
+  const content=document.getElementById('userCoachDetailContent');
+  if(!content||!sb)return;
+  content.innerHTML=`<div style="display:flex;justify-content:center;padding:40px 0;"><div class="spinner"></div></div>`;
+  const{data:inv,error:invErr}=await sb.from('coach_invitations').select('*').eq('id',invId).single();
+  if(invErr||!inv){content.innerHTML=`<div style="color:var(--red);padding:16px;">${invErr?.message||'Payments unavailable'}</div>`;return;}
+  const{data,error}=await sb.from('coach_payments').select('*').eq('invitation_id',invId).order('due_date',{ascending:true});
+  const title=tt({pl:'Płatności',en:'Payments',de:'Zahlungen',es:'Pagos'});
+  if(error){
+    content.innerHTML=userCoachHeader(inv,title,inv.coach_name||inv.coach_email||'',`openUserCoachDetail('${inv.id}')`)+`<div style="color:var(--red);padding:14px;">${error.message}</div>`;
+    return;
+  }
+  const rows=data||[];
+  content.innerHTML=userCoachHeader(inv,title,inv.coach_name||inv.coach_email||'',`openUserCoachDetail('${inv.id}')`)+
+    (rows.length?rows.map(p=>`<div class="workout-row" style="cursor:default;">
+      <div class="workout-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg></div>
+      <div class="workout-row-info"><div class="workout-row-name">${formatIsoDate(p.due_date)}</div><div class="workout-row-meta">${p.paid_at?tt({pl:'Zapłacono',en:'Paid',de:'Bezahlt',es:'Pagado'})+': '+formatIsoDate((p.paid_at||'').slice(0,10)):tt({pl:'Oczekuje',en:'Pending',de:'Ausstehend',es:'Pendiente'})}</div></div>
+      ${paymentStatusBadge(p)}
+    </div>`).join(''):`<div class="empty-state">${tt({pl:'Coach nie dodał jeszcze harmonogramu płatności.',en:'Your coach has not added a payment schedule yet.',de:'Noch kein Zahlungsplan.',es:'Sin calendario de pagos.'})}</div>`);
+}
+
+async function renderUserCoachNotes(invId){
+  const content=document.getElementById('userCoachDetailContent');
+  if(!content||!sb)return;
+  content.innerHTML=`<div style="display:flex;justify-content:center;padding:40px 0;"><div class="spinner"></div></div>`;
+  const{data:inv,error:invErr}=await sb.from('coach_invitations').select('*').eq('id',invId).single();
+  if(invErr||!inv){content.innerHTML=`<div style="color:var(--red);padding:16px;">${invErr?.message||'Notes unavailable'}</div>`;return;}
+  const{data,error}=await sb.from('coach_client_notes').select('*').eq('invitation_id',invId).order('created_at',{ascending:false});
+  const title=tt({pl:'Notatki',en:'Notes',de:'Notizen',es:'Notas'});
+  if(error){
+    content.innerHTML=userCoachHeader(inv,title,inv.coach_name||inv.coach_email||'',`openUserCoachDetail('${inv.id}')`)+`<div style="color:var(--red);padding:14px;">${error.message}</div>`;
+    return;
+  }
+  const notes=data||[];
+  content.innerHTML=userCoachHeader(inv,title,inv.coach_name||inv.coach_email||'',`openUserCoachDetail('${inv.id}')`)+
+    (notes.length?notes.map(n=>`<div class="ex-card">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:8px;">${n.created_at?new Date(n.created_at).toLocaleDateString():''}</div>
+      <div style="font-size:14px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere;">${chatEsc(n.note)}</div>
+    </div>`).join(''):`<div class="empty-state">${tt({pl:'Brak notatek od coacha.',en:'No coach notes yet.',de:'Noch keine Notizen.',es:'Sin notas.'})}</div>`);
+}
+
+function renderUserCoachCheckin(invId){
+  const content=document.getElementById('userCoachDetailContent');
+  if(!content)return;
+  const measurements=Object.entries(S.measurements||{}).sort((a,b)=>String(b[0]).localeCompare(String(a[0])));
+  content.innerHTML=`<div style="display:flex;justify-content:center;padding:40px 0;"><div class="spinner"></div></div>`;
+  sb.from('coach_invitations').select('*').eq('id',invId).single().then(({data:inv,error})=>{
+    if(error||!inv){content.innerHTML=`<div style="color:var(--red);padding:16px;">${error?.message||'Check-in unavailable'}</div>`;return;}
+    const title='Check-in';
+    const types=(typeof MEASURE_TYPES!=='undefined'?MEASURE_TYPES:[
+      {key:'weight_k'},{key:'chest_m'},{key:'waist'},{key:'hips'},{key:'arm'},{key:'thigh'}
+    ]);
+    content.innerHTML=userCoachHeader(inv,title,inv.coach_name||inv.coach_email||'',`openUserCoachDetail('${inv.id}')`)+
+      (measurements.length?measurements.map(([date,m])=>{
+        const parts=types.filter(mt=>m[mt.key]!=null).map(mt=>`${t(mt.key)}: ${dispMeas(mt.key,+m[mt.key])}${unitMeas(mt.key)}`);
+        return `<div class="workout-row" onclick="sendCoachCheckin('${inv.id}','${date}')">
+          <div class="workout-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="workout-row-info"><div class="workout-row-name">${formatIsoDate(date)}</div><div class="workout-row-meta">${parts.join(' · ')||t('noData')}</div></div>
+        </div>`;
+      }).join(''):`<div class="empty-state">${tt({pl:'Nie masz jeszcze pomiarów do wysłania.',en:'You have no measurements to send yet.',de:'Keine Messungen zum Senden.',es:'No tienes medidas para enviar.'})}</div>`);
+  });
+}
+
+async function sendCoachCheckin(invId,date){
+  if(!sb||!S.user)return;
+  const m=S.measurements?.[date];
+  if(!m)return;
+  const{data:inv,error:invErr}=await sb.from('coach_invitations').select('*').eq('id',invId).single();
+  if(invErr||!inv)return showSyncToast(invErr?.message||'Check-in unavailable','error');
+  const payload={
+    invitation_id:inv.id,
+    coach_id:inv.coach_id,
+    client_user_id:S.user.id,
+    measurement_date:date,
+    measurement_data:m,
+  };
+  const{error}=await sb.from('coach_checkins').insert(payload);
+  if(error)return showSyncToast(error.message,'error');
+  showSyncToast(tt({pl:'Check-in wysłany do coacha ✓',en:'Check-in sent to coach ✓',de:'Check-in gesendet ✓',es:'Check-in enviado ✓'}),'success');
+}
+
 window.renderUserCoachChat=renderUserCoachChat;
+window.renderUserCoachPayments=renderUserCoachPayments;
+window.renderUserCoachNotes=renderUserCoachNotes;
+window.renderUserCoachCheckin=renderUserCoachCheckin;
+window.sendCoachCheckin=sendCoachCheckin;
 window.sendCoachChatMessage=sendCoachChatMessage;
 
 async function clearCoachChat(){
