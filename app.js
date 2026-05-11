@@ -1298,7 +1298,7 @@ function renderSettings(){
     login:{title:tt({pl:'Login and data',en:'Login and data',de:'Login und Daten',es:'Login y datos'}),rows:null},
     subscription:{title:subscriptionTitle,rows:null},
     preferences:{title:preferencesTitle,rows:null},
-    measurements:{title:tt({pl:'Body measurements',en:'Body measurements',de:'Körpermaße',es:'Medidas corporales'}),rows:null},
+    measurements:{title:tt({pl:'Twoje pomiary',en:'Body measurements',de:'Körpermaße',es:'Medidas corporales'}),rows:null},
     contact:{title:contactTitle,rows:null},
     whatsnew:{title:whatsNewTitle,rows:null},
     privacy:{title:privacyTitle,rows:null},
@@ -1319,7 +1319,7 @@ function renderSettings(){
   const subscriptionLabel=S.coachMode&&S.user
     ?'COACH'
     :(S.isPro&&S.user?'PRO':'FREE');
-  const loginTitle=tt({pl:'Login and data',en:'Login and data',de:'Login und Daten',es:'Login y datos'});
+  const loginTitle=tt({pl:'Login i dane',en:'Login and data',de:'Login und Daten',es:'Login y datos'});
   const loginRows=[
     {key:'account',label:loginTitle,value:S.user?`${S.user.email} · ${dataState}`:`${accountState} · ${dataState}`,icon:svg(icon.account),action:S.user?'showAccountModal':'showAuthModal'},
     {key:'name',label:lang==='pl'?'Imię':'Name',value:localStorage.getItem('bs-username')||'—',icon:svg(icon.name),action:'openSettingsName'},
@@ -1332,9 +1332,9 @@ function renderSettings(){
     {key:'theme',label:tt({pl:'Theme colour',en:'Theme colour',de:'Farbschema',es:'Tema'}),value:isDark?t('darkTheme'):t('lightTheme'),icon:svg(icon.theme),action:'openSettingsTheme'},
     {key:'language',label:t('language'),value:({en:t('langEnglish'),pl:t('langPolish'),de:t('langGerman'),es:t('langSpanish')}[lang]||t('langEnglish')),icon:svg(icon.language),action:'openSettingsLanguage'},
     {key:'units',label:tt({pl:'Units',en:'Units',de:'Einheiten',es:'Unidades'}),value:S.units==='imperial'?'Imperial (lbs / in)':'Metric (kg / cm)',icon:svg(icon.units),action:'openSettingsUnits'},
-    {key:'restTimer',label:tt({pl:'Rest timer',en:'Rest timer',de:'Pausenzeit',es:'Tiempo de descanso'}),value:`${S.defaultRest||90} s`,icon:svg(icon.timer),action:'openSettingsRestTimer'},
+    {key:'restTimer',label:tt({pl:'Czas odpoczynku',en:'Rest timer',de:'Pausenzeit',es:'Tiempo de descanso'}),value:`${S.defaultRest||90} s`,icon:svg(icon.timer),action:'openSettingsRestTimer'},
   ];
-  const measurementsTitle=tt({pl:'Body measurements',en:'Body measurements',de:'Körpermaße',es:'Medidas corporales'});
+  const measurementsTitle=tt({pl:'Twoje pomiary',en:'Body measurements',de:'Körpermaße',es:'Medidas corporales'});
   const measurementRows=[
     {key:'measurements',label:measurementsTitle,value:measValue,icon:svg(icon.measure),action:'openSettingsMeasurements'},
   ];
