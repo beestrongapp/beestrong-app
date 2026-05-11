@@ -1298,6 +1298,7 @@ function renderSettings(){
   const contactTitle=tt({pl:'Kontakt',en:'Contact',de:'Kontakt',es:'Contacto'});
   const whatsNewTitle=tt({pl:'Co nowego',en:"What's new",de:'Was ist neu',es:'Novedades'});
   const privacyTitle=tt({pl:'Polityka prywatności',en:'Privacy Policy',de:'Datenschutz',es:'Política de privacidad'});
+  const termsTitle=tt({pl:'Regulamin',en:'Terms of Service',de:'Nutzungsbedingungen',es:'Terminos de servicio'});
   const deleteTitle=tt({pl:'Usuń konto i dane',en:'Delete account and data',de:'Konto und Daten löschen',es:'Eliminar cuenta y datos'});
   window._profileSections={
     login:{title:tt({pl:'Login and data',en:'Login and data',de:'Login und Daten',es:'Login y datos'}),rows:null},
@@ -1307,6 +1308,7 @@ function renderSettings(){
     contact:{title:contactTitle,rows:null},
     whatsnew:{title:whatsNewTitle,rows:null},
     privacy:{title:privacyTitle,rows:null},
+    terms:{title:termsTitle,rows:null},
     deleteAccount:{title:deleteTitle,rows:null},
   };
   const hubRow=(id,label,path)=>{
@@ -1355,7 +1357,7 @@ function renderSettings(){
     {key:'whatsnew',label:"What's new",value:tt({pl:'Zmiany z ostatniego update',en:'Latest update notes',de:'Letzte Update-Notizen',es:'Notas del último update'}),icon:svg(icon.news),action:'openProfilePlaceholderWhatsNew'},
   ];
   const privacyRows=[
-    {key:'privacy',label:'Privacy Policy',value:'beestrongapp.com/privacy.html',icon:svg(icon.privacy),action:'openPrivacyPolicy'},
+    {key:'privacy',label:'Privacy Policy',value:tt({pl:'Dostępna offline',en:'Available offline',de:'Offline verfuegbar',es:'Disponible offline'}),icon:svg(icon.privacy),action:'openPrivacyPolicy'},
   ];
   window._profileSections.login={title:loginTitle,rows:loginRows};
   window._profileSections.subscription={title:subscriptionTitle,rows:subscriptionRows};
@@ -1364,6 +1366,7 @@ function renderSettings(){
   window._profileSections.contact={title:contactTitle,rows:contactRows};
   window._profileSections.whatsnew={title:whatsNewTitle,rows:whatsNewRows};
   window._profileSections.privacy={title:privacyTitle,rows:privacyRows};
+  window._profileSections.terms={title:termsTitle,rows:null};
   window._profileSections.deleteAccount={title:deleteTitle,rows:null};
 
   const adminChangelog=isAdmin()?adminChangelogHtml():'';
@@ -1378,7 +1381,7 @@ function renderSettings(){
       else if(_profileSectionView==='subscription')sectionBody=profileSubscriptionHtml();
       else if(_profileSectionView==='measurements')sectionBody=profileMeasurementsHtml();
       else if(_profileSectionView==='deleteAccount')sectionBody=profileDeleteAccountHtml();
-      else if(['contact','whatsnew','privacy'].includes(_profileSectionView))sectionBody=profileInfoSectionHtml(_profileSectionView);
+      else if(['contact','whatsnew','privacy','terms'].includes(_profileSectionView))sectionBody=profileInfoSectionHtml(_profileSectionView);
       else sectionBody=`<div style="border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border);background:var(--bg2);">${(section.rows||[]).map((row,i)=>profileRow(row,i)).join('')}</div>`;
       el.innerHTML=`<div style="font-size:20px;font-weight:900;margin-bottom:18px;">${section.title}</div>${sectionBody}<div style="height:96px;"></div>${versionLbl}${backBar}`;
       if(_profileSectionView==='measurements')renderBodyCharts();
@@ -1398,6 +1401,7 @@ function renderSettings(){
     +hubRow('contact',contactTitle,icon.contact)
     +hubRow('whatsnew',whatsNewTitle,icon.news)
     +hubRow('privacy',privacyTitle,icon.privacy)
+    +hubRow('terms',termsTitle,icon.news)
     +`</div><div style="margin-bottom:8px;">`
     +hubRow('deleteAccount',deleteTitle,icon.delete)
     +`</div>`
@@ -1484,18 +1488,8 @@ function profileMeasurementsHtml(){
 }
 
 function profileInfoSectionHtml(id){
-  if(id==='privacy'){
-    return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:12px;">
-      ${tt({
-        pl:'Polityka prywatności BeeStrong opisuje dane konta, dane treningowe, pomiary ciała, Coach Mode, local storage, cloud sync i usuwanie danych.',
-        en:'BeeStrong Privacy Policy covers account data, workout data, body measurements, Coach Mode, local storage, cloud sync, and data deletion.',
-        de:'Die BeeStrong-Datenschutzerklaerung beschreibt Kontodaten, Trainingsdaten, Koerpermessungen, Coach Mode, lokalen Speicher, Cloud Sync und Datenloeschung.',
-        es:'La Politica de privacidad de BeeStrong cubre datos de cuenta, entrenamientos, medidas corporales, Coach Mode, almacenamiento local, cloud sync y eliminacion de datos.'
-      })}
-    </div>
-    ${profileActionCard('Privacy Policy','https://beestrongapp.com/privacy.html','openPrivacyPolicy()')}
-    ${profileActionCard(tt({pl:'Regulamin',en:'Terms of Service',de:'Nutzungsbedingungen',es:'Terminos de servicio'}),'https://beestrongapp.com/terms.html','openTermsOfService()')}`;
-  }
+  if(id==='privacy')return legalDocHtml('privacy')+profileActionCard(tt({pl:'Regulamin',en:'Terms of Service',de:'Nutzungsbedingungen',es:'Terminos de servicio'}),tt({pl:'Pokaż dokument offline',en:'Show offline document',de:'Offline-Dokument anzeigen',es:'Mostrar documento offline'}),'openTermsOfService()','margin-top:14px;');
+  if(id==='terms')return legalDocHtml('terms')+profileActionCard(tt({pl:'Polityka prywatności',en:'Privacy Policy',de:'Datenschutz',es:'Politica de privacidad'}),tt({pl:'Pokaż dokument offline',en:'Show offline document',de:'Offline-Dokument anzeigen',es:'Mostrar documento offline'}),'openPrivacyPolicy()','margin-top:14px;');
   const body={
     contact:tt({pl:'Sekcja Contact zostanie dodana później.',en:'Contact will be added later.',de:'Kontakt wird später hinzugefügt.',es:'Contact se añadirá más tarde.'}),
     whatsnew:tt({pl:'Tutaj będzie opis zmian z ostatniego update.',en:'Latest update notes will live here.',de:'Hier erscheinen die letzten Update-Notizen.',es:'Aquí estarán las notas del último update.'}),
@@ -1503,11 +1497,192 @@ function profileInfoSectionHtml(id){
   return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;font-size:13px;color:var(--text2);line-height:1.5;">${body}</div>`;
 }
 
+function legalDocHtml(type){
+  const docs={
+    privacy:{
+      en:{
+        title:'Privacy Policy',
+        updated:'Last updated: 6 May 2026',
+        intro:'BeeStrong is a workout tracking app for lifters and personal trainers. This policy explains what data we collect, how we use it, and the choices you have.',
+        notice:'This page is written for launch readiness and should be reviewed against your exact business setup before publishing to a store.',
+        sections:[
+          ['Data We Collect','BeeStrong may collect account information such as email address and display name; workout data such as exercises, sets, reps, weights, duration, notes, and program history; body measurement data that you choose to enter, such as weight and body measurements; Coach Mode data such as coach-client invitations, assigned programs, and client progress visible to an accepted coach relationship; and technical data stored locally on your device, including preferences, app settings, cached files, and offline workout data.'],
+          ['How We Use Data','We use your data to provide the app, save and sync your workouts, show progress analytics, support Coach Mode, maintain account access, improve reliability, and respond to support or deletion requests.'],
+          ['Local Storage and Offline Use','BeeStrong is an offline-first Progressive Web App. Workout data and preferences may be stored on your device so the app can work without an internet connection. If you clear browser/app storage, local-only data may be deleted.'],
+          ['Cloud Sync','If you create an account or use Coach Mode, selected app data may sync to our backend provider, Supabase. The intended production region is Frankfurt, Germany. Data is encrypted in transit by HTTPS.'],
+          ['Coach Mode','If you accept a coach invitation, that coach may be able to view workout and measurement data connected with your account so they can manage your training. You should only accept invitations from coaches you trust.'],
+          ['Sharing','We do not sell personal data. We may share data with service providers that operate the app infrastructure, such as hosting, authentication, database, analytics, payment, or app store services, where needed to provide BeeStrong.'],
+          ['Payments','If paid features are enabled, payments may be handled by Google Play or another payment provider. BeeStrong does not need to store full card details.'],
+          ['Retention','We keep account and training data while your account is active or while needed to provide the app, comply with legal obligations, resolve disputes, or enforce agreements. You can request deletion using the contact details below.'],
+          ['Your Rights','Depending on where you live, including in the UK or EU, you may have rights to access, correct, export, restrict, object to, or delete your personal data. You can contact us to make a request.'],
+          ['Children','BeeStrong is not intended for children under 13. If you believe a child has provided personal data, contact us and we will take appropriate steps.'],
+          ['Security','We use reasonable technical and organisational measures to protect data. No system is perfectly secure, so you should use a strong password and keep your device protected.'],
+          ['Changes','We may update this policy from time to time. The latest version will be posted on this page with a new updated date.'],
+          ['Contact','For privacy requests or questions, contact beestrong@beestrongapp.com.']
+        ]
+      },
+      pl:{
+        title:'Polityka prywatności',
+        updated:'Ostatnia aktualizacja: 6 maja 2026',
+        intro:'BeeStrong to aplikacja do zapisywania treningów dla osób trenujących i trenerów personalnych. Ta polityka wyjaśnia, jakie dane zbieramy, jak ich używamy i jakie masz możliwości wyboru.',
+        notice:'Ta strona jest przygotowana pod gotowość do publikacji i powinna zostać sprawdzona pod konkretny model biznesowy przed wysłaniem aplikacji do sklepu.',
+        sections:[
+          ['Dane, które zbieramy','BeeStrong może zbierać dane konta, takie jak adres email i nazwa wyświetlana; dane treningowe, takie jak ćwiczenia, serie, powtórzenia, ciężary, czas trwania, notatki i historia programów; pomiary ciała, które zdecydujesz się wpisać; dane Coach Mode, takie jak zaproszenia trener-klient, przypisane programy i progres klienta widoczny po zaakceptowaniu relacji z trenerem; oraz dane techniczne zapisane lokalnie na urządzeniu, w tym preferencje, ustawienia, pliki cache i dane treningowe offline.'],
+          ['Jak używamy danych','Używamy danych, aby udostępniać aplikację, zapisywać i synchronizować treningi, pokazywać analitykę progresu, wspierać Coach Mode, utrzymywać dostęp do konta, poprawiać niezawodność i odpowiadać na prośby o pomoc lub usunięcie danych.'],
+          ['Pamięć lokalna i tryb offline','BeeStrong jest aplikacją PWA offline-first. Dane treningowe i preferencje mogą być zapisane na Twoim urządzeniu, aby aplikacja działała bez internetu. Wyczyszczenie pamięci przeglądarki lub aplikacji może usunąć dane zapisane tylko lokalnie.'],
+          ['Synchronizacja w chmurze','Jeśli utworzysz konto lub używasz Coach Mode, wybrane dane aplikacji mogą synchronizować się z naszym dostawcą backendu, Supabase. Planowany region produkcyjny to Frankfurt, Niemcy. Dane są szyfrowane w transmisji przez HTTPS.'],
+          ['Coach Mode','Jeśli zaakceptujesz zaproszenie trenera, trener może mieć wgląd w dane treningowe i pomiary powiązane z Twoim kontem, aby prowadzić Twój trening. Akceptuj zaproszenia tylko od trenerów, którym ufasz.'],
+          ['Udostępnianie','Nie sprzedajemy danych osobowych. Możemy udostępniać dane dostawcom usług obsługującym infrastrukturę aplikacji, takim jak hosting, uwierzytelnianie, baza danych, analityka, płatności lub sklepy z aplikacjami, jeśli jest to potrzebne do działania BeeStrong.'],
+          ['Płatności','Jeśli funkcje płatne są włączone, płatności mogą być obsługiwane przez Google Play lub innego dostawcę płatności. BeeStrong nie musi przechowywać pełnych danych karty.'],
+          ['Przechowywanie','Przechowujemy dane konta i treningów tak długo, jak konto jest aktywne lub jak jest to potrzebne do działania aplikacji, wypełnienia obowiązków prawnych, rozwiązywania sporów lub egzekwowania umów. Możesz poprosić o usunięcie danych, korzystając z danych kontaktowych poniżej.'],
+          ['Twoje prawa','W zależności od miejsca zamieszkania, w tym w UK lub UE, możesz mieć prawo dostępu, poprawienia, eksportu, ograniczenia, sprzeciwu lub usunięcia danych osobowych. Możesz skontaktować się z nami, aby złożyć prośbę.'],
+          ['Dzieci','BeeStrong nie jest przeznaczony dla dzieci poniżej 13 lat. Jeśli uważasz, że dziecko przekazało dane osobowe, skontaktuj się z nami, a podejmiemy odpowiednie kroki.'],
+          ['Bezpieczeństwo','Stosujemy rozsądne środki techniczne i organizacyjne w celu ochrony danych. Żaden system nie jest idealnie bezpieczny, dlatego używaj silnego hasła i chroń swoje urządzenie.'],
+          ['Zmiany','Możemy od czasu do czasu aktualizować tę politykę. Najnowsza wersja będzie opublikowana na tej stronie z nową datą aktualizacji.'],
+          ['Kontakt','W sprawach prywatności lub pytań skontaktuj się z beestrong@beestrongapp.com.']
+        ]
+      },
+      de:{
+        title:'Datenschutzerklaerung',
+        updated:'Zuletzt aktualisiert: 6. Mai 2026',
+        intro:'BeeStrong ist eine Workout-Tracking-App fuer Trainierende und Personal Trainer. Diese Richtlinie erklaert, welche Daten wir erfassen, wie wir sie nutzen und welche Wahlmoeglichkeiten du hast.',
+        notice:'Diese Seite ist fuer die Launch-Vorbereitung geschrieben und sollte vor der Store-Veroeffentlichung gegen dein genaues Geschaeftsmodell geprueft werden.',
+        sections:[
+          ['Welche Daten wir erfassen','BeeStrong kann Kontodaten wie E-Mail-Adresse und Anzeigename erfassen; Trainingsdaten wie Uebungen, Saetze, Wiederholungen, Gewichte, Dauer, Notizen und Programmverlauf; Koerpermessdaten, die du eingibst; Coach-Mode-Daten wie Coach-Kunden-Einladungen, zugewiesene Programme und Kundenfortschritt, der nach akzeptierter Coach-Beziehung sichtbar ist; sowie technische Daten, die lokal auf deinem Geraet gespeichert werden, darunter Praeferenzen, App-Einstellungen, Cache-Dateien und Offline-Trainingsdaten.'],
+          ['Wie wir Daten nutzen','Wir nutzen deine Daten, um die App bereitzustellen, Workouts zu speichern und zu synchronisieren, Fortschrittsanalysen zu zeigen, Coach Mode zu unterstuetzen, Kontozugriff zu erhalten, Zuverlaessigkeit zu verbessern und auf Support- oder Loeschanfragen zu reagieren.'],
+          ['Lokaler Speicher und Offline-Nutzung','BeeStrong ist eine offline-first Progressive Web App. Trainingsdaten und Praeferenzen koennen auf deinem Geraet gespeichert werden, damit die App ohne Internet funktioniert. Wenn du Browser- oder App-Speicher loeschst, koennen nur lokal gespeicherte Daten geloescht werden.'],
+          ['Cloud-Synchronisierung','Wenn du ein Konto erstellst oder Coach Mode nutzt, koennen ausgewaehlte App-Daten mit unserem Backend-Anbieter Supabase synchronisiert werden. Die geplante Produktionsregion ist Frankfurt, Deutschland. Daten werden per HTTPS waehrend der Uebertragung verschluesselt.'],
+          ['Coach Mode','Wenn du eine Coach-Einladung akzeptierst, kann dieser Coach Trainings- und Messdaten sehen, die mit deinem Konto verbunden sind, um dein Training zu betreuen. Akzeptiere nur Einladungen von Coaches, denen du vertraust.'],
+          ['Weitergabe','Wir verkaufen keine personenbezogenen Daten. Wir koennen Daten mit Dienstleistern teilen, die die App-Infrastruktur betreiben, etwa Hosting, Authentifizierung, Datenbank, Analytik, Zahlungen oder App-Store-Dienste, soweit dies fuer BeeStrong erforderlich ist.'],
+          ['Zahlungen','Wenn bezahlte Funktionen aktiviert sind, koennen Zahlungen ueber Google Play oder einen anderen Zahlungsanbieter abgewickelt werden. BeeStrong muss keine vollstaendigen Kartendaten speichern.'],
+          ['Speicherung','Wir speichern Konto- und Trainingsdaten, solange dein Konto aktiv ist oder solange dies noetig ist, um die App bereitzustellen, rechtliche Pflichten zu erfuellen, Streitigkeiten zu klaeren oder Vereinbarungen durchzusetzen. Du kannst ueber die Kontaktdaten unten eine Loeschung anfordern.'],
+          ['Deine Rechte','Je nach Wohnort, einschliesslich UK oder EU, hast du moeglicherweise Rechte auf Auskunft, Berichtigung, Export, Einschraenkung, Widerspruch oder Loeschung deiner personenbezogenen Daten. Du kannst uns kontaktieren, um eine Anfrage zu stellen.'],
+          ['Kinder','BeeStrong ist nicht fuer Kinder unter 13 Jahren bestimmt. Wenn du glaubst, dass ein Kind personenbezogene Daten bereitgestellt hat, kontaktiere uns und wir ergreifen geeignete Massnahmen.'],
+          ['Sicherheit','Wir verwenden angemessene technische und organisatorische Massnahmen zum Schutz von Daten. Kein System ist vollkommen sicher, daher solltest du ein starkes Passwort verwenden und dein Geraet schuetzen.'],
+          ['Aenderungen','Wir koennen diese Richtlinie von Zeit zu Zeit aktualisieren. Die neueste Version wird auf dieser Seite mit einem neuen Aktualisierungsdatum veroeffentlicht.'],
+          ['Kontakt','Bei Datenschutzanfragen oder Fragen kontaktiere beestrong@beestrongapp.com.']
+        ]
+      },
+      es:{
+        title:'Politica de privacidad',
+        updated:'Ultima actualizacion: 6 de mayo de 2026',
+        intro:'BeeStrong es una app de registro de entrenamientos para atletas y entrenadores personales. Esta politica explica que datos recopilamos, como los usamos y que opciones tienes.',
+        notice:'Esta pagina esta preparada para el lanzamiento y debe revisarse segun tu configuracion exacta de negocio antes de publicar en una tienda.',
+        sections:[
+          ['Datos que recopilamos','BeeStrong puede recopilar datos de cuenta como direccion de email y nombre visible; datos de entrenamiento como ejercicios, series, repeticiones, pesos, duracion, notas e historial de programas; medidas corporales que decidas introducir; datos de Coach Mode como invitaciones entrenador-cliente, programas asignados y progreso visible tras aceptar una relacion con un entrenador; y datos tecnicos guardados localmente en tu dispositivo, incluidas preferencias, ajustes, archivos en cache y datos de entrenamiento offline.'],
+          ['Como usamos los datos','Usamos tus datos para ofrecer la app, guardar y sincronizar entrenamientos, mostrar analitica de progreso, soportar Coach Mode, mantener el acceso a la cuenta, mejorar la fiabilidad y responder a solicitudes de soporte o eliminacion.'],
+          ['Almacenamiento local y uso offline','BeeStrong es una Progressive Web App offline-first. Los datos de entrenamiento y preferencias pueden guardarse en tu dispositivo para que la app funcione sin conexion. Si borras el almacenamiento del navegador o de la app, los datos solo locales pueden eliminarse.'],
+          ['Sincronizacion en la nube','Si creas una cuenta o usas Coach Mode, datos seleccionados de la app pueden sincronizarse con nuestro proveedor backend, Supabase. La region de produccion prevista es Frankfurt, Alemania. Los datos se cifran en transito mediante HTTPS.'],
+          ['Coach Mode','Si aceptas una invitacion de entrenador, ese entrenador puede ver datos de entrenamientos y medidas conectados con tu cuenta para gestionar tu entrenamiento. Acepta solo invitaciones de entrenadores en quienes confies.'],
+          ['Comparticion','No vendemos datos personales. Podemos compartir datos con proveedores que operan la infraestructura de la app, como hosting, autenticacion, base de datos, analitica, pagos o servicios de tiendas de apps, cuando sea necesario para ofrecer BeeStrong.'],
+          ['Pagos','Si las funciones de pago estan activadas, los pagos pueden gestionarse mediante Google Play u otro proveedor de pagos. BeeStrong no necesita guardar datos completos de tarjeta.'],
+          ['Retencion','Conservamos datos de cuenta y entrenamiento mientras tu cuenta este activa o mientras sea necesario para ofrecer la app, cumplir obligaciones legales, resolver disputas o aplicar acuerdos. Puedes solicitar eliminacion usando los datos de contacto de abajo.'],
+          ['Tus derechos','Segun donde vivas, incluso en UK o la UE, puedes tener derechos de acceso, correccion, exportacion, restriccion, oposicion o eliminacion de tus datos personales. Puedes contactarnos para hacer una solicitud.'],
+          ['Menores','BeeStrong no esta destinada a menores de 13 anos. Si crees que un menor ha proporcionado datos personales, contactanos y tomaremos medidas adecuadas.'],
+          ['Seguridad','Usamos medidas tecnicas y organizativas razonables para proteger los datos. Ningun sistema es perfectamente seguro, por lo que debes usar una contrasena fuerte y proteger tu dispositivo.'],
+          ['Cambios','Podemos actualizar esta politica ocasionalmente. La version mas reciente se publicara en esta pagina con una nueva fecha de actualizacion.'],
+          ['Contacto','Para solicitudes o preguntas de privacidad, contacta con beestrong@beestrongapp.com.']
+        ]
+      }
+    },
+    terms:{
+      en:{
+        title:'Terms of Service',
+        updated:'Last updated: 6 May 2026',
+        intro:'These terms govern your use of BeeStrong. By using the app, you agree to these terms.',
+        notice:'BeeStrong is a training log and planning tool. It is not medical advice. Train responsibly and seek professional medical advice before starting or changing a training program if you have any health concerns.',
+        sections:[
+          ['Use of the App','You may use BeeStrong to track workouts, create templates, follow programs, record measurements, and, where available, use Coach Mode. You must use the app lawfully and must not attempt to damage, overload, reverse engineer, or misuse the service.'],
+          ['Accounts','You are responsible for keeping your login details secure and for activity under your account. You should provide accurate information and tell us if you believe your account has been compromised.'],
+          ['Training and Health','You are responsible for your own training decisions. BeeStrong can help organise training information, but it does not replace medical, physiotherapy, nutrition, or qualified coaching advice.'],
+          ['Coach Mode','Coach Mode allows trainers and clients to share training information after an invitation is accepted. Coaches are responsible for the programmes and advice they provide to clients. Clients should only accept invitations from coaches they trust.'],
+          ['Your Content','You keep ownership of the workout data, measurements, notes, and programmes you enter. You give BeeStrong permission to store, process, display, and sync that content as needed to provide the app.'],
+          ['Paid Features','BeeStrong may offer paid features, including Pro or Coach features. Prices, billing periods, renewals, refunds, and cancellations may be handled through Google Play or another payment provider. Store policies may apply.'],
+          ['Availability','We aim to keep BeeStrong reliable, but the app may be unavailable from time to time for maintenance, provider outages, updates, or reasons outside our control.'],
+          ['Intellectual Property','BeeStrong, its branding, design, software, and app content are owned by BeeStrong or its licensors. You may not copy or reuse them except as allowed by law or with written permission.'],
+          ['Termination','You may stop using BeeStrong at any time. We may suspend or terminate access if you breach these terms, misuse the service, or create risk for other users or the app.'],
+          ['Liability','To the maximum extent permitted by law, BeeStrong is provided as is and without warranties. We are not liable for indirect losses, training injuries, lost data caused by user device storage clearing, or issues caused by third-party services.'],
+          ['Changes','We may update these terms. The latest version will be posted on this page with a new updated date. Continued use of BeeStrong after changes means you accept the updated terms.'],
+          ['Contact','For questions, contact beestrong@beestrongapp.com.']
+        ]
+      },
+      pl:{
+        title:'Regulamin',
+        updated:'Ostatnia aktualizacja: 6 maja 2026',
+        intro:'Ten regulamin określa zasady korzystania z BeeStrong. Korzystając z aplikacji, akceptujesz te warunki.',
+        notice:'BeeStrong jest dziennikiem treningowym i narzędziem do planowania. Nie jest poradą medyczną. Trenuj odpowiedzialnie i skonsultuj się ze specjalistą medycznym przed rozpoczęciem lub zmianą programu, jeśli masz jakiekolwiek obawy zdrowotne.',
+        sections:[
+          ['Korzystanie z aplikacji','Możesz używać BeeStrong do zapisywania treningów, tworzenia szablonów, realizacji programów, zapisywania pomiarów oraz, jeśli dostępne, korzystania z Coach Mode. Musisz korzystać z aplikacji zgodnie z prawem i nie wolno Ci próbować jej uszkadzać, przeciążać, odtwarzać kodu źródłowego ani nadużywać usługi.'],
+          ['Konta','Odpowiadasz za bezpieczeństwo danych logowania i aktywność na swoim koncie. Podawaj poprawne informacje i poinformuj nas, jeśli uważasz, że konto zostało przejęte.'],
+          ['Trening i zdrowie','Odpowiadasz za własne decyzje treningowe. BeeStrong pomaga organizować informacje treningowe, ale nie zastępuje porady medycznej, fizjoterapeutycznej, dietetycznej ani kwalifikowanej porady trenerskiej.'],
+          ['Coach Mode','Coach Mode pozwala trenerom i klientom udostępniać informacje treningowe po zaakceptowaniu zaproszenia. Trenerzy odpowiadają za programy i porady przekazywane klientom. Klienci powinni akceptować zaproszenia tylko od trenerów, którym ufają.'],
+          ['Twoje treści','Zachowujesz własność danych treningowych, pomiarów, notatek i programów, które wpisujesz. Udzielasz BeeStrong zgody na przechowywanie, przetwarzanie, wyświetlanie i synchronizację tych treści w zakresie potrzebnym do działania aplikacji.'],
+          ['Funkcje płatne','BeeStrong może oferować funkcje płatne, w tym Pro lub funkcje trenerskie. Ceny, okresy rozliczeniowe, odnowienia, zwroty i anulowanie mogą być obsługiwane przez Google Play lub innego dostawcę płatności. Mogą mieć zastosowanie zasady sklepu.'],
+          ['Dostępność','Staramy się utrzymywać BeeStrong jako niezawodne narzędzie, ale aplikacja może być czasowo niedostępna z powodu konserwacji, awarii dostawców, aktualizacji lub przyczyn poza naszą kontrolą.'],
+          ['Własność intelektualna','BeeStrong, marka, projekt, oprogramowanie i treści aplikacji należą do BeeStrong lub licencjodawców. Nie wolno ich kopiować ani wykorzystywać ponownie poza zakresem dozwolonym prawem lub pisemną zgodą.'],
+          ['Zakończenie dostępu','Możesz przestać korzystać z BeeStrong w dowolnym momencie. Możemy zawiesić lub zakończyć dostęp, jeśli naruszysz te warunki, nadużyjesz usługi lub stworzysz ryzyko dla innych użytkowników albo aplikacji.'],
+          ['Odpowiedzialność','W maksymalnym zakresie dozwolonym prawem BeeStrong jest dostarczany w stanie takim, w jakim jest, bez gwarancji. Nie odpowiadamy za straty pośrednie, kontuzje treningowe, utratę danych spowodowaną wyczyszczeniem pamięci urządzenia ani problemy wynikające z usług stron trzecich.'],
+          ['Zmiany','Możemy aktualizować ten regulamin. Najnowsza wersja będzie opublikowana na tej stronie z nową datą aktualizacji. Dalsze korzystanie z BeeStrong po zmianach oznacza akceptację zaktualizowanych warunków.'],
+          ['Kontakt','W razie pytań skontaktuj się z beestrong@beestrongapp.com.']
+        ]
+      },
+      de:{
+        title:'Nutzungsbedingungen',
+        updated:'Zuletzt aktualisiert: 6. Mai 2026',
+        intro:'Diese Bedingungen regeln deine Nutzung von BeeStrong. Durch die Nutzung der App stimmst du diesen Bedingungen zu.',
+        notice:'BeeStrong ist ein Trainingslog und Planungstool. Es ist keine medizinische Beratung. Trainiere verantwortungsvoll und hole medizinischen Rat ein, bevor du ein Trainingsprogramm startest oder aenderst, wenn du gesundheitliche Bedenken hast.',
+        sections:[
+          ['Nutzung der App','Du kannst BeeStrong nutzen, um Workouts zu tracken, Vorlagen zu erstellen, Programmen zu folgen, Messungen zu erfassen und, sofern verfuegbar, Coach Mode zu nutzen. Du musst die App rechtmaessig verwenden und darfst nicht versuchen, den Dienst zu beschaedigen, zu ueberlasten, zurueckzuentwickeln oder zu missbrauchen.'],
+          ['Konten','Du bist fuer die Sicherheit deiner Zugangsdaten und Aktivitaeten unter deinem Konto verantwortlich. Du solltest korrekte Informationen angeben und uns informieren, wenn du glaubst, dass dein Konto kompromittiert wurde.'],
+          ['Training und Gesundheit','Du bist fuer deine eigenen Trainingsentscheidungen verantwortlich. BeeStrong hilft bei der Organisation von Trainingsinformationen, ersetzt aber keine medizinische, physiotherapeutische, ernaehrungsbezogene oder qualifizierte Coaching-Beratung.'],
+          ['Coach Mode','Coach Mode ermoeglicht Trainern und Kunden, Trainingsinformationen nach akzeptierter Einladung zu teilen. Coaches sind fuer die Programme und Ratschlaege verantwortlich, die sie Kunden geben. Kunden sollten nur Einladungen von Coaches akzeptieren, denen sie vertrauen.'],
+          ['Deine Inhalte','Du behaeltst das Eigentum an Workout-Daten, Messungen, Notizen und Programmen, die du eingibst. Du erlaubst BeeStrong, diese Inhalte zu speichern, zu verarbeiten, anzuzeigen und zu synchronisieren, soweit dies fuer die Bereitstellung der App noetig ist.'],
+          ['Bezahlte Funktionen','BeeStrong kann bezahlte Funktionen anbieten, einschliesslich Pro- oder Coach-Funktionen. Preise, Abrechnungszeitraeume, Verlaengerungen, Rueckerstattungen und Kuendigungen koennen ueber Google Play oder einen anderen Zahlungsanbieter abgewickelt werden. Store-Richtlinien koennen gelten.'],
+          ['Verfuegbarkeit','Wir bemuehen uns, BeeStrong zuverlaessig zu halten, aber die App kann zeitweise wegen Wartung, Anbieterstoerungen, Updates oder Gruenden ausserhalb unserer Kontrolle nicht verfuegbar sein.'],
+          ['Geistiges Eigentum','BeeStrong, Branding, Design, Software und App-Inhalte gehoeren BeeStrong oder seinen Lizenzgebern. Du darfst sie nicht kopieren oder wiederverwenden, ausser soweit gesetzlich erlaubt oder mit schriftlicher Genehmigung.'],
+          ['Beendigung','Du kannst BeeStrong jederzeit nicht mehr nutzen. Wir koennen den Zugang aussetzen oder beenden, wenn du diese Bedingungen verletzt, den Dienst missbrauchst oder Risiken fuer andere Nutzer oder die App verursachst.'],
+          ['Haftung','Soweit gesetzlich zulaessig, wird BeeStrong ohne Garantien bereitgestellt. Wir haften nicht fuer indirekte Verluste, Trainingsverletzungen, Datenverlust durch Loeschen des Geraetespeichers oder Probleme durch Drittanbieter.'],
+          ['Aenderungen','Wir koennen diese Bedingungen aktualisieren. Die neueste Version wird auf dieser Seite mit einem neuen Aktualisierungsdatum veroeffentlicht. Die weitere Nutzung von BeeStrong nach Aenderungen bedeutet, dass du die aktualisierten Bedingungen akzeptierst.'],
+          ['Kontakt','Bei Fragen kontaktiere beestrong@beestrongapp.com.']
+        ]
+      },
+      es:{
+        title:'Terminos de servicio',
+        updated:'Ultima actualizacion: 6 de mayo de 2026',
+        intro:'Estos terminos regulan tu uso de BeeStrong. Al usar la app, aceptas estos terminos.',
+        notice:'BeeStrong es un registro de entrenamiento y una herramienta de planificacion. No es consejo medico. Entrena con responsabilidad y busca consejo medico profesional antes de empezar o cambiar un programa si tienes dudas de salud.',
+        sections:[
+          ['Uso de la app','Puedes usar BeeStrong para registrar entrenamientos, crear plantillas, seguir programas, registrar medidas y, cuando este disponible, usar Coach Mode. Debes usar la app legalmente y no intentar danar, sobrecargar, aplicar ingenieria inversa o abusar del servicio.'],
+          ['Cuentas','Eres responsable de mantener seguros tus datos de acceso y de la actividad en tu cuenta. Debes proporcionar informacion precisa y avisarnos si crees que tu cuenta ha sido comprometida.'],
+          ['Entrenamiento y salud','Eres responsable de tus propias decisiones de entrenamiento. BeeStrong ayuda a organizar informacion de entrenamiento, pero no sustituye consejo medico, de fisioterapia, nutricion o coaching cualificado.'],
+          ['Coach Mode','Coach Mode permite a entrenadores y clientes compartir informacion de entrenamiento tras aceptar una invitacion. Los entrenadores son responsables de los programas y consejos que dan a clientes. Los clientes solo deben aceptar invitaciones de entrenadores en quienes confien.'],
+          ['Tu contenido','Mantienes la propiedad de los datos de entrenamiento, medidas, notas y programas que introduces. Das permiso a BeeStrong para almacenar, procesar, mostrar y sincronizar ese contenido segun sea necesario para ofrecer la app.'],
+          ['Funciones de pago','BeeStrong puede ofrecer funciones de pago, incluidas funciones Pro o Coach. Precios, periodos de facturacion, renovaciones, reembolsos y cancelaciones pueden gestionarse mediante Google Play u otro proveedor de pagos. Pueden aplicarse politicas de la tienda.'],
+          ['Disponibilidad','Intentamos mantener BeeStrong fiable, pero la app puede no estar disponible ocasionalmente por mantenimiento, caidas de proveedores, actualizaciones o causas fuera de nuestro control.'],
+          ['Propiedad intelectual','BeeStrong, su marca, diseno, software y contenido pertenecen a BeeStrong o sus licenciantes. No puedes copiarlos o reutilizarlos salvo cuando la ley lo permita o con permiso escrito.'],
+          ['Terminacion','Puedes dejar de usar BeeStrong en cualquier momento. Podemos suspender o terminar el acceso si incumples estos terminos, abusas del servicio o creas riesgo para otros usuarios o la app.'],
+          ['Responsabilidad','En la maxima medida permitida por la ley, BeeStrong se ofrece tal cual y sin garantias. No somos responsables de perdidas indirectas, lesiones de entrenamiento, perdida de datos causada por borrar almacenamiento del dispositivo o problemas causados por servicios de terceros.'],
+          ['Cambios','Podemos actualizar estos terminos. La version mas reciente se publicara en esta pagina con una nueva fecha de actualizacion. El uso continuado de BeeStrong tras cambios significa que aceptas los terminos actualizados.'],
+          ['Contacto','Para preguntas, contacta con beestrong@beestrongapp.com.']
+        ]
+      }
+    }
+  };
+  const doc=(docs[type][lang]||docs[type].en);
+  return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;margin-bottom:12px;">
+    <div style="font-size:22px;font-weight:900;margin-bottom:6px;color:var(--text);">${doc.title}</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:14px;">${doc.updated}</div>
+    <div style="font-size:13px;color:var(--text2);line-height:1.55;margin-bottom:12px;">${doc.intro}</div>
+    <div style="font-size:12px;color:var(--text2);line-height:1.5;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:16px;">${doc.notice}</div>
+    ${doc.sections.map(([h,p])=>`<section style="padding:0;margin:0 0 16px;"><h3 style="font-size:15px;font-weight:900;margin:0 0 6px;color:var(--text);">${h}</h3><p style="font-size:13px;color:var(--text2);line-height:1.55;margin:0;">${p}</p></section>`).join('')}
+  </div>`;
+}
+
 function openPrivacyPolicy(){
-  window.open('https://beestrongapp.com/privacy.html','_blank','noopener');
+  openProfileSection('privacy');
 }
 function openTermsOfService(){
-  window.open('https://beestrongapp.com/terms.html','_blank','noopener');
+  openProfileSection('terms');
 }
 window.openPrivacyPolicy=openPrivacyPolicy;
 window.openTermsOfService=openTermsOfService;
