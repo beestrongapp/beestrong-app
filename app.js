@@ -1213,7 +1213,7 @@ function startPlannedWorkout(date){
 window.startPlannedWorkout=startPlannedWorkout;
 window.switchCalTab=switchCalTab;
 
-// ===== SETTINGS =====
+// ===== PROFILE =====
 function renderSettings(){
   const el=document.getElementById('settingsContent');
   if(!el)return;
@@ -1224,70 +1224,23 @@ function renderSettings(){
     ?`${measCount} ${tt({pl:'pomiarów',en:'entries',de:'Einträge',es:'entradas'})}${measLastDate?' · '+measLastDate:''}`
     :tt({pl:'Brak pomiarów',en:'No measurements',de:'Keine Messungen',es:'Sin medidas'});
 
-  const settingsRows=[
-    {
-      key:'account',
-      label:tt({pl:'Konto',en:'Account',de:'Konto',es:'Cuenta'}),
-      value:S.user
-        ?S.user.email
-        :tt({pl:'Niezalogowany — kliknij',en:'Signed out — tap to sign in',de:'Abgemeldet — zum Anmelden tippen',es:'Sin sesión — toca para iniciar'}),
-      icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
-      action:S.user?'showAccountModal':'showAuthModal'
-    },
-    {
-      key:'name',
-      label:lang==='pl'?'Imię':'Name',
-      value:localStorage.getItem('bs-username')||'—',
-      icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>',
-      action:'openSettingsName'
-    },
-    {
-      key:'measurements',
-      label:tt({pl:'Pomiary ciała',en:'Body measurements',de:'Körpermaße',es:'Medidas corporales'}),
-      value:measValue,
-      icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><rect x="2" y="8" width="20" height="8" rx="2"/><path d="M7 8v2M10 8v3M13 8v2M17 8v3"/></svg>',
-      action:'openSettingsMeasurements'
-    },
-    {
-      key:'restTimer',
-      label:tt({pl:'Czas przerwy',en:'Rest timer',de:'Pausenzeit',es:'Tiempo de descanso'}),
-      value:`${S.defaultRest||90} s — ${tt({pl:'Quick / nowe szablony',en:'Quick / new templates',de:'Quick / neue Vorlagen',es:'Rápido / nuevas plantillas'})}`,
-      icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
-      action:'openSettingsRestTimer'
-    },
-    {
-      key:'layout',
-      label:tt({pl:'Layout aplikacji',en:'App layout',de:'App-Layout',es:'Layout de app'}),
-      value:S.layoutMode==='minimal'?tt({pl:'Minimal',en:'Minimal',de:'Minimal',es:'Minimal'}):tt({pl:'Standard',en:'Standard',de:'Standard',es:'Estándar'}),
-      icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="18" height="7" rx="1"/></svg>',
-      action:'openSettingsLayout'
-    },
-    {
-      key:'units',
-      label:tt({pl:'Jednostki',en:'Units',de:'Einheiten',es:'Unidades'}),
-      value:S.units==='imperial'?'Imperial (lbs / in)':'Metric (kg / cm)',
-      icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M3 3h18M3 9h18M3 15h18M3 21h18M9 3v18M15 3v18"/></svg>',
-      action:'openSettingsUnits'
-    },
-    {
-      key:'language',
-      label:t('language'),
-      value:({en:'🇬🇧 '+t('langEnglish'),pl:'🇵🇱 '+t('langPolish'),de:'🇩🇪 '+t('langGerman'),es:'🇪🇸 '+t('langSpanish')}[lang]||('🇬🇧 '+t('langEnglish'))),
-      icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="12" cy="12" r="9"/><path d="M12 3a15 15 0 0 1 0 18M3 12h18"/><path d="M3.6 8h16.8M3.6 16h16.8"/></svg>',
-      action:'openSettingsLanguage'
-    },
-    {
-      key:'theme',
-      label:t('themeColor'),
-      value:isDark?'🌑 '+t('darkTheme'):'☀️ '+t('lightTheme'),
-      icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>',
-      action:'openSettingsTheme'
-    },
-  ];
-
-  const proCard=proCardHtml();
-  const rowsHtml=`<div style="border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border);margin-bottom:8px;">
-    ${settingsRows.map((row,i)=>{
+  const icon={
+    account:'<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+    cloud:'<path d="M17.5 19H7a5 5 0 0 1-.7-10 6 6 0 0 1 11.2-2A4.5 4.5 0 0 1 17.5 19z"/>',
+    card:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/>',
+    layout:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="18" height="7" rx="1"/>',
+    theme:'<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>',
+    language:'<circle cx="12" cy="12" r="9"/><path d="M12 3a15 15 0 0 1 0 18M3 12h18"/><path d="M3.6 8h16.8M3.6 16h16.8"/>',
+    units:'<path d="M3 3h18M3 9h18M3 15h18M3 21h18M9 3v18M15 3v18"/>',
+    timer:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    measure:'<rect x="2" y="8" width="20" height="8" rx="2"/><path d="M7 8v2M10 8v3M13 8v2M17 8v3"/>',
+    contact:'<path d="M4 4h16v12H5.2L4 19.5V4z"/><path d="M8 9h8M8 13h5"/>',
+    news:'<path d="M4 4h13a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3V4z"/><path d="M8 8h6M8 12h8M8 16h5"/>',
+    privacy:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9.5 12l1.7 1.7 3.6-4.2"/>',
+    name:'<circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>',
+  };
+  const svg=path=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">${path}</svg>`;
+  const profileRow=(row,i)=>{
       const isUnits=row.key==='units';
       const isTheme=row.key==='theme';
       const isLayout=row.key==='layout';
@@ -1334,14 +1287,113 @@ function renderSettings(){
         </div>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="color:var(--text3);flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>`;
-    }).join('')}
+  };
+  const profileSection=(title,rows)=>`<div style="margin:16px 0 8px;">
+    ${title?`<div style="font-size:12px;color:var(--text3);font-weight:800;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 8px 2px;">${title}</div>`:''}
+    <div style="border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border);">${rows.map(profileRow).join('')}</div>
   </div>`;
+
+  const accountState=S.user
+    ?tt({pl:'Zalogowany',en:'Signed in',de:'Angemeldet',es:'Sesión iniciada'})
+    :tt({pl:'Niezalogowany',en:'Signed out',de:'Abgemeldet',es:'Sin sesión'});
+  const dataState=cloudSyncAllowed()
+    ?tt({pl:'Cloud backup aktywny',en:'Cloud backup active',de:'Cloud-Backup aktiv',es:'Backup en nube activo'})
+    :tt({pl:'Dane tylko na tym urządzeniu',en:'Stored on this device only',de:'Nur auf diesem Gerät gespeichert',es:'Solo en este dispositivo'});
+  const subscriptionLabel=S.coachMode&&S.user
+    ?'COACH'
+    :(S.isPro&&S.user?'PRO':'FREE');
+  const loginRows=[
+    {key:'account',label:tt({pl:'Login and data',en:'Login and data',de:'Login und Daten',es:'Login y datos'}),value:S.user?`${S.user.email} · ${dataState}`:`${accountState} · ${dataState}`,icon:svg(icon.account),action:S.user?'showAccountModal':'showAuthModal'},
+    {key:'name',label:lang==='pl'?'Imię':'Name',value:localStorage.getItem('bs-username')||'—',icon:svg(icon.name),action:'openSettingsName'},
+  ];
+  const subscriptionRows=[
+    {key:'subscription',label:'Subscription',value:`${subscriptionLabel} · ${tt({pl:'zobacz porównanie planów',en:'view plan comparison',de:'Pläne vergleichen',es:'ver comparación'})}`,icon:svg(icon.card),action:'openSubscriptionModal'},
+  ];
+  const preferenceRows=[
+    {key:'layout',label:tt({pl:'App Layout',en:'App layout',de:'App-Layout',es:'Layout de app'}),value:S.layoutMode==='minimal'?tt({pl:'Minimal',en:'Minimal',de:'Minimal',es:'Minimal'}):tt({pl:'Standard',en:'Standard',de:'Standard',es:'Estándar'}),icon:svg(icon.layout),action:'openSettingsLayout'},
+    {key:'theme',label:tt({pl:'Theme colour',en:'Theme colour',de:'Farbschema',es:'Tema'}),value:isDark?t('darkTheme'):t('lightTheme'),icon:svg(icon.theme),action:'openSettingsTheme'},
+    {key:'language',label:t('language'),value:({en:t('langEnglish'),pl:t('langPolish'),de:t('langGerman'),es:t('langSpanish')}[lang]||t('langEnglish')),icon:svg(icon.language),action:'openSettingsLanguage'},
+    {key:'units',label:tt({pl:'Units',en:'Units',de:'Einheiten',es:'Unidades'}),value:S.units==='imperial'?'Imperial (lbs / in)':'Metric (kg / cm)',icon:svg(icon.units),action:'openSettingsUnits'},
+    {key:'restTimer',label:tt({pl:'Rest timer',en:'Rest timer',de:'Pausenzeit',es:'Tiempo de descanso'}),value:`${S.defaultRest||90} s`,icon:svg(icon.timer),action:'openSettingsRestTimer'},
+  ];
+  const measurementRows=[
+    {key:'measurements',label:tt({pl:'Body measurements',en:'Body measurements',de:'Körpermaße',es:'Medidas corporales'}),value:measValue,icon:svg(icon.measure),action:'openSettingsMeasurements'},
+  ];
+  const infoRows=[
+    {key:'contact',label:'Contact',value:tt({pl:'Wkrótce',en:'Coming soon',de:'Bald verfügbar',es:'Próximamente'}),icon:svg(icon.contact),action:'openProfilePlaceholderContact'},
+    {key:'whatsnew',label:"What's new",value:tt({pl:'Zmiany z ostatniego update',en:'Latest update notes',de:'Letzte Update-Notizen',es:'Notas del último update'}),icon:svg(icon.news),action:'openProfilePlaceholderWhatsNew'},
+    {key:'privacy',label:'Privacy Policy',value:tt({pl:'Wkrótce',en:'Coming soon',de:'Bald verfügbar',es:'Próximamente'}),icon:svg(icon.privacy),action:'openProfilePlaceholderPrivacy'},
+  ];
 
   const adminChangelog=isAdmin()?adminChangelogHtml():'';
   const versionLbl=`<div style="margin:24px 0 40px;padding:12px;text-align:center;font-size:11px;color:var(--text3);">BeeStrong Gym Tracker · v1.0</div>`;
 
-  el.innerHTML=proCard+rowsHtml+adminChangelog+versionLbl;
+  el.innerHTML=proCardHtml()
+    +profileSection(tt({pl:'Login and data',en:'Login and data',de:'Login und Daten',es:'Login y datos'}),loginRows)
+    +profileSection('Subscription',subscriptionRows)
+    +profileSection('Preferences',preferenceRows)
+    +profileSection(tt({pl:'Body measurements',en:'Body measurements',de:'Körpermaße',es:'Medidas corporales'}),measurementRows)
+    +profileSection('',infoRows)
+    +adminChangelog
+    +versionLbl;
 }
+
+function openSubscriptionModal(){
+  closeModal();
+  const ov=document.createElement('div');ov.className='modal-overlay';
+  const plans=[
+    {name:'FREE',sub:tt({pl:'Dane lokalne',en:'Local data',de:'Lokale Daten',es:'Datos locales'}),items:[
+      tt({pl:'Dane zapisane tylko na urządzeniu',en:'Data stored on this device only',de:'Daten nur auf diesem Gerät',es:'Datos solo en este dispositivo'}),
+      tt({pl:'Podstawowe treningi i pomiary',en:'Basic workouts and measurements',de:'Basis-Trainings und Messungen',es:'Entrenos y medidas básicos'}),
+      tt({pl:'Brak cloud backup',en:'No cloud backup',de:'Kein Cloud-Backup',es:'Sin backup en nube'}),
+    ]},
+    {name:'PRO',sub:tt({pl:'Backup i funkcje premium',en:'Backup and premium tools',de:'Backup und Premium-Funktionen',es:'Backup y funciones premium'}),items:[
+      tt({pl:'Cloud backup dla treningów, szablonów i pomiarów',en:'Cloud backup for workouts, templates and measurements',de:'Cloud-Backup für Trainings, Vorlagen und Messungen',es:'Backup de entrenos, plantillas y medidas'}),
+      tt({pl:'Pełny dostęp do funkcji PRO',en:'Full PRO feature access',de:'Voller PRO-Zugriff',es:'Acceso completo PRO'}),
+      tt({pl:'Synchronizacja po ważnych akcjach',en:'Sync after important actions',de:'Sync nach wichtigen Aktionen',es:'Sync tras acciones importantes'}),
+    ]},
+    {name:'COACH',sub:tt({pl:'PRO + praca z klientami',en:'PRO + client tools',de:'PRO + Klienten-Tools',es:'PRO + herramientas de clientes'}),items:[
+      tt({pl:'Wszystko z PRO',en:'Everything in PRO',de:'Alles aus PRO',es:'Todo lo de PRO'}),
+      tt({pl:'Klienci, przypisywanie planów i programów',en:'Clients, assignments and programs',de:'Klienten, Zuweisungen und Programme',es:'Clientes, asignaciones y programas'}),
+      tt({pl:'Chat coach-klient i podgląd postępów',en:'Coach-client chat and progress view',de:'Coach-Klient-Chat und Fortschrittsansicht',es:'Chat coach-cliente y vista de progreso'}),
+    ]},
+  ];
+  ov.innerHTML=`<div class="modal" style="max-height:88vh;display:flex;flex-direction:column;">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Subscription</div>
+    <div style="overflow-y:auto;display:grid;gap:10px;padding-bottom:8px;">
+      ${plans.map(p=>`<div style="border:1px solid var(--border);background:var(--bg2);border-radius:12px;padding:14px;">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:8px;">
+          <div style="font-size:16px;font-weight:900;color:var(--accent);">${p.name}</div>
+          <div style="font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase;">${p.sub}</div>
+        </div>
+        ${p.items.map(it=>`<div style="font-size:13px;color:var(--text2);line-height:1.4;padding:5px 0;border-top:1px solid var(--border);">${it}</div>`).join('')}
+      </div>`).join('')}
+    </div>
+    <div style="padding-top:12px;border-top:1px solid var(--border);">
+      <button class="btn btn-primary" onclick="closeModal()" style="width:100%;">OK</button>
+    </div>
+  </div>`;
+  ov.addEventListener('click',e=>{if(e.target===ov)closeModal();});
+  document.body.appendChild(ov);S.modal=ov;
+}
+window.openSubscriptionModal=openSubscriptionModal;
+
+function openProfilePlaceholder(title,body){
+  closeModal();
+  const ov=document.createElement('div');ov.className='modal-overlay';
+  ov.innerHTML=`<div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">${title}</div>
+    <div style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:18px;">${body}</div>
+    <button class="btn btn-primary" onclick="closeModal()" style="width:100%;">OK</button>
+  </div>`;
+  ov.addEventListener('click',e=>{if(e.target===ov)closeModal();});
+  document.body.appendChild(ov);S.modal=ov;
+}
+window.openProfilePlaceholderContact=()=>openProfilePlaceholder('Contact',tt({pl:'Sekcja Contact zostanie dodana później.',en:'Contact will be added later.',de:'Kontakt wird später hinzugefügt.',es:'Contact se añadirá más tarde.'}));
+window.openProfilePlaceholderWhatsNew=()=>openProfilePlaceholder("What's new",tt({pl:'Tutaj będzie opis zmian z ostatniego update.',en:'Latest update notes will live here.',de:'Hier erscheinen die letzten Update-Notizen.',es:'Aquí estarán las notas del último update.'}));
+window.openProfilePlaceholderPrivacy=()=>openProfilePlaceholder('Privacy Policy',tt({pl:'Privacy Policy zostanie dodana później.',en:'Privacy Policy will be added later.',de:'Privacy Policy wird später hinzugefügt.',es:'Privacy Policy se añadirá más tarde.'}));
 
 function renderNotifications(){
   const el=document.getElementById('notificationsContent');
@@ -1372,7 +1424,7 @@ function renderNotifications(){
       title:u.message||'Auto update',
       body:tt({pl:'Wpis z changeloga admina.',en:'Admin changelog entry.',de:'Admin-Changelog-Eintrag.',es:'Entrada del changelog admin.'}),
       at:u.at,
-      action:"showScreen('settings')",
+      action:"showScreen('profile')",
     }));
   }
   if(!items.length){
@@ -1546,7 +1598,7 @@ function openMoreMenu(){
     {label:t('exercises'),screen:'exercises',icon:'<path d="M6.5 6.5h11"/><path d="M6.5 17.5h11"/><rect x="2" y="9" width="3" height="6" rx="0.5"/><rect x="19" y="9" width="3" height="6" rx="0.5"/><rect x="5" y="7" width="2" height="10" rx="0.5"/><rect x="17" y="7" width="2" height="10" rx="0.5"/>'},
     {label:t('programs'),screen:'programs',icon:'<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 3v18"/>'},
     {label:t('templates'),screen:'templates',icon:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>'},
-    {label:t('settings'),screen:'settings',icon:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>'},
+    {label:t('profile'),screen:'profile',icon:'<circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>'},
   ];
   const ov=document.createElement('div');ov.className='modal-overlay';
   ov.innerHTML=`<div class="modal">
@@ -2003,12 +2055,12 @@ setTimeout(updateNotificationBadge,0);
 if(sessionStorage.getItem('bs-updated')==='1'){
   sessionStorage.removeItem('bs-updated');
   addAdminChangelogEntry('auto_update',tt({pl:'Auto update wykonany',en:'Auto update completed',de:'Auto update abgeschlossen',es:'Auto update completado'}));
-  if(document.getElementById('screen-settings')?.classList.contains('active'))renderSettings();
+  if(document.getElementById('screen-profile')?.classList.contains('active'))renderSettings();
   setTimeout(()=>showSyncToast(tt({pl:'Aplikacja została zaktualizowana.',en:'App has been updated.',de:'App wurde aktualisiert.',es:'La app se ha actualizado.'}),'success'),700);
 }
 if(sessionStorage.getItem('bs-manual-hard-refresh')==='1'){
   sessionStorage.removeItem('bs-manual-hard-refresh');
   addAdminChangelogEntry('manual_refresh',tt({pl:'Ręczny hard refresh wykonany',en:'Manual hard refresh completed',de:'Manueller Hard Refresh abgeschlossen',es:'Hard refresh manual completado'}));
-  if(document.getElementById('screen-settings')?.classList.contains('active'))renderSettings();
+  if(document.getElementById('screen-profile')?.classList.contains('active'))renderSettings();
   setTimeout(()=>showSyncToast(tt({pl:'Pobrano świeże pliki z serwera.',en:'Fresh files loaded from server.',de:'Neue Dateien vom Server geladen.',es:'Archivos nuevos cargados desde servidor.'}),'success'),700);
 }

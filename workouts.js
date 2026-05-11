@@ -1135,60 +1135,27 @@ const MEASURE_TYPES=[
 function proCardHtml(){
   const logoSrc=isDark?'./logo.jpg':'./light_logo.png';
   const logoImg=`<img src="${logoSrc}" alt="BeeStrong" style="width:34px;height:34px;object-fit:contain;border-radius:8px;flex-shrink:0;"/>`;
-  const proActiveBg=isDark?'rgba(0,200,83,0.08)':'#bdd8c8';
-  const proActiveBorder=isDark?'rgba(0,200,83,0.35)':'rgba(0,105,55,0.38)';
-  const proCoachBg=isDark?'linear-gradient(135deg,rgba(0,200,83,0.08),rgba(245,197,66,0.08))':'#d3c48f';
-  const proCoachBorder=isDark?'rgba(245,197,66,0.45)':'rgba(130,96,18,0.42)';
-  const proTitleColor=isDark?'#00e676':'#006b3a';
-  const proSubColor=isDark?'var(--text2)':'#24352b';
-  const coachTitleColor=isDark?'var(--yellow)':'#6c5200';
-  const coachBtnColor=isDark?'#00e676':'#005f36';
-
-  // Not logged in
-  if(!S.user){
-    return `<div style="display:flex;align-items:center;gap:12px;background:rgba(255,92,92,0.10);border:1px solid rgba(255,92,92,0.35);border-radius:12px;padding:12px 14px;margin-bottom:14px;cursor:pointer;" onclick="showAuthModal()">
-      ${logoImg}
-      <div style="flex:1;">
-        <div style="font-size:14px;font-weight:700;color:#ff5c5c;">BeeStrong Pro</div>
-        <div style="font-size:12px;color:rgba(255,92,92,0.75);">${tt({pl:'Zaloguj się, aby zobaczyć szczegóły',en:'Log in to see details',de:'Einloggen für Details',es:'Inicia sesión para ver detalles'})}</div>
-      </div>
-      <span style="display:inline-flex;align-items:center;padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;background:rgba(255,92,92,0.15);color:#ff5c5c;border:1px solid rgba(255,92,92,0.40);white-space:nowrap;flex-shrink:0;">${tt({pl:'Zaloguj',en:'Log in',de:'Einloggen',es:'Entrar'})}</span>
-    </div>`;
-  }
-
-  // Logged in, no PRO
-  if(!isPro()){
-    return `<div style="position:relative;display:flex;align-items:center;gap:12px;background:rgba(201,169,110,0.10);border:1px solid rgba(201,169,110,0.40);border-radius:12px;padding:12px 14px;margin-bottom:14px;cursor:pointer;" onclick="showPaywall()">
-      ${logoImg}
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:14px;font-weight:700;color:var(--accent);">BeeStrong Pro</div>
-        <div style="font-size:12px;color:var(--text2);">${tt({pl:'Zdobądź konto PRO',en:'Get PRO account',de:'PRO-Konto holen',es:'Obtén cuenta PRO'})}</div>
-      </div>
-      <span style="display:inline-block;transform:rotate(-8deg);background:rgba(201,169,110,0.18);border:1.5px solid rgba(201,169,110,0.70);color:var(--accent);font-size:9px;font-weight:800;letter-spacing:1.2px;padding:3px 11px;border-radius:5px;text-transform:uppercase;white-space:nowrap;flex-shrink:0;margin:0 4px;">GET PRO</span>
-      <button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();showPaywall()" style="font-size:11px;padding:6px 10px;flex-shrink:0;border-color:rgba(201,169,110,0.45);color:var(--accent);">${tt({pl:'Podgląd',en:'Preview',de:'Vorschau',es:'Vista previa'})}</button>
-    </div>`;
-  }
-
-  // PRO + Coach active
-  if(S.isPro&&S.coachMode){
-    return `<div style="display:flex;align-items:center;gap:10px;background:${proCoachBg};border:1px solid ${proCoachBorder};border-radius:12px;padding:12px 14px;margin-bottom:14px;">
-      ${logoImg}
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:14px;font-weight:800;"><span style="color:${proTitleColor};">BeeStrong Pro</span> <span style="color:${coachTitleColor};">+ Coach Subscription</span></div>
-        <div style="font-size:12px;color:${proSubColor};font-weight:500;">${tt({pl:'Aktywne — dziękujemy!',en:'Active — thank you!',de:'Aktiv — danke!',es:'Activo — ¡gracias!'})}</div>
-      </div>
-    </div>`;
-  }
-
-  // PRO only active
-  const coachBtn=` <button class="btn btn-sm" onclick="showCoachModeInfo()" style="font-size:10px;padding:5px 10px;flex-shrink:0;background:rgba(0,120,62,0.12);color:${coachBtnColor};border:1px solid rgba(0,120,62,0.38);font-weight:800;letter-spacing:0.3px;">Get Coach Mode</button>`;
-  return `<div style="display:flex;align-items:center;gap:10px;background:${proActiveBg};border:1px solid ${proActiveBorder};border-radius:12px;padding:12px 14px;margin-bottom:14px;">
+  const isCoach=!!(S.user&&S.coachMode);
+  const isPaid=!!(S.user&&S.isPro);
+  const plan=isCoach?'COACH':(isPaid?'PRO':'FREE');
+  const bg=isCoach
+    ?(isDark?'linear-gradient(135deg,rgba(0,200,83,0.08),rgba(245,197,66,0.08))':'#d3c48f')
+    :(isPaid?(isDark?'rgba(0,200,83,0.08)':'#bdd8c8'):'var(--bg2)');
+  const border=isCoach
+    ?(isDark?'rgba(245,197,66,0.45)':'rgba(130,96,18,0.42)')
+    :(isPaid?(isDark?'rgba(0,200,83,0.35)':'rgba(0,105,55,0.38)'):'var(--border)');
+  const dataLine=(isPaid||isCoach)
+    ?tt({pl:'Cloud backup aktywny',en:'Cloud backup active',de:'Cloud-Backup aktiv',es:'Backup en nube activo'})
+    :tt({pl:'Dane tylko na tym urządzeniu',en:'Stored on this device only',de:'Nur auf diesem Gerät gespeichert',es:'Solo en este dispositivo'});
+  const detail=S.user?(S.user.email||dataLine):tt({pl:'Niezalogowany',en:'Signed out',de:'Abgemeldet',es:'Sin sesión'});
+  const cta=S.user?'':`<button class="btn btn-sm btn-primary" onclick="event.stopPropagation();showAuthModal()" style="font-size:11px;padding:7px 11px;flex-shrink:0;">${tt({pl:'Login',en:'Log in',de:'Login',es:'Login'})}</button>`;
+  return `<div style="display:flex;align-items:center;gap:10px;background:${bg};border:1px solid ${border};border-radius:12px;padding:12px 14px;margin-bottom:14px;${S.user?'':'cursor:pointer;'}" ${S.user?'':'onclick="showAuthModal()"'}">
     ${logoImg}
     <div style="flex:1;min-width:0;">
-      <div style="font-size:14px;font-weight:800;color:${proTitleColor};">BeeStrong Pro</div>
-      <div style="font-size:12px;color:${proSubColor};font-weight:500;">${tt({pl:'Aktywne — dziękujemy!',en:'Active — thank you!',de:'Aktiv — danke!',es:'Activo — ¡gracias!'})}</div>
+      <div style="font-size:14px;font-weight:900;color:var(--accent);">${plan}</div>
+      <div style="font-size:12px;color:var(--text2);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${detail} · ${dataLine}</div>
     </div>
-    ${coachBtn}
+    ${cta}
   </div>`;
 }
 

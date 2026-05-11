@@ -153,6 +153,7 @@ function saveAll(){
 }
 
 function showScreen(name){
+  if(name==='settings')name='profile';
   if(typeof closeMobileFabMenu==='function')closeMobileFabMenu();
   document.body.classList.toggle('workout-active',name==='workouts'&&!!S.activeWorkout);
   if(window._bsHistoryReady&&!window._bsHandlingBack&&name!=='dashboard'){
@@ -164,7 +165,7 @@ function showScreen(name){
   document.querySelectorAll('.mobile-nav-item[data-screen]').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('.mobile-header-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('screen-'+name).classList.add('active');
-  const screens=['dashboard','workouts','calendar','exercises','programs','progress','templates','settings'];
+  const screens=['dashboard','workouts','calendar','exercises','programs','progress','templates'];
   const idx=screens.indexOf(name);
   if(idx>=0){
     document.querySelectorAll('.nav-item')[idx]?.classList.add('active');
@@ -173,7 +174,7 @@ function showScreen(name){
   }
   const mBtn=document.querySelector(`.mobile-nav-item[data-screen="${name}"]`);
   if(mBtn)mBtn.classList.add('active');
-  if(name==='settings')document.getElementById('mobileSettingsBtn')?.classList.add('active');
+  if(name==='profile')document.getElementById('mobileProfileBtn')?.classList.add('active');
   if(name==='notifications')document.getElementById('mobileNotificationsBtn')?.classList.add('active');
   if(name==='clients')document.getElementById('mobileClientsBtn')?.classList.add('active');
   if(name==='coaches')document.getElementById('mobileCoachesBtn')?.classList.add('active');
@@ -186,7 +187,7 @@ function showScreen(name){
   if(name==='templates')renderTemplates();
   if(name==='workouts')renderWorkout();
   // Profile screen removed — its content lives in Settings now (renderSettings handles measurements + Pro card)
-  if(name==='settings')renderSettings();
+  if(name==='profile')renderSettings();
   if(name==='notifications')renderNotifications();
   if(name==='friends')renderFriends();
   if(name==='clients')renderClients();
