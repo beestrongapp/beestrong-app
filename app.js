@@ -1309,12 +1309,16 @@ function renderSettings(){
     privacy:{title:privacyTitle,rows:null},
     deleteAccount:{title:deleteTitle,rows:null},
   };
-  const hubRow=(id,label,path)=>`<div onclick="openProfileSection('${id}')" style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);cursor:pointer;margin-bottom:10px;">
-        <div style="width:38px;height:38px;border-radius:10px;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;color:var(--accent);flex-shrink:0;">${svg(path)}</div>
+  const hubRow=(id,label,path)=>{
+    const danger=id==='deleteAccount';
+    const dangerColor='#d92d20';
+    return `<div onclick="openProfileSection('${id}')" style="display:flex;align-items:center;gap:14px;padding:16px;background:${danger?'rgba(217,45,32,0.10)':'var(--bg2)'};border:1px solid ${danger?'rgba(217,45,32,0.38)':'var(--border)'};border-radius:var(--radius-lg);cursor:pointer;margin-top:${danger?'28px':'0'};margin-bottom:10px;">
+        <div style="width:38px;height:38px;border-radius:10px;background:${danger?'rgba(217,45,32,0.16)':'var(--accent-dim)'};display:flex;align-items:center;justify-content:center;color:${danger?dangerColor:'var(--accent)'};flex-shrink:0;">${svg(path)}</div>
         <div style="flex:1;min-width:0;">
-          <div style="font-size:15px;font-weight:800;">${label}</div>
+          <div style="font-size:15px;font-weight:900;color:${danger?dangerColor:'var(--text)'};">${label}</div>
         </div>
       </div>`;
+  };
 
   const accountState=S.user
     ?tt({pl:'Zalogowany',en:'Signed in',de:'Angemeldet',es:'Sesión iniciada'})
