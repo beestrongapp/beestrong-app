@@ -1,6 +1,6 @@
 const T={
   pl:{
-    home:'Home',workout:'Treningi',calendar:'Kalendarz',progress:'Progres',templates:'Szablony',profile:'Profil',programs:'Programy',clients:'Klienci',friends:'Friends',coach:'Coach',more:'Więcej',addClient:'Dodaj',quickAccess:'Szybki dostęp',
+    home:'Home',workout:'Treningi',calendar:'Kalendarz',progress:'Progres',templates:'Szablony',profile:'Profil',programs:'Programy',clients:'Klienci',friends:'Znajomi',coach:'Trener',more:'Więcej',addClient:'Dodaj',quickAccess:'Szybki dostęp',
     dashboard:'Dashboard',recentWorkouts:'Ostatnie treningi',newWorkout:'Nowy trening',
     workoutsThisWeek:'w tym tygodniu',minutes:'minut',tons:'ton',
     noWorkouts:'Brak treningów. Zacznij pierwszy!',startWorkout:'Zacznij trening',

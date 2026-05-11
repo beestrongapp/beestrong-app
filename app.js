@@ -1328,10 +1328,10 @@ function renderSettings(){
     {key:'subscription',label:subscriptionTitle,value:`${subscriptionLabel} · ${tt({pl:'zobacz porównanie planów',en:'view plan comparison',de:'Pläne vergleichen',es:'ver comparación'})}`,icon:svg(icon.card),action:'openSubscriptionModal'},
   ];
   const preferenceRows=[
-    {key:'layout',label:tt({pl:'App Layout',en:'App layout',de:'App-Layout',es:'Layout de app'}),value:S.layoutMode==='minimal'?tt({pl:'Minimal',en:'Minimal',de:'Minimal',es:'Minimal'}):tt({pl:'Standard',en:'Standard',de:'Standard',es:'Estándar'}),icon:svg(icon.layout),action:'openSettingsLayout'},
-    {key:'theme',label:tt({pl:'Theme colour',en:'Theme colour',de:'Farbschema',es:'Tema'}),value:isDark?t('darkTheme'):t('lightTheme'),icon:svg(icon.theme),action:'openSettingsTheme'},
+    {key:'layout',label:tt({pl:'Wygląd appki',en:'App layout',de:'App-Layout',es:'Layout de app'}),value:S.layoutMode==='minimal'?tt({pl:'Uproszczony',en:'Minimal',de:'Minimal',es:'Minimal'}):tt({pl:'Standardowy',en:'Standard',de:'Standard',es:'Estándar'}),icon:svg(icon.layout),action:'openSettingsLayout'},
+    {key:'theme',label:tt({pl:'Kolor motywu',en:'Theme colour',de:'Farbschema',es:'Tema'}),value:isDark?t('darkTheme'):t('lightTheme'),icon:svg(icon.theme),action:'openSettingsTheme'},
     {key:'language',label:t('language'),value:({en:t('langEnglish'),pl:t('langPolish'),de:t('langGerman'),es:t('langSpanish')}[lang]||t('langEnglish')),icon:svg(icon.language),action:'openSettingsLanguage'},
-    {key:'units',label:tt({pl:'Units',en:'Units',de:'Einheiten',es:'Unidades'}),value:S.units==='imperial'?'Imperial (lbs / in)':'Metric (kg / cm)',icon:svg(icon.units),action:'openSettingsUnits'},
+    {key:'units',label:tt({pl:'Jednostki',en:'Units',de:'Einheiten',es:'Unidades'}),value:S.units==='imperial'?'Imperial (lbs / in)':'Metric (kg / cm)',icon:svg(icon.units),action:'openSettingsUnits'},
     {key:'restTimer',label:tt({pl:'Czas odpoczynku',en:'Rest timer',de:'Pausenzeit',es:'Tiempo de descanso'}),value:`${S.defaultRest||90} s`,icon:svg(icon.timer),action:'openSettingsRestTimer'},
   ];
   const measurementsTitle=tt({pl:'Twoje pomiary',en:'Body measurements',de:'Körpermaße',es:'Medidas corporales'});
