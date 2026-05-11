@@ -2175,17 +2175,22 @@ function setupBackButton(){
     if(S.detailModal){closeDetailModal();return;}
     // 2) Let complex modals consume Back before generic modal closing
     if(runModalBackHandler())return;
-    // 3) Client detail subview -> return to client hub before closing the full-screen client card
-    if(S.modal&&window._clientDetailData&&window._clientDetailView&&window._clientDetailView!=='hub'){
+    // 3) Client detail subview -> return to client hub before leaving the coach/client context
+    if(window._clientDetailData&&window._clientDetailView&&window._clientDetailView!=='hub'){
       renderClientHub();
       return;
     }
-    // 4) Friend detail subview -> return to friend hub before closing the full-screen friend card
+    // 4) User coach subview -> return to coach hub before leaving the Coach screen
+    if(window._userCoachDetailInvId&&window._userCoachView&&window._userCoachView!=='hub'){
+      openUserCoachDetail(window._userCoachDetailInvId);
+      return;
+    }
+    // 5) Friend detail subview -> return to friend hub before closing the full-screen friend card
     if(S.modal&&window._friendDetailView&&window._friendDetailView!=='hub'){
       renderFriendHub();
       return;
     }
-    // 5) Close any modal/popup
+    // 6) Close any modal/popup
     if(S.modal){
       const returnScreen=S.modal._returnScreen;
       closeModal();
@@ -2199,7 +2204,7 @@ function setupBackButton(){
 
     const active=document.querySelector('.screen.active')?.id?.replace('screen-','');
 
-    // 6) Active workout — double-back asks for confirmation
+    // 7) Active workout — double-back asks for confirmation
     if(active==='workouts'&&S.activeWorkout){
       const now=Date.now();
       if(now-_lastBackOnWorkouts<2500){
@@ -2211,7 +2216,7 @@ function setupBackButton(){
       return;
     }
 
-    // 7) Any screen other than dashboard → go home
+    // 8) Any screen other than dashboard → go home
     if(active!=='dashboard'){
       window._bsHandlingBack=true;
       showScreen('dashboard');

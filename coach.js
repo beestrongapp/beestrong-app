@@ -481,6 +481,8 @@ function renderClients(){
 
 async function renderUserCoaches(){
   stopCoachChatRealtime();
+  window._userCoachDetailInvId=null;
+  window._userCoachView=null;
   const el=document.getElementById('coachesContent');
   if(!el)return;
   if(!S.user){
@@ -532,6 +534,8 @@ function userCoachCardHtml(inv){
 async function openUserCoachDetail(invId){
   closeModal();
   stopCoachChatRealtime();
+  window._userCoachDetailInvId=invId;
+  window._userCoachView='hub';
   const el=document.getElementById('coachesContent');
   if(!el)return;
   el.innerHTML=`<div id="userCoachDetailContent" style="display:flex;align-items:center;justify-content:center;padding:40px 0;"><div class="spinner"></div></div>`;
@@ -559,6 +563,8 @@ function userCoachHeader(inv,title,sub,backAction){
 function renderUserCoachHub(inv){
   const content=document.getElementById('userCoachDetailContent');
   if(!content)return;
+  window._userCoachDetailInvId=inv.id;
+  window._userCoachView='hub';
   const coachName=inv.coach_name||inv.coach_email||'Coach';
   content.style.display='block';
   content.style.padding='0';
@@ -1314,6 +1320,8 @@ async function sendCoachChatMessage(inputId){
 async function renderUserCoachChat(invId){
   const content=document.getElementById('userCoachDetailContent');
   if(!content||!sb)return;
+  window._userCoachDetailInvId=invId;
+  window._userCoachView='chat';
   content.style.display='block';
   content.style.padding='0';
   content.innerHTML=`<div style="display:flex;justify-content:center;padding:40px 0;"><div class="spinner"></div></div>`;
@@ -1338,6 +1346,8 @@ async function renderUserCoachChat(invId){
 async function renderUserCoachPayments(invId){
   const content=document.getElementById('userCoachDetailContent');
   if(!content||!sb)return;
+  window._userCoachDetailInvId=invId;
+  window._userCoachView='payments';
   content.innerHTML=`<div style="display:flex;justify-content:center;padding:40px 0;"><div class="spinner"></div></div>`;
   const{data:inv,error:invErr}=await sb.from('coach_invitations').select('*').eq('id',invId).single();
   if(invErr||!inv){content.innerHTML=`<div style="color:var(--red);padding:16px;">${invErr?.message||'Payments unavailable'}</div>`;return;}
@@ -1359,6 +1369,8 @@ async function renderUserCoachPayments(invId){
 async function renderUserCoachNotes(invId){
   const content=document.getElementById('userCoachDetailContent');
   if(!content||!sb)return;
+  window._userCoachDetailInvId=invId;
+  window._userCoachView='notes';
   content.innerHTML=`<div style="display:flex;justify-content:center;padding:40px 0;"><div class="spinner"></div></div>`;
   const{data:inv,error:invErr}=await sb.from('coach_invitations').select('*').eq('id',invId).single();
   if(invErr||!inv){content.innerHTML=`<div style="color:var(--red);padding:16px;">${invErr?.message||'Notes unavailable'}</div>`;return;}
@@ -1379,6 +1391,8 @@ async function renderUserCoachNotes(invId){
 function renderUserCoachCheckin(invId){
   const content=document.getElementById('userCoachDetailContent');
   if(!content)return;
+  window._userCoachDetailInvId=invId;
+  window._userCoachView='checkin';
   const measurements=Object.entries(S.measurements||{}).sort((a,b)=>String(b[0]).localeCompare(String(a[0])));
   content.innerHTML=`<div style="display:flex;justify-content:center;padding:40px 0;"><div class="spinner"></div></div>`;
   sb.from('coach_invitations').select('*').eq('id',invId).single().then(({data:inv,error})=>{
