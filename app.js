@@ -1233,6 +1233,7 @@ function renderSettings(){
     account:'<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
     cloud:'<path d="M17.5 19H7a5 5 0 0 1-.7-10 6 6 0 0 1 11.2-2A4.5 4.5 0 0 1 17.5 19z"/>',
     card:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/>',
+    bell:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
     layout:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="18" height="7" rx="1"/>',
     theme:'<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>',
     language:'<circle cx="12" cy="12" r="9"/><path d="M12 3a15 15 0 0 1 0 18M3 12h18"/><path d="M3.6 8h16.8M3.6 16h16.8"/>',
@@ -1346,6 +1347,7 @@ function renderSettings(){
     {key:'language',label:t('language'),value:({en:t('langEnglish'),pl:t('langPolish'),de:t('langGerman'),es:t('langSpanish')}[lang]||t('langEnglish')),icon:svg(icon.language),action:'openSettingsLanguage'},
     {key:'units',label:tt({pl:'Jednostki',en:'Units',de:'Einheiten',es:'Unidades'}),value:S.units==='imperial'?'Imperial (lbs / in)':'Metric (kg / cm)',icon:svg(icon.units),action:'openSettingsUnits'},
     {key:'restTimer',label:tt({pl:'Czas odpoczynku',en:'Rest timer',de:'Pausenzeit',es:'Tiempo de descanso'}),value:`${S.defaultRest||90} s`,icon:svg(icon.timer),action:'openSettingsRestTimer'},
+    {key:'push',label:tt({pl:'Powiadomienia telefonu',en:'Phone notifications',de:'Telefon-Benachrichtigungen',es:'Notificaciones del teléfono'}),value:typeof pushStatusLabel==='function'?pushStatusLabel():tt({pl:'Niedostępne',en:'Unavailable',de:'Nicht verfügbar',es:'No disponible'}),icon:svg(icon.bell),action:'togglePushNotifications'},
   ];
   const measurementsTitle=tt({pl:'Twoje pomiary',en:'Body measurements',de:'Körpermaße',es:'Medidas corporales'});
   const measurementRows=[
@@ -2646,6 +2648,16 @@ function setupBackButton(){
 }
 setupBackButton();
 setTimeout(updateNotificationBadge,0);
+setTimeout(()=>{
+  try{
+    const params=new URLSearchParams(location.search);
+    const screen=params.get('screen');
+    if(screen&&document.getElementById(`screen-${screen}`)){
+      showScreen(screen);
+      history.replaceState(history.state,'',location.pathname+location.hash);
+    }
+  }catch(e){}
+},900);
 
 if(sessionStorage.getItem('bs-updated')==='1'){
   sessionStorage.removeItem('bs-updated');

@@ -406,6 +406,13 @@ async function sendFriendMessage(){
   const{error}=await sb.from('friend_messages').insert({invitation_id:ctx.inv.id,sender_id:S.user.id,receiver_id:friendId(ctx.inv),message:msg});
   input.disabled=false;
   if(error){showSyncToast(error.message,'error');return;}
+  if(typeof sendPushToUser==='function')sendPushToUser(friendId(ctx.inv),{
+    type:'friend_message',
+    title:'BeeStrong Friends',
+    body:msg.slice(0,120),
+    url:'./?screen=notifications',
+    tag:`friend-chat-${ctx.inv.id}`,
+  });
   input.value='';
   await loadFriendMessages();
 }

@@ -11,6 +11,7 @@ let _suppressCloudQueue=false;
 // (NEVER paste service_role keys here — those bypass RLS and would leak data.)
 const SUPABASE_URL='https://gtaskzdyoyscbgsqdvnk.supabase.co';
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd0YXNremR5b3lzY2Jnc3Fkdm5rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5OTU4MTIsImV4cCI6MjA5MzU3MTgxMn0.EPBUyLflxYSsr7BNdzVSZM4Q-M1oRAsBI9sIXhUDOH8';
+const PUSH_VAPID_PUBLIC_KEY='BK6QlCz2qCc0fPybDGzYJNIjIWC0ln_O37cuNVpEyld7KANqK-oTQLBWICApvbuzsgWq-PeH5kaXY670C9mxNGc';
 let sb=null; // Supabase client, initialized after DOM ready (see initSupabase)
 
 let S={month:new Date().getMonth(),year:new Date().getFullYear(),selectedDate:null,templates:[],workouts:{},measurements:{},activeWorkout:null,timerSecs:0,timerInterval:null,modal:null,loaded:false,isPro:false,coachMode:false,programs:[],clients:[],pendingInvites:[],user:null,defaultRest:90,units:'metric',layoutMode:localStorage.getItem('bs-layout-mode-v1')||'standard',goal:localStorage.getItem('bs-goal-v1')||'strength',level:localStorage.getItem('bs-level-v1')||'beginner',weekPlan:{}};

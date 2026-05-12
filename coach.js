@@ -591,6 +591,13 @@ async function requestCoach(coachId){
       responded_at:new Date().toISOString(),
     });
     if(error)throw error;
+    if(typeof sendPushToUser==='function')sendPushToUser(coach.id,{
+      type:'coach_selected',
+      title:'BeeStrong',
+      body:tt({pl:'Nowy klient wybrał Cię jako coacha.',en:'A new client chose you as coach.',de:'Ein neuer Klient hat dich als Coach gewählt.',es:'Un nuevo cliente te eligió como coach.'}),
+      url:'./?screen=clients',
+      tag:`coach-selected-${S.user.id}`,
+    });
     showSyncToast(tt({pl:'Coach dodany.',en:'Coach added.',de:'Coach hinzugefügt.',es:'Coach añadido.'}),'success');
     renderUserCoaches();
   }catch(e){
@@ -799,6 +806,13 @@ async function sendCoachInvitation(){
       status:'pending',
     });
     if(insErr)throw insErr;
+    if(typeof sendPushToUser==='function')sendPushToUser(uid,{
+      type:'coach_invitation',
+      title:'BeeStrong',
+      body:tt({pl:'Masz nowe zaproszenie od coacha.',en:'You have a new coach invitation.',de:'Du hast eine neue Coach-Einladung.',es:'Tienes una nueva invitación de coach.'}),
+      url:'./?screen=notifications',
+      tag:`coach-invite-${S.user.id}`,
+    });
     closeModal();
     showSyncToast(tt({pl:'Zaproszenie wysłane ✓',en:'Invitation sent ✓',de:'Einladung gesendet ✓',es:'Invitación enviada ✓'}),'success');
     renderClients();
@@ -1468,6 +1482,14 @@ async function sendCoachChatMessage(inputId){
     input.focus();
     return;
   }
+  const receiverId=S.user.id===row.coach_id?row.client_user_id:row.coach_id;
+  if(typeof sendPushToUser==='function')sendPushToUser(receiverId,{
+    type:'chat_message',
+    title:'BeeStrong Chat',
+    body:message.slice(0,120),
+    url:'./?screen=notifications',
+    tag:`coach-chat-${row.invitation_id}`,
+  });
   input.value='';
   await loadCoachChatMessages();
   input.focus();
@@ -1931,6 +1953,13 @@ async function insertClientAssignment(invId,clientUserId,row,successMsg){
       :sb.from('coach_program_assignments').insert(payload);
     const{error}=await query;
     if(error)throw error;
+    if(typeof sendPushToUser==='function')sendPushToUser(clientUserId,{
+      type:'coach_assignment',
+      title:'BeeStrong',
+      body:tt({pl:'Coach przypisał Ci nowy trening lub program.',en:'Your coach assigned a new workout or program.',de:'Dein Coach hat dir ein neues Training oder Programm zugewiesen.',es:'Tu coach te asignó un nuevo entrenamiento o programa.'}),
+      url:'./?screen=notifications',
+      tag:`coach-assignment-${invId}`,
+    });
     closeModal();
     showSyncToast(successMsg,'success');
     setTimeout(()=>openClientDetail(invId),150);
