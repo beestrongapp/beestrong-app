@@ -139,9 +139,10 @@ body.fab-open .mobile-fab-action{opacity:1;transform:translate(-50%,0) scale(1);
 .is-reordering [data-reorder-item] input.si,
 .is-reordering [data-reorder-item] .set-done,
 .is-reordering [data-reorder-item] .rm-btn,
-.is-reordering [data-reorder-item] button:not(.drag-handle),
+.is-reordering [data-reorder-item] button:not(.drag-handle):not(.workout-ex-name-btn),
 .is-reordering [data-reorder-item] [style*="grid-template-columns"]{display:none!important;}
 .is-reordering [data-reorder-item] .exercise-title-drag{width:100%;}
+.is-reordering [data-reorder-item] .workout-ex-name-btn{display:flex!important;pointer-events:none;}
 .is-reordering [data-reorder-item]::before,
 .is-reordering [data-reorder-item]::after{pointer-events:none;}
 .set-grid{display:grid;grid-template-columns:20px 40px 1.4fr 1fr 1fr 34px 26px;gap:4px;align-items:center;margin-bottom:7px;}
