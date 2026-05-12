@@ -1489,14 +1489,113 @@ function profileMeasurementsHtml(){
   return `${bodyMeasurementsHtml(true)}<button class="btn btn-primary" onclick="openAddMeasure()" style="width:100%;font-size:15px;padding:14px;margin-top:14px;">+ ${t('addMeasure')}</button>`;
 }
 
+const WHATS_NEW_URL='./whats-new.json';
+const WHATS_NEW_CACHE_KEY='bs-whats-new-cache-v1';
+let _whatsNewLoading=false;
+
+function escHtml(v){
+  return String(v==null?'':v).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+
+function localizedValue(v){
+  if(v&&typeof v==='object'&&!Array.isArray(v))return v[lang]||v.en||v.pl||Object.values(v)[0]||'';
+  return v||'';
+}
+
+function contactSectionHtml(){
+  const rows=[
+    {
+      role:'Support',
+      email:'support@beestrongapp.com',
+      desc:tt({pl:'Pomoc techniczna, problemy z kontem, pytania użytkowników.',en:'Technical help, account issues, and user questions.',de:'Technische Hilfe, Kontoprobleme und Nutzerfragen.',es:'Ayuda tecnica, problemas de cuenta y preguntas de usuarios.'})
+    },
+    {
+      role:'Admin',
+      email:'BeeStrong@beestrongapp.com',
+      desc:tt({pl:'Sprawy administracyjne, biznesowe i ogólny kontakt.',en:'Admin, business, and general contact.',de:'Admin, Business und allgemeiner Kontakt.',es:'Admin, negocio y contacto general.'})
+    },
+  ];
+  return `<div style="display:grid;gap:10px;">
+    ${rows.map(r=>`<a href="mailto:${r.email}" style="display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;text-decoration:none;color:inherit;">
+      <div style="min-width:0;">
+        <div style="font-size:15px;font-weight:900;margin-bottom:4px;">${r.role}</div>
+        <div style="font-size:14px;color:var(--accent);font-weight:700;word-break:break-all;">${r.email}</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.45;margin-top:6px;">${r.desc}</div>
+      </div>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" style="color:var(--text3);flex-shrink:0;"><path d="M4 4h16v16H4z"/><path d="m4 6 8 7 8-7"/></svg>
+    </a>`).join('')}
+  </div>`;
+}
+
+function defaultWhatsNewData(){
+  return {
+    version:'1.0',
+    updated:'2026-05-12',
+    items:[
+      {
+        date:'2026-05-12',
+        title:{pl:'Zmiana kolejności ćwiczeń',en:'Exercise reordering',de:'Übungen neu sortieren',es:'Reordenar ejercicios'},
+        body:{pl:'Dodano przeciąganie ćwiczeń w aktywnym treningu, szablonach i ręcznym dodawaniu treningu.',en:'Added drag reordering in active workouts, templates, and manual workout entry.',de:'Drag-Reordering in aktiven Workouts, Vorlagen und manueller Eingabe hinzugefügt.',es:'Se añadió reordenar ejercicios en entrenamientos activos, plantillas y entrada manual.'},
+        changes:{
+          pl:['Przytrzymaj uchwyt z trzema kreskami przy nazwie ćwiczenia.','Pola kg, reps i rest działają normalnie podczas edycji.'],
+          en:['Hold the three-line handle next to an exercise name.','kg, reps, and rest fields remain editable as usual.'],
+          de:['Halte den Griff mit drei Linien neben dem Übungsnamen.','kg-, Wiederholungs- und Pausenfelder bleiben normal editierbar.'],
+          es:['Mantén pulsado el asa de tres líneas junto al ejercicio.','Los campos de kg, reps y descanso siguen editables.']
+        }
+      }
+    ]
+  };
+}
+
+async function loadWhatsNew(){
+  if(_whatsNewLoading)return;
+  _whatsNewLoading=true;
+  try{
+    const res=await fetch(WHATS_NEW_URL,{cache:'no-store'});
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    if(data&&Array.isArray(data.items)){
+      localStorage.setItem(WHATS_NEW_CACHE_KEY,JSON.stringify(data));
+      if(_profileSectionView==='whatsnew')renderSettings();
+    }
+  }catch(e){
+    if(_profileSectionView==='whatsnew')renderSettings();
+  }finally{
+    _whatsNewLoading=false;
+  }
+}
+
+function whatsNewSectionHtml(){
+  const cached=ld(WHATS_NEW_CACHE_KEY,null);
+  const data=cached&&Array.isArray(cached.items)?cached:defaultWhatsNewData();
+  if(!cached&&!_whatsNewLoading)loadWhatsNew();
+  const items=(data.items||[]).slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+  const sourceNote=cached
+    ?tt({pl:'Treść pobrana z pliku whats-new.json.',en:'Content loaded from whats-new.json.',de:'Inhalt aus whats-new.json geladen.',es:'Contenido cargado desde whats-new.json.'})
+    :tt({pl:'Pokazuję wbudowaną wersję. Po publikacji pliku whats-new.json appka pobierze aktualną treść.',en:'Showing the built-in fallback. Once whats-new.json is published, the app will load the latest content.',de:'Zeigt die eingebaute Fallback-Version. Nach Veröffentlichung von whats-new.json lädt die App aktuelle Inhalte.',es:'Mostrando la version integrada. Cuando publiques whats-new.json, la app cargara el contenido actual.'});
+  return `<div style="display:grid;gap:12px;">
+    <div style="font-size:12px;color:var(--text3);line-height:1.45;">${sourceNote}</div>
+    ${items.map(item=>{
+      const changes=localizedValue(item.changes);
+      const list=Array.isArray(changes)?changes:[];
+      return `<article style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px;">
+          <div style="font-size:16px;font-weight:900;color:var(--text);">${escHtml(localizedValue(item.title))}</div>
+          <div style="font-size:11px;color:var(--text3);font-weight:800;white-space:nowrap;">${escHtml(item.date||data.updated||'')}</div>
+        </div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:${list.length?'10px':'0'};">${escHtml(localizedValue(item.body))}</div>
+        ${list.length?`<div style="display:grid;gap:7px;">${list.map(ch=>`<div style="font-size:13px;color:var(--text2);line-height:1.4;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;">${escHtml(ch)}</div>`).join('')}</div>`:''}
+      </article>`;
+    }).join('')}
+  </div>`;
+}
+
 function profileInfoSectionHtml(id){
   if(id==='privacy')return legalDocHtml('privacy')+profileActionCard(tt({pl:'Regulamin',en:'Terms of Service',de:'Nutzungsbedingungen',es:'Terminos de servicio'}),tt({pl:'Pokaż dokument offline',en:'Show offline document',de:'Offline-Dokument anzeigen',es:'Mostrar documento offline'}),'openTermsOfService()','margin-top:14px;');
   if(id==='terms')return legalDocHtml('terms')+profileActionCard(tt({pl:'Polityka prywatności',en:'Privacy Policy',de:'Datenschutz',es:'Politica de privacidad'}),tt({pl:'Pokaż dokument offline',en:'Show offline document',de:'Offline-Dokument anzeigen',es:'Mostrar documento offline'}),'openPrivacyPolicy()','margin-top:14px;');
-  const body={
-    contact:tt({pl:'Sekcja Contact zostanie dodana później.',en:'Contact will be added later.',de:'Kontakt wird später hinzugefügt.',es:'Contact se añadirá más tarde.'}),
-    whatsnew:tt({pl:'Tutaj będzie opis zmian z ostatniego update.',en:'Latest update notes will live here.',de:'Hier erscheinen die letzten Update-Notizen.',es:'Aquí estarán las notas del último update.'}),
-  }[id]||'';
-  return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;font-size:13px;color:var(--text2);line-height:1.5;">${body}</div>`;
+  if(id==='contact')return contactSectionHtml();
+  if(id==='whatsnew')return whatsNewSectionHtml();
+  return '';
 }
 
 function legalDocHtml(type){

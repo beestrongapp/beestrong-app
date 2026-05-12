@@ -1,0 +1,39 @@
+{
+  "version": "1.0",
+  "updated": "2026-05-12",
+  "items": [
+    {
+      "date": "2026-05-12",
+      "title": {
+        "pl": "Zmiana kolejnosci cwiczen",
+        "en": "Exercise reordering",
+        "de": "Uebungen neu sortieren",
+        "es": "Reordenar ejercicios"
+      },
+      "body": {
+        "pl": "Dodano przeciaganie cwiczen w aktywnym treningu, szablonach i recznym dodawaniu treningu.",
+        "en": "Added drag reordering in active workouts, templates, and manual workout entry.",
+        "de": "Drag-Reordering in aktiven Workouts, Vorlagen und manueller Eingabe hinzugefuegt.",
+        "es": "Se anadio reordenar ejercicios en entrenamientos activos, plantillas y entrada manual."
+      },
+      "changes": {
+        "pl": [
+          "Przytrzymaj uchwyt z trzema kreskami przy nazwie cwiczenia.",
+          "Pola kg, reps i rest dzialaja normalnie podczas edycji."
+        ],
+        "en": [
+          "Hold the three-line handle next to an exercise name.",
+          "kg, reps, and rest fields remain editable as usual."
+        ],
+        "de": [
+          "Halte den Griff mit drei Linien neben dem Uebungsnamen.",
+          "kg-, Wiederholungs- und Pausenfelder bleiben normal editierbar."
+        ],
+        "es": [
+          "Manten pulsado el asa de tres lineas junto al ejercicio.",
+          "Los campos de kg, reps y descanso siguen editables."
+        ]
+      }
+    }
+  ]
+}
