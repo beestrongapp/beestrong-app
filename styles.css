@@ -316,7 +316,7 @@ body.workout-active .mobile-fab-overlay{display:none!important;}
 .mobile-brand{display:none;align-items:center;gap:10px;padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:16px;justify-content:space-between;}
 .mobile-brand-logo{width:105px;height:105px;border-radius:13px;object-fit:cover;flex-shrink:0;}
 .mobile-brand-copy{flex:1;min-width:0;}
-.mobile-brand-name{font-size:20px;font-weight:900;color:var(--accent);letter-spacing:0;display:block;line-height:1.08;}
+.mobile-brand-name{font-size:28px;font-weight:900;color:var(--accent);letter-spacing:0;display:block;line-height:1.08;}
 .mobile-brand-sub{font-size:12px;font-weight:500;color:var(--text3);letter-spacing:0;display:block;margin-top:1px;}
 .mobile-header-actions{display:flex;align-items:center;gap:7px;margin-left:auto;justify-content:flex-end;}
 .mobile-header-btn{width:40px;height:40px;border-radius:11px;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--text2);cursor:pointer;flex-shrink:0;transition:background 0.15s,color 0.15s;-webkit-tap-highlight-color:transparent;position:relative;}
