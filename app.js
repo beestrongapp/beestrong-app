@@ -1251,6 +1251,7 @@ function renderSettings(){
       const isUnits=row.key==='units';
       const isTheme=row.key==='theme';
       const isLayout=row.key==='layout';
+      const isPush=row.key==='push';
       if(isLayout){
         const isOn=S.layoutMode==='minimal';
         return`<div style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--bg2);transition:background 0.12s;${i>0?'border-top:1px solid var(--border);':''}">
@@ -1282,6 +1283,18 @@ function renderSettings(){
             <div style="font-size:12px;color:var(--text2);margin-top:2px;">${isDark?t('darkTheme'):t('lightTheme')}</div>
           </div>
           <div class="toggle-switch ${isOn?'on':''}" onclick="event.stopPropagation();toggleThemeInline()"><div class="toggle-knob"></div></div>
+        </div>`;
+      }
+      if(isPush){
+        const isOn=typeof Notification!=='undefined'&&Notification.permission==='granted';
+        const disabled=typeof pushSupported==='function'&&!pushSupported();
+        return`<div style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--bg2);transition:background 0.12s;${i>0?'border-top:1px solid var(--border);':''}">
+          <div style="width:36px;height:36px;border-radius:10px;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;color:var(--accent);flex-shrink:0;">${row.icon}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:14px;font-weight:600;">${row.label}</div>
+            <div style="font-size:12px;color:var(--text2);margin-top:2px;">${row.value}</div>
+          </div>
+          <div class="toggle-switch ${isOn?'on':''}" style="${disabled?'opacity:0.45;':''}" onclick="event.stopPropagation();togglePushNotifications()"><div class="toggle-knob"></div></div>
         </div>`;
       }
       return`<div onclick="${row.action}()" style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--bg2);cursor:pointer;transition:background 0.12s;${i>0?'border-top:1px solid var(--border);':''}"
