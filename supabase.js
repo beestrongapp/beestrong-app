@@ -187,13 +187,14 @@ async function pullAllFromCloud(){
   if(typeof cloudSyncAllowed==='function'&&!cloudSyncAllowed())return{error:'cloud_sync_requires_pro'};
   const uid=S.user.id;
   try{
-    const[tplsRes,woRes,mRes,pRes,ccRes,assignRes]=await Promise.all([
+    const[tplsRes,woRes,mRes,pRes,ccRes,assignRes,coachInvRes]=await Promise.all([
       sb.from('templates').select('*').eq('user_id',uid),
       sb.from('workouts').select('*').eq('user_id',uid).order('date',{ascending:true}),
       sb.from('measurements').select('*').eq('user_id',uid),
       sb.from('programs').select('*').eq('owner_id',uid),
       sb.from('coach_clients').select('*').eq('coach_id',uid),
       sb.from('coach_program_assignments').select('*').eq('client_user_id',uid).eq('status','active'),
+      sb.from('coach_invitations').select('id,status').eq('client_user_id',uid).eq('status','accepted'),
     ]);
     if(tplsRes.error)throw tplsRes.error;
     if(woRes.error)throw woRes.error;
@@ -203,6 +204,7 @@ async function pullAllFromCloud(){
     if(ccRes.error&&ccRes.error.code!=='PGRST116')console.warn('coach_clients pull:',ccRes.error);
     // coach_program_assignments may fail if table doesn't exist yet — ignore gracefully
     if(assignRes.error)console.warn('coach_program_assignments pull:',assignRes.error);
+    if(coachInvRes.error)console.warn('coach_invitations pull:',coachInvRes.error);
 
     // Templates — keep cloud UUID as local id for stable references
     S.templates=(tplsRes.data||[]).map(t=>({
@@ -256,7 +258,8 @@ async function pullAllFromCloud(){
     }));
     // Coach-assigned programs/workouts (client receives from coach)
     if(!assignRes.error){
-      const activeAssignments=assignRes.data||[];
+      const acceptedInvitationIds=new Set((coachInvRes.data||[]).map(inv=>String(inv.id)));
+      const activeAssignments=(assignRes.data||[]).filter(a=>coachInvRes.error||acceptedInvitationIds.has(String(a.invitation_id)));
       const coachPrograms=activeAssignments.filter(a=>(a.assignment_type||'program')==='program').map(a=>({
         id:'coach_'+a.id,
         assignmentId:a.id,

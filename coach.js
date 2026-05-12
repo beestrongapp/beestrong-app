@@ -576,7 +576,8 @@ function renderUserCoachHub(inv){
       ${clientHubTile(`renderUserCoachPayments('${inv.id}')`,tt({pl:'Płatności',en:'Payments',de:'Zahlungen',es:'Pagos'}),'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/><path d="M7 15h4"/>')}
       ${clientHubTile(`renderUserCoachCheckin('${inv.id}')`,'Check-in','<polyline points="20 6 9 17 4 12"/>')}
       ${clientHubTile(`renderUserCoachNotes('${inv.id}')`,tt({pl:'Notatki',en:'Notes',de:'Notizen',es:'Notas'}),'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="14" y2="17"/>')}
-    </div>`;
+    </div>
+    <button class="btn btn-danger" style="width:100%;margin-top:12px;" onclick="resignFromCoach('${inv.id}')">${tt({pl:'Zrezygnuj z coacha',en:'Leave coach',de:'Coach verlassen',es:'Dejar coach'})}</button>`;
 }
 
 function filterClients(){
@@ -750,6 +751,48 @@ async function cancelInvitation(invId){
 }
 window.cancelInvitation=cancelInvitation;
 
+async function removeCoachClient(invId){
+  if(!sb||!S.user||!invId)return;
+  const msg=tt({
+    pl:'Usunąć klienta? Stracisz dostęp do jego treningów, pomiarów, płatności, notatek i przypisanych planów.',
+    en:'Remove this client? You will lose access to their workouts, measurements, payments, notes, and assigned plans.',
+    de:'Diesen Klienten entfernen? Du verlierst Zugriff auf Workouts, Messungen, Zahlungen, Notizen und Pläne.',
+    es:'¿Eliminar este cliente? Perderás acceso a entrenamientos, medidas, pagos, notas y planes asignados.'
+  });
+  if(!confirm(msg))return;
+  const{error}=await sb.from('coach_invitations').delete().eq('id',invId).eq('coach_id',S.user.id);
+  if(error)return showSyncToast(error.message,'error');
+  closeModal();
+  showSyncToast(tt({pl:'Klient usunięty.',en:'Client removed.',de:'Klient entfernt.',es:'Cliente eliminado.'}),'success');
+  renderClients();
+}
+window.removeCoachClient=removeCoachClient;
+
+async function resignFromCoach(invId){
+  if(!sb||!S.user||!invId)return;
+  const msg=tt({
+    pl:'Zrezygnować z tego coacha? Coach straci dostęp do Twoich danych i nie będzie mógł przypisywać planów.',
+    en:'Leave this coach? The coach will lose access to your data and will no longer be able to assign plans.',
+    de:'Diesen Coach verlassen? Der Coach verliert Zugriff auf deine Daten und kann keine Pläne mehr zuweisen.',
+    es:'¿Dejar este coach? El coach perderá acceso a tus datos y no podrá asignar planes.'
+  });
+  if(!confirm(msg))return;
+  const{error}=await sb.from('coach_invitations')
+    .update({status:'declined',responded_at:new Date().toISOString()})
+    .eq('id',invId);
+  if(error)return showSyncToast(error.message,'error');
+  if(Array.isArray(S.programs))S.programs=S.programs.filter(p=>!p.fromCoach);
+  if(S.weekPlan){
+    Object.keys(S.weekPlan).forEach(k=>{if(S.weekPlan[k]?.fromCoach)delete S.weekPlan[k];});
+  }
+  saveAll();
+  showSyncToast(tt({pl:'Zrezygnowano z coacha.',en:'Coach removed.',de:'Coach entfernt.',es:'Coach eliminado.'}),'success');
+  renderUserCoaches();
+  renderPrograms();
+  renderCalendar();
+}
+window.resignFromCoach=resignFromCoach;
+
 // ── CLIENT DETAIL ──────────────────────────────────────────
 
 async function openClientDetail(invId){
@@ -842,6 +885,7 @@ function renderClientHub(){
       ${clientHubTile('renderCoachPaymentsView()',tt({pl:'Płatności',en:'Payments',de:'Zahlungen',es:'Pagos'}),'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/><path d="M7 15h4"/>')}
     </div>
     ${renderClientAssignments(ctx)}
+    <button class="btn btn-danger" style="margin-top:12px;width:100%;" onclick="removeCoachClient('${ctx.inv.id}')">${tt({pl:'Usuń klienta',en:'Remove client',de:'Klient entfernen',es:'Eliminar cliente'})}</button>
     <button class="btn btn-ghost" style="margin-top:20px;width:100%;" onclick="closeModal()">${tt({pl:'Zamknij',en:'Close',de:'Schließen',es:'Cerrar'})}</button>`;
 }
 
@@ -1171,11 +1215,13 @@ async function renderCoachPaymentsView(){
       <label class="form-label">${tt({pl:'Pierwsza płatność',en:'First payment',de:'Erste Zahlung',es:'Primer pago'})}</label>
       <input id="coachPaymentStartDate" type="date" value="${rows[0]?.due_date||today()}" style="margin-bottom:10px;">
       <button class="btn btn-primary" onclick="createClientPaymentSchedule()" style="width:100%;">${tt({pl:'Wygeneruj harmonogram',en:'Generate schedule',de:'Plan erstellen',es:'Generar calendario'})}</button>
+      ${rows.length?`<button class="btn btn-danger" onclick="deleteClientPaymentSchedule()" style="width:100%;margin-top:8px;">${tt({pl:'Usuń cały harmonogram',en:'Delete full schedule',de:'Gesamten Plan löschen',es:'Eliminar calendario completo'})}</button>`:''}
     </div>
     ${rows.length?rows.map(p=>`<div class="workout-row" style="cursor:default;">
       <div class="workout-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg></div>
       <div class="workout-row-info"><div class="workout-row-name">${formatIsoDate(p.due_date)}</div><div class="workout-row-meta">${p.paid_at?tt({pl:'Zapłacono',en:'Paid',de:'Bezahlt',es:'Pagado'})+': '+formatIsoDate((p.paid_at||'').slice(0,10)):tt({pl:'Oczekuje',en:'Pending',de:'Ausstehend',es:'Pendiente'})}</div></div>
       ${paymentStatusBadge(p,`toggleClientPaymentStatus('${p.id}','${p.status||'pending'}')`)}
+      <button class="rm-btn" onclick="deleteClientPayment('${p.id}')" title="${tt({pl:'Usuń płatność',en:'Delete payment',de:'Zahlung löschen',es:'Eliminar pago'})}" style="margin-left:6px;">✕</button>
     </div>`).join(''):`<div class="empty-state">${tt({pl:'Wpisz pierwszą datę, żeby utworzyć harmonogram.',en:'Enter the first date to create a schedule.',de:'Erstes Datum eingeben.',es:'Introduce la primera fecha.'})}</div>`}`;
 }
 
@@ -1204,6 +1250,30 @@ async function toggleClientPaymentStatus(paymentId,status){
   renderCoachPaymentsView();
 }
 
+async function deleteClientPayment(paymentId){
+  if(!sb||!paymentId)return;
+  if(!confirm(tt({pl:'Usunąć tę płatność?',en:'Delete this payment?',de:'Diese Zahlung löschen?',es:'¿Eliminar este pago?'})))return;
+  const{error}=await sb.from('coach_payments').delete().eq('id',paymentId).eq('coach_id',S.user.id);
+  if(error)return showSyncToast(error.message,'error');
+  showSyncToast(tt({pl:'Płatność usunięta.',en:'Payment deleted.',de:'Zahlung gelöscht.',es:'Pago eliminado.'}),'success');
+  renderCoachPaymentsView();
+}
+
+async function deleteClientPaymentSchedule(){
+  const ctx=window._clientDetailData;
+  if(!sb||!ctx?.inv?.id||!S.user)return;
+  if(!confirm(tt({
+    pl:'Usunąć cały harmonogram płatności dla tego klienta?',
+    en:'Delete the full payment schedule for this client?',
+    de:'Den gesamten Zahlungsplan für diesen Klienten löschen?',
+    es:'¿Eliminar todo el calendario de pagos de este cliente?'
+  })))return;
+  const{error}=await sb.from('coach_payments').delete().eq('invitation_id',ctx.inv.id).eq('coach_id',S.user.id);
+  if(error)return showSyncToast(error.message,'error');
+  showSyncToast(tt({pl:'Harmonogram usunięty.',en:'Schedule deleted.',de:'Plan gelöscht.',es:'Calendario eliminado.'}),'success');
+  renderCoachPaymentsView();
+}
+
 window.renderClientHub=renderClientHub;
 window.renderClientWorkoutsView=renderClientWorkoutsView;
 window.renderClientWorkoutDetail=renderClientWorkoutDetail;
@@ -1218,6 +1288,8 @@ window.saveCoachClientNote=saveCoachClientNote;
 window.deleteCoachClientNote=deleteCoachClientNote;
 window.createClientPaymentSchedule=createClientPaymentSchedule;
 window.toggleClientPaymentStatus=toggleClientPaymentStatus;
+window.deleteClientPayment=deleteClientPayment;
+window.deleteClientPaymentSchedule=deleteClientPaymentSchedule;
 
 let _coachChatChannel=null;
 let _coachChatContext=null;
