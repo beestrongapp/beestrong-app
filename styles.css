@@ -130,6 +130,20 @@ body.fab-open .mobile-fab-action{opacity:1;transform:translate(-50%,0) scale(1);
 [data-reorder-item].drop-before::before{top:-7px;}
 [data-reorder-item].drop-after::after{bottom:-7px;}
 .is-reordering{cursor:grabbing;}
+.is-reordering [data-reorder-item]{padding-top:10px;padding-bottom:10px;}
+.is-reordering [data-reorder-item] .ex-card-header{margin-bottom:0;}
+.is-reordering [data-reorder-item] .set-grid-labels,
+.is-reordering [data-reorder-item] .set-grid,
+.is-reordering [data-reorder-item] .set-lbl,
+.is-reordering [data-reorder-item] .set-last,
+.is-reordering [data-reorder-item] input.si,
+.is-reordering [data-reorder-item] .set-done,
+.is-reordering [data-reorder-item] .rm-btn,
+.is-reordering [data-reorder-item] button:not(.drag-handle),
+.is-reordering [data-reorder-item] [style*="grid-template-columns"]{display:none!important;}
+.is-reordering [data-reorder-item] .exercise-title-drag{width:100%;}
+.is-reordering [data-reorder-item]::before,
+.is-reordering [data-reorder-item]::after{pointer-events:none;}
 .set-grid{display:grid;grid-template-columns:20px 40px 1.4fr 1fr 1fr 34px 26px;gap:4px;align-items:center;margin-bottom:7px;}
 .set-grid-labels{display:grid;grid-template-columns:20px 40px 1.4fr 1fr 1fr 34px 26px;gap:4px;margin-bottom:6px;}
 .set-last{font-size:11px;color:var(--text3);text-align:center;line-height:1.25;padding:2px 0;}
