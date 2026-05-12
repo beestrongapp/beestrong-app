@@ -409,7 +409,7 @@ function updateCoachNav(){
 }
 
 function updateProCoachNav(){
-  const show=!!(S.isPro&&S.user);
+  const show=!!(S.user&&(S.isPro||S.coachMode));
   document.querySelectorAll('.pro-coach-nav-item').forEach(el=>{
     el.style.display=show?'flex':'none';
   });
@@ -489,8 +489,8 @@ async function renderUserCoaches(){
     el.innerHTML=`<div class="empty-state">${tt({pl:'Zaloguj się, aby zobaczyć swojego coacha.',en:'Sign in to see your coach.',de:'Melde dich an, um deinen Coach zu sehen.',es:'Inicia sesión para ver tu coach.'})}</div>`;
     return;
   }
-  if(!S.isPro){
-    el.innerHTML=`<div class="empty-state">${tt({pl:'Zakładka Coach jest dostępna dla użytkowników Pro.',en:'Coach tab is available for Pro users.',de:'Coach ist für Pro-Nutzer verfügbar.',es:'Coach está disponible para usuarios Pro.'})}</div>`;
+  if(!S.isPro&&!S.coachMode){
+    el.innerHTML=`<div class="empty-state">${tt({pl:'Zakładka Coach jest dostępna dla użytkowników Pro i Coach.',en:'Coach tab is available for Pro and Coach users.',de:'Coach ist für Pro- und Coach-Nutzer verfügbar.',es:'Coach está disponible para usuarios Pro y Coach.'})}</div>`;
     return;
   }
   if(!sb){
@@ -500,19 +500,36 @@ async function renderUserCoaches(){
   el.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;padding:40px 0;"><div class="spinner"></div></div>`;
   try{
     const email=(S.user.email||'').toLowerCase();
-    const[byId,byEmail]=await Promise.all([
+    const[byId,byEmail,availableRes]=await Promise.all([
       sb.from('coach_invitations').select('*').eq('client_user_id',S.user.id).eq('status','accepted').order('responded_at',{ascending:false}),
       sb.from('coach_invitations').select('*').eq('client_email',email).eq('status','accepted').order('responded_at',{ascending:false}),
+      sb.from('profiles').select('id,email,display_name,is_coach').eq('is_coach',true).order('display_name',{ascending:true}),
     ]);
     if(byId.error)throw byId.error;
     if(byEmail.error)throw byEmail.error;
+    if(availableRes.error)throw availableRes.error;
     const byInviteId=new Map([...(byId.data||[]),...(byEmail.data||[])].map(inv=>[inv.id,inv]));
     const coaches=[...byInviteId.values()];
-    if(!coaches.length){
-      el.innerHTML=`<div class="empty-state">${tt({pl:'Nie masz jeszcze przypisanego coacha.',en:'You do not have an assigned coach yet.',de:'Du hast noch keinen zugewiesenen Coach.',es:'Aún no tienes coach asignado.'})}</div>`;
-      return;
-    }
-    el.innerHTML=coaches.map(inv=>userCoachCardHtml(inv)).join('');
+    const[allById,allByEmail]=await Promise.all([
+      sb.from('coach_invitations').select('id,coach_id,status').eq('client_user_id',S.user.id),
+      sb.from('coach_invitations').select('id,coach_id,status').eq('client_email',email),
+    ]);
+    if(allById.error)throw allById.error;
+    if(allByEmail.error)throw allByEmail.error;
+    const relationByCoach=new Map([...(allById.data||[]),...(allByEmail.data||[])].map(inv=>[inv.coach_id,inv]));
+    const available=(availableRes.data||[])
+      .filter(p=>p.id!==S.user.id)
+      .filter(p=>relationByCoach.get(p.id)?.status!=='accepted');
+    const parts=[];
+    parts.push(`<div class="section-label">${tt({pl:'Twoi coachowie',en:'Your coaches',de:'Deine Coaches',es:'Tus coaches'})}</div>`);
+    parts.push(coaches.length
+      ?coaches.map(inv=>userCoachCardHtml(inv)).join('')
+      :`<div class="empty-state" style="padding:22px 12px;">${tt({pl:'Nie masz jeszcze przypisanego coacha.',en:'You do not have an assigned coach yet.',de:'Du hast noch keinen zugewiesenen Coach.',es:'Aún no tienes coach asignado.'})}</div>`);
+    parts.push(`<div class="section-label" style="margin-top:20px;">${tt({pl:'Dostępni coachowie',en:'Available coaches',de:'Verfügbare Coaches',es:'Coaches disponibles'})}</div>`);
+    parts.push(available.length
+      ?available.map(p=>availableCoachCardHtml(p,relationByCoach.get(p.id))).join('')
+      :`<div class="empty-state" style="padding:22px 12px;">${tt({pl:'Brak dostępnych coachów.',en:'No available coaches yet.',de:'Noch keine verfügbaren Coaches.',es:'Aún no hay coaches disponibles.'})}</div>`);
+    el.innerHTML=parts.join('');
   }catch(e){
     el.innerHTML=`<div style="color:var(--red);padding:12px;">${e.message||tt({pl:'Nie udało się pobrać coacha.',en:'Could not load coach.',de:'Coach konnte nicht geladen werden.',es:'No se pudo cargar el coach.'})}</div>`;
   }
@@ -530,6 +547,57 @@ function userCoachCardHtml(inv){
     <span style="color:var(--text3);font-size:22px;">›</span>
   </div>`;
 }
+
+function availableCoachCardHtml(profile,relation){
+  const name=profile.display_name||profile.email||'Coach';
+  const pending=relation?.status==='pending';
+  return `<div class="client-card" style="cursor:default;">
+    <div style="width:38px;height:38px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--btn-text);flex-shrink:0;">${(name||'?')[0].toUpperCase()}</div>
+    <div class="client-card-info">
+      <div class="client-card-name">${chatEsc(name)}</div>
+      <div class="client-card-meta">${chatEsc(profile.email||tt({pl:'Coach',en:'Coach',de:'Coach',es:'Coach'}))}</div>
+    </div>
+    ${pending
+      ?`<span class="client-status-badge client-status-pending">${tt({pl:'Oczekuje',en:'Pending',de:'Ausstehend',es:'Pendiente'})}</span>`
+      :`<button class="btn btn-primary" style="width:auto;min-width:92px;padding:8px 12px;font-size:12px;" onclick="requestCoach('${profile.id}')">${tt({pl:'Wybierz',en:'Choose',de:'Wählen',es:'Elegir'})}</button>`}
+  </div>`;
+}
+
+async function requestCoach(coachId){
+  if(!sb||!S.user||!coachId)return;
+  try{
+    const{data:coach,error:coachErr}=await sb.from('profiles').select('id,email,display_name').eq('id',coachId).single();
+    if(coachErr||!coach)throw coachErr||new Error('Coach not found');
+    const email=(S.user.email||'').toLowerCase();
+    const[existingById,existingByEmail]=await Promise.all([
+      sb.from('coach_invitations').select('id,status').eq('coach_id',coachId).eq('client_user_id',S.user.id).in('status',['pending','accepted']),
+      sb.from('coach_invitations').select('id,status').eq('coach_id',coachId).eq('client_email',email).in('status',['pending','accepted']),
+    ]);
+    if(existingById.error)throw existingById.error;
+    if(existingByEmail.error)throw existingByEmail.error;
+    const existing=[...(existingById.data||[]),...(existingByEmail.data||[])];
+    if(existing.length){
+      showSyncToast(tt({pl:'Relacja z tym coachem już istnieje.',en:'This coach connection already exists.',de:'Diese Coach-Verbindung existiert bereits.',es:'Esta conexión con coach ya existe.'}),'error');
+      renderUserCoaches();
+      return;
+    }
+    const{error}=await sb.from('coach_invitations').insert({
+      coach_id:coach.id,
+      coach_email:coach.email,
+      coach_name:coach.display_name||coach.email,
+      client_email:email,
+      client_user_id:S.user.id,
+      status:'accepted',
+      responded_at:new Date().toISOString(),
+    });
+    if(error)throw error;
+    showSyncToast(tt({pl:'Coach dodany.',en:'Coach added.',de:'Coach hinzugefügt.',es:'Coach añadido.'}),'success');
+    renderUserCoaches();
+  }catch(e){
+    showSyncToast(e.message||tt({pl:'Nie udało się wysłać prośby.',en:'Could not send request.',de:'Anfrage konnte nicht gesendet werden.',es:'No se pudo enviar la solicitud.'}),'error');
+  }
+}
+window.requestCoach=requestCoach;
 
 async function openUserCoachDetail(invId){
   closeModal();
