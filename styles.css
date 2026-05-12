@@ -315,7 +315,7 @@ body.workout-active .mobile-fab-overlay{display:none!important;}
 #autoSyncDot.syncing{opacity:1;animation:syncPulse 1s ease-in-out infinite;}
 @keyframes syncPulse{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.5);opacity:0.5;}}
 /* ── Mobile brand header (hidden on desktop, visible on mobile dashboard) ── */
-.mobile-brand{display:none;align-items:center;gap:10px;padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:2px;justify-content:space-between;}
+.mobile-brand{display:none;align-items:center;gap:10px;padding-bottom:1px;border-bottom:1px solid var(--border);margin-bottom:22px;justify-content:space-between;}
 .mobile-brand-logo{width:105px;height:105px;border-radius:13px;object-fit:cover;flex-shrink:0;}
 .mobile-brand-copy{flex:1;min-width:0;}
 .mobile-brand-name{font-size:28px;font-weight:900;color:var(--accent);letter-spacing:0;display:block;line-height:1.08;}
