@@ -1076,7 +1076,6 @@ function renderClientChatPlaceholder(){
     containerId:'clientDetailContent',
     title:'Chat',
     subtitle:clientDetailName(ctx),
-    backHtml:clientDetailHeader('Chat',clientDetailName(ctx),'top'),
     backAction:'renderClientHub()',
     inputId:'clientChatInput',
     listId:'clientChatMessages',
@@ -1320,15 +1319,21 @@ async function renderCoachChat(opts){
   el.style.padding='0';
   _coachChatContext=opts;
   const backAction=opts.backAction||'renderClientHub()';
-  el.innerHTML=`${opts.backHtml||clientDetailHeader(opts.title||'Chat',opts.subtitle||'','top')}
+  const closeAction=opts.closeAction||backAction;
+  el.innerHTML=`<div class="chat-top-bar">
+      <div>
+        <div class="modal-title" style="margin-bottom:4px;">${chatEsc(opts.title||'Chat')}</div>
+        ${opts.subtitle?`<div style="font-size:12px;color:var(--text2);">${chatEsc(opts.subtitle)}</div>`:''}
+      </div>
+      <div class="chat-top-actions">
+        <button class="btn btn-ghost chat-clear-top" onclick="clearCoachChat()">${tt({pl:'Clear chat',en:'Clear chat',de:'Chat löschen',es:'Limpiar chat'})}</button>
+        <button class="rm-btn chat-close-btn" onclick="${closeAction}">✕</button>
+      </div>
+    </div>
     <div id="${opts.listId}" class="chat-messages coach-chat-messages"></div>
     <div class="chat-input-bar coach-chat-input-bar">
       <textarea id="${opts.inputId}" rows="1" maxlength="2000" placeholder="${tt({pl:'Napisz wiadomość...',en:'Write a message...',de:'Nachricht schreiben...',es:'Escribe un mensaje...'})}" style="min-height:44px;max-height:110px;resize:none;"></textarea>
       <button class="btn btn-primary" onclick="sendCoachChatMessage('${opts.inputId}')" style="width:auto;min-width:86px;height:44px;padding:0 16px;">${tt({pl:'Wyślij',en:'Send',de:'Senden',es:'Enviar'})}</button>
-    </div>
-    <div class="chat-bottom-actions">
-      <button class="btn btn-ghost" onclick="clearCoachChat()">${tt({pl:'Clear chat',en:'Clear chat',de:'Chat löschen',es:'Limpiar chat'})}</button>
-      <button class="btn btn-primary" onclick="${backAction}">${t('backBtn')}</button>
     </div>`;
   await loadCoachChatMessages();
   if(sb){
@@ -1420,7 +1425,6 @@ async function renderUserCoachChat(invId){
     containerId:'userCoachDetailContent',
     title:'Chat',
     subtitle:title,
-    backHtml:userCoachHeader(inv,'Chat',title,`openUserCoachDetail('${inv.id}')`),
     backAction:`openUserCoachDetail('${inv.id}')`,
     inputId:'userCoachChatInput',
     listId:'userCoachChatMessages',
@@ -1557,21 +1561,13 @@ async function openChatFromNotification(invId){
   const otherName=S.user?.id===inv.coach_id
     ? (inv.client_name||inv.client_email||'Client')
     : (inv.coach_name||inv.coach_email||'Coach');
-  const header=`<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:16px;">
-    <div>
-      <button class="modal-back" onclick="closeModal();showScreen('notifications')" style="margin-bottom:8px;">${t('backBtn')}</button>
-      <div class="modal-title" style="margin-bottom:4px;">Chat</div>
-      <div style="font-size:12px;color:var(--text2);">${chatEsc(otherName)}</div>
-    </div>
-    <button class="rm-btn" onclick="closeModal()" style="width:34px;height:34px;font-size:18px;">✕</button>
-  </div>`;
   renderCoachChat({
     inv,
     containerId:'notificationChatContent',
     title:'Chat',
     subtitle:otherName,
-    backHtml:header,
     backAction:"closeModal();showScreen('notifications')",
+    closeAction:'closeModal()',
     inputId:'notificationChatInput',
     listId:'notificationChatMessages',
   });

@@ -1,4 +1,4 @@
-// ===== FRIENDS =====
+﻿// ===== FRIENDS =====
 let _friendInvitations=[];
 let _friendDetail=null;
 let _friendChatChannel=null;
@@ -339,15 +339,21 @@ async function renderFriendChat(){
   stopFriendChatRealtime();
   _friendDetailView='chat';window._friendDetailView='chat';
   el.style.display='block';el.style.padding='0';
-  el.innerHTML=friendHeader('Chat',ctx.profile?.display_name||friendName(ctx.inv),'hub-chat')+`
+  const title=ctx.profile?.display_name||friendName(ctx.inv);
+  el.innerHTML=`<div class="chat-top-bar">
+      <div>
+        <div class="modal-title" style="margin-bottom:4px;">Chat</div>
+        <div style="font-size:12px;color:var(--text2);">${friendEsc(title)}</div>
+      </div>
+      <div class="chat-top-actions">
+        <button class="btn btn-ghost chat-clear-top" onclick="clearFriendChat()">${tt({pl:'Clear chat',en:'Clear chat',de:'Chat löschen',es:'Limpiar chat'})}</button>
+        <button class="rm-btn chat-close-btn" onclick="renderFriendHub()">✕</button>
+      </div>
+    </div>
     <div id="friendChatMessages" class="chat-messages friend-chat-messages"></div>
     <div class="chat-input-bar friend-chat-input-bar">
       <textarea id="friendChatInput" rows="1" maxlength="2000" placeholder="${tt({pl:'Napisz wiadomość...',en:'Write a message...',de:'Nachricht schreiben...',es:'Escribe un mensaje...'})}" style="min-height:44px;max-height:110px;resize:none;"></textarea>
       <button class="btn btn-primary" onclick="sendFriendMessage()" style="width:auto;min-width:86px;height:44px;padding:0 16px;">${tt({pl:'Wyślij',en:'Send',de:'Senden',es:'Enviar'})}</button>
-    </div>
-    <div class="chat-bottom-actions">
-      <button class="btn btn-ghost" onclick="clearFriendChat()">${tt({pl:'Clear chat',en:'Clear chat',de:'Chat löschen',es:'Limpiar chat'})}</button>
-      <button class="btn btn-primary" onclick="renderFriendHub()">${friendBackLabel()}</button>
     </div>`;
   await loadFriendMessages();
   _friendChatChannel=sb.channel('bs-friend-chat-'+ctx.inv.id)
