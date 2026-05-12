@@ -716,6 +716,100 @@ function computeSupLabels(exercises){
   return labels;
 }
 
+function moveArrayItem(arr,from,to){
+  if(!Array.isArray(arr)||from===to||from<0||to<0||from>=arr.length||to>arr.length)return false;
+  const [item]=arr.splice(from,1);
+  arr.splice(to,0,item);
+  return true;
+}
+
+function reorderHandle(label){
+  const safe=label||'Reorder';
+  return `<button type="button" class="drag-handle" aria-label="${safe}" title="${safe}">
+    <span></span><span></span><span></span>
+  </button>`;
+}
+
+function initExerciseReorder(root,onMove){
+  const container=typeof root==='string'?document.querySelector(root):root;
+  if(!container||container._reorderReady)return;
+  container._reorderReady=true;
+  let state=null;
+  const clearMarkers=()=>{
+    container.querySelectorAll('.drop-before,.drop-after').forEach(el=>el.classList.remove('drop-before','drop-after'));
+  };
+  const getInsertIndex=y=>{
+    const items=[...container.querySelectorAll('[data-reorder-item]')];
+    const active=state?.card;
+    const others=items.filter(el=>el!==active);
+    for(const item of others){
+      const r=item.getBoundingClientRect();
+      if(y<r.top+r.height/2){
+        const idx=Number(item.dataset.reorderIndex);
+        return idx>state.from?idx-1:idx;
+      }
+    }
+    return items.length-1;
+  };
+  const markTarget=y=>{
+    clearMarkers();
+    const items=[...container.querySelectorAll('[data-reorder-item]')];
+    const active=state?.card;
+    const others=items.filter(el=>el!==active);
+    if(!others.length)return;
+    for(const item of others){
+      const r=item.getBoundingClientRect();
+      if(y<r.top+r.height/2){item.classList.add('drop-before');return;}
+    }
+    others[others.length-1].classList.add('drop-after');
+  };
+  const finish=()=>{
+    if(!state)return;
+    const {card,from,active,lastY,pointerId,handle,timer}=state;
+    const to=active?getInsertIndex(lastY):from;
+    clearTimeout(timer);
+    try{handle.releasePointerCapture(pointerId);}catch(e){}
+    card.classList.remove('dragging');
+    card.style.transform='';
+    document.body.classList.remove('is-reordering');
+    clearMarkers();
+    state=null;
+    if(active&&to!==from)onMove(from,to);
+  };
+  const startDrag=()=>{
+    if(!state)return;
+    state.active=true;
+    state.card.classList.add('dragging');
+    document.body.classList.add('is-reordering');
+  };
+  container.addEventListener('pointerdown',ev=>{
+    const handle=ev.target.closest('.drag-handle');
+    if(!handle||!container.contains(handle))return;
+    const card=handle.closest('[data-reorder-item]');
+    if(!card)return;
+    ev.preventDefault();
+    handle.setPointerCapture(ev.pointerId);
+    state={handle,card,pointerId:ev.pointerId,from:Number(card.dataset.reorderIndex),startY:ev.clientY,lastY:ev.clientY,active:false,timer:null};
+    state.timer=setTimeout(startDrag,ev.pointerType==='mouse'?0:230);
+  });
+  container.addEventListener('pointermove',ev=>{
+    if(!state||ev.pointerId!==state.pointerId)return;
+    state.lastY=ev.clientY;
+    if(!state.active){
+      if(Math.abs(ev.clientY-state.startY)>10&&ev.pointerType==='mouse')startDrag();
+      return;
+    }
+    ev.preventDefault();
+    state.card.style.transform=`translateY(${ev.clientY-state.startY}px)`;
+    markTarget(ev.clientY);
+  });
+  container.addEventListener('pointerup',ev=>{if(state&&ev.pointerId===state.pointerId)finish();});
+  container.addEventListener('pointercancel',ev=>{if(state&&ev.pointerId===state.pointerId)finish();});
+}
+window.initExerciseReorder=initExerciseReorder;
+window.moveArrayItem=moveArrayItem;
+window.reorderHandle=reorderHandle;
+
 // ===== STREAK =====
 function getWorkoutStreak(){
   const dates=new Set(Object.values(S.workouts).map(w=>w.date).filter(Boolean));
@@ -919,7 +1013,7 @@ function renderWorkout(){
   const _supLabels=computeSupLabels(w.exercises);
   w.exercises.forEach((ex,ei)=>{
     const _slbl=_supLabels[ei];
-    h+=`<div class="ex-card${ex.sup?' super':''}"><div class="ex-card-header"><div style="display:flex;align-items:center;gap:7px;flex:1;">${_slbl?`<span class="super-tag">${_slbl}</span>`:''}<span style="font-size:14px;font-weight:700;">${exName(ex)}</span></div><button onclick="toggleWorkoutSup(${ei})" style="padding:3px 8px;border-radius:6px;border:1px solid ${ex.sup?'var(--accent)':'var(--border2)'};background:${ex.sup?'var(--accent-dim)':'var(--bg3)'};color:${ex.sup?'var(--accent)':'var(--text3)'};font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;transition:all 0.15s;">SS</button></div><div class="set-grid-labels"><div></div><div class="set-lbl" style="font-size:9px;">LAST</div><div class="set-lbl">${unitW()}</div><div class="set-lbl">${t('reps')}</div><div class="set-lbl">${t('exRest')}</div><div></div><div></div></div>`;
+    h+=`<div class="ex-card${ex.sup?' super':''}" data-reorder-item data-reorder-index="${ei}"><div class="ex-card-header"><div class="exercise-title-drag">${reorderHandle(lang==='pl'?'Zmień kolejność':'Reorder')}<div style="display:flex;align-items:center;gap:7px;flex:1;min-width:0;">${_slbl?`<span class="super-tag">${_slbl}</span>`:''}<span style="font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${exName(ex)}</span></div></div><button onclick="toggleWorkoutSup(${ei})" style="padding:3px 8px;border-radius:6px;border:1px solid ${ex.sup?'var(--accent)':'var(--border2)'};background:${ex.sup?'var(--accent-dim)':'var(--bg3)'};color:${ex.sup?'var(--accent)':'var(--text3)'};font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;transition:all 0.15s;">SS</button></div><div class="set-grid-labels"><div></div><div class="set-lbl" style="font-size:9px;">LAST</div><div class="set-lbl">${unitW()}</div><div class="set-lbl">${t('reps')}</div><div class="set-lbl">${t('exRest')}</div><div></div><div></div></div>`;
     ex.sets.forEach((s,si)=>{
       const last=getLastSet(ex,si);
       const lastHtml=last?`<div class="set-last">${dispW(last.weight)}<br><span style="color:var(--text3);font-size:10px;">×${last.reps}</span></div>`:`<div class="set-last" style="opacity:0.4;">—</div>`;
@@ -935,6 +1029,7 @@ function renderWorkout(){
   h+=`<button class="workout-action-btn primary" onclick="${finishFn}">${t('finish')}</button>`;
   h+=`</div>`;
   el.innerHTML=h;
+  initExerciseReorder(el,(from,to)=>{moveArrayItem(S.activeWorkout.exercises,from,to);renderWorkout();});
   // If timer was running, re-insert timer bar (DOM was rebuilt)
   if(S.timerSecs>0) _renderTimerBar();
 }
@@ -1398,8 +1493,8 @@ function openManualWorkout(dateStr){
               style="font-size:13px;padding:6px 4px;"
               oninput="window.mwExercises[${ei}].sets[${si}].weight=inputToKg(+this.value)"/>
           </div>`).join('');
-        return`<div style="background:var(--bg3);border-radius:10px;padding:10px 12px;margin-bottom:8px;">
-          <div style="font-size:13px;font-weight:600;margin-bottom:4px;">${exName(ex)}</div>
+        return`<div class="tpl-edit-ex-card" data-reorder-item data-reorder-index="${ei}" style="background:var(--bg3);border-radius:10px;padding:10px 12px;margin-bottom:8px;">
+          <div class="exercise-title-drag" style="margin-bottom:4px;">${reorderHandle(L?'Zmień kolejność':'Reorder')}<div style="font-size:13px;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${exName(ex)}</div></div>
           <div style="display:grid;grid-template-columns:20px 1fr 1fr;gap:6px;">
             <div></div>
             <div style="font-size:10px;color:var(--text3);text-align:center;text-transform:uppercase;">${L?'Powt':'Reps'}</div>
@@ -1443,9 +1538,9 @@ function openManualWorkout(dateStr){
             <button onclick="window.mwRmSet(${ei},${si})"
               style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:0;font-family:inherit;">✕</button>
           </div>`).join('');
-        return`<div style="background:var(--bg3);border-radius:10px;padding:10px 12px;margin-bottom:8px;">
+        return`<div class="tpl-edit-ex-card" data-reorder-item data-reorder-index="${ei}" style="background:var(--bg3);border-radius:10px;padding:10px 12px;margin-bottom:8px;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-            <div style="font-size:13px;font-weight:600;">${exName(ex)}</div>
+            <div class="exercise-title-drag">${reorderHandle(L?'Zmień kolejność':'Reorder')}<div style="font-size:13px;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${exName(ex)}</div></div>
             <button onclick="window.mwRmEx(${ei})"
               style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;font-family:inherit;">✕</button>
           </div>
@@ -1483,6 +1578,7 @@ function openManualWorkout(dateStr){
         </div>
       </div>`;
     }
+    initExerciseReorder(ov.querySelector('.modal [style*="overflow-y:auto"]'),(from,to)=>{moveArrayItem(window.mwExercises,from,to);window.renderMw();});
   };
 
   // Handlers — all on window, reference window.mw* directly

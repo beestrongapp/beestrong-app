@@ -669,9 +669,9 @@ function showTplModal(id){
       const addLabel=lang==='pl'?'Dodaj serię +':'Add set +';
       const rmLabel=lang==='pl'?'Usuń serię −':'Remove set −';
 
-      return`<div style="border:1px solid ${e.sup?'var(--accent-dim2)':'var(--border)'};border-radius:10px;padding:10px 12px;margin-bottom:8px;background:var(--bg3);">
+      return`<div class="tpl-edit-ex-card" data-reorder-item data-reorder-index="${i}" style="border:1px solid ${e.sup?'var(--accent-dim2)':'var(--border)'};border-radius:10px;padding:10px 12px;margin-bottom:8px;background:var(--bg3);">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-          <div style="font-size:13px;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${exName(e)}</div>
+          <div class="exercise-title-drag">${reorderHandle(lang==='pl'?'Zmień kolejność':'Reorder')}<div style="font-size:13px;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${exName(e)}</div></div>
           <button onclick="toggleSup(${i})" style="padding:3px 8px;border-radius:6px;border:1px solid ${e.sup?'var(--accent)':'var(--border2)'};background:${e.sup?'var(--accent-dim)':'var(--bg4)'};color:${e.sup?'var(--accent)':'var(--text2)'};font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;transition:all 0.15s;">SS</button>
           <button onclick="rmEx(${i})" style="background:none;border:none;color:var(--text3);font-size:16px;cursor:pointer;padding:0;font-family:inherit;line-height:1;flex-shrink:0;">✕</button>
         </div>
@@ -708,6 +708,7 @@ function showTplModal(id){
       </div>
       ${id?`<button class="btn btn-danger" style="margin-top:8px;" onclick="delTpl(${id})">${t('deleteTemplate')}</button>`:''}
     </div>`;
+    initExerciseReorder(ov.querySelector('#exList'),(from,to)=>{moveArrayItem(exs,from,to);renderTplModal();});
     // Restore scroll position after re-render
     requestAnimationFrame(()=>{const m=ov.querySelector('.modal');if(m)m.scrollTop=_scrollTop;});
   }
