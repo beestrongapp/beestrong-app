@@ -805,9 +805,13 @@ function initExerciseReorder(root,onMove){
   };
   const startDrag=()=>{
     if(!state)return;
+    const beforeTop=state.card.getBoundingClientRect().top;
     state.active=true;
     state.card.classList.add('dragging');
     document.body.classList.add('is-reordering');
+    const afterTop=state.card.getBoundingClientRect().top;
+    state.baseTranslateY=beforeTop-afterTop;
+    state.card.style.transform=`translateY(${state.baseTranslateY}px)`;
   };
   container.addEventListener('pointerdown',ev=>{
     const handle=ev.target.closest('.drag-handle');
@@ -827,7 +831,7 @@ function initExerciseReorder(root,onMove){
       return;
     }
     ev.preventDefault();
-    state.card.style.transform=`translateY(${ev.clientY-state.startY}px)`;
+    state.card.style.transform=`translateY(${(state.baseTranslateY||0)+ev.clientY-state.startY}px)`;
     markTarget(ev.clientY);
   });
   container.addEventListener('pointerup',ev=>{if(state&&ev.pointerId===state.pointerId)finish();});
