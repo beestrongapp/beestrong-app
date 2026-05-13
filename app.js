@@ -39,7 +39,7 @@ function renderDashboard(){
       action:"showScreen('calendar')",
     },
     {
-      icon:'<svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M12 2.5c1.8 0 3.1 1.2 3.1 3 0 1.4-.7 2.6-1.8 3.1.6.3 1.2.8 1.6 1.5l.8 1.4 2.7-1.7c.7-.4 1.5-.2 1.9.5.4.7.2 1.5-.5 1.9l-3.7 2.3c-.8.5-1.9.2-2.4-.6l-.4-.7-.4 2.4 1.8 5.1c.3.8-.1 1.6-.9 1.9-.8.3-1.6-.1-1.9-.9L12 18.8l-1 2.9c-.3.8-1.1 1.2-1.9.9-.8-.3-1.2-1.1-.9-1.9l1.8-5.1-.4-2.4-.4.7c-.5.8-1.6 1.1-2.4.6l-3.7-2.3c-.7-.4-.9-1.2-.5-1.9.4-.7 1.2-.9 1.9-.5l2.7 1.7.8-1.4c.4-.7 1-1.2 1.6-1.5-1.1-.5-1.8-1.7-1.8-3.1 0-1.8 1.3-3 3.1-3Z"/></svg>',
+      icon:'<span class="measure-shape-icon" aria-hidden="true"></span>',
       labelKey:{pl:'Pomiary',en:'Measurements',de:'Messungen',es:'Medidas'},
       action:'openSettingsMeasurements()',
     },
@@ -1239,7 +1239,7 @@ function renderSettings(){
     language:'<circle cx="12" cy="12" r="9"/><path d="M12 3a15 15 0 0 1 0 18M3 12h18"/><path d="M3.6 8h16.8M3.6 16h16.8"/>',
     units:'<path d="M3 3h18M3 9h18M3 15h18M3 21h18M9 3v18M15 3v18"/>',
     timer:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
-    measure:'<path fill="currentColor" stroke="none" d="M12 2.5c1.8 0 3.1 1.2 3.1 3 0 1.4-.7 2.6-1.8 3.1.6.3 1.2.8 1.6 1.5l.8 1.4 2.7-1.7c.7-.4 1.5-.2 1.9.5.4.7.2 1.5-.5 1.9l-3.7 2.3c-.8.5-1.9.2-2.4-.6l-.4-.7-.4 2.4 1.8 5.1c.3.8-.1 1.6-.9 1.9-.8.3-1.6-.1-1.9-.9L12 18.8l-1 2.9c-.3.8-1.1 1.2-1.9.9-.8-.3-1.2-1.1-.9-1.9l1.8-5.1-.4-2.4-.4.7c-.5.8-1.6 1.1-2.4.6l-3.7-2.3c-.7-.4-.9-1.2-.5-1.9.4-.7 1.2-.9 1.9-.5l2.7 1.7.8-1.4c.4-.7 1-1.2 1.6-1.5-1.1-.5-1.8-1.7-1.8-3.1 0-1.8 1.3-3 3.1-3Z"/>',
+    measure:'shape',
     contact:'<path d="M4 4h16v12H5.2L4 19.5V4z"/><path d="M8 9h8M8 13h5"/>',
     news:'<path d="M4 4h13a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3V4z"/><path d="M8 8h6M8 12h8M8 16h5"/>',
     privacy:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9.5 12l1.7 1.7 3.6-4.2"/>',
@@ -1380,7 +1380,7 @@ function renderSettings(){
   }
   const measurementsTitle=tt({pl:'Twoje pomiary',en:'Body measurements',de:'Körpermaße',es:'Medidas corporales'});
   const measurementRows=[
-    {key:'measurements',label:measurementsTitle,value:measValue,icon:svg(icon.measure),action:'openSettingsMeasurements'},
+    {key:'measurements',label:measurementsTitle,value:measValue,icon:'<span class="measure-shape-icon" aria-hidden="true"></span>',action:'openSettingsMeasurements'},
   ];
   const contactRows=[
     {key:'contact',label:'Contact',value:tt({pl:'Wkrótce',en:'Coming soon',de:'Bald verfügbar',es:'Próximamente'}),icon:svg(icon.contact),action:'openProfilePlaceholderContact'},

@@ -717,15 +717,12 @@ function beepSound(freq,dur,vol){
 }
 function timerAlert(type){
   if(type==='warning'){
-    beepSound(880,0.08,0.2);
-    setTimeout(()=>beepSound(880,0.08,0.2),180);
-    setTimeout(()=>beepSound(1100,0.12,0.3),360);
-    if(navigator.vibrate)navigator.vibrate([60,50,60]);
+    beepSound(980,0.06,0.18);
+    if(navigator.vibrate)navigator.vibrate(35);
   } else { // done
-    beepSound(660,0.1,0.22);
-    setTimeout(()=>beepSound(880,0.14,0.3),200);
-    setTimeout(()=>beepSound(1100,0.25,0.38),430);
-    if(navigator.vibrate)navigator.vibrate([80,40,80,40,180]);
+    beepSound(740,0.16,0.24);
+    setTimeout(()=>beepSound(980,0.22,0.34),210);
+    if(navigator.vibrate)navigator.vibrate([180,70,260]);
   }
 }
 
@@ -1057,7 +1054,7 @@ function renderWorkout(){
   h+=`<div class="workout-actions-bar">`;
   h+=`<button class="workout-action-btn danger" onclick="cancelWorkout()">${t('cancelWorkout')}</button>`;
   h+=`<button class="workout-action-btn" onclick="addExToActiveWorkout()">${t('addExerciseToWorkout')}</button>`;
-  h+=`<button class="workout-action-btn primary" onclick="${finishFn}">${t('finish')}</button>`;
+  h+=`<button class="workout-action-btn primary" onclick="${w.isQuick?finishFn:'confirmFinishWorkout()'}">${t('finish')}</button>`;
   h+=`</div>`;
   el.innerHTML=h;
   initExerciseReorder(el,(from,to)=>{moveArrayItem(S.activeWorkout.exercises,from,to);renderWorkout();});
@@ -1108,7 +1105,7 @@ function startTimer(s){
       const tb=document.getElementById('workoutTimerBar');
       if(tb)tb.remove();
     } else {
-      if(S.timerSecs===5)timerAlert('warning');
+      if(S.timerSecs<=5)timerAlert('warning');
       _renderTimerBar();
     }
   },1000);
@@ -1136,8 +1133,25 @@ function _renderTimerBar(){
   }
   const isWarning=S.timerSecs>0&&S.timerSecs<=5;
   tb.className='timer-bar'+(isWarning?' timer-warning':'');
-  tb.innerHTML=`<div class="timer-display" style="${isWarning?'color:var(--red);':''}">${min}:${sec}</div><div class="timer-label">${t('restBreak')}</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px;"><button class="btn btn-sm btn-ghost" onclick="adjustTimer(-10)">- 10 sec</button><button class="btn btn-sm btn-ghost" onclick="stopTimer()">${t('skipRest')}</button><button class="btn btn-sm btn-ghost" onclick="adjustTimer(10)">+ 10 sec</button></div>`;
+  tb.innerHTML=`<div class="timer-display" style="${isWarning?'color:var(--red);':''}">${min}:${sec}</div><div class="timer-label">${t('restBreak')}</div><div class="timer-controls"><button class="timer-adjust timer-minus" onclick="adjustTimer(-10)">- 10 sec</button><button class="timer-skip" onclick="stopTimer()">${t('skipRest')}</button><button class="timer-adjust timer-plus" onclick="adjustTimer(10)">+ 10 sec</button></div>`;
 }
+
+function confirmFinishWorkout(){
+  if(!S.activeWorkout)return;
+  if(S.activeWorkout.isQuick){finishQuickWorkout();return;}
+  closeModal();
+  const ov=document.createElement('div');ov.className='modal-overlay';
+  ov._backHandler=()=>{closeModal();return true;};
+  ov.innerHTML=`<div class="modal finish-confirm-modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" style="margin-bottom:8px;">${tt({pl:'Zakończyć trening?',en:'Finish workout?',de:'Training beenden?',es:'¿Terminar entrenamiento?'})}</div>
+    <div style="font-size:13px;color:var(--text2);line-height:1.45;margin-bottom:18px;">${tt({pl:'Jeśli kliknąłeś Finish przez pomyłkę, wróć do aktywnego treningu.',en:'If you tapped Finish by mistake, go back to the active workout.',de:'Wenn du versehentlich Finish getippt hast, gehe zurück zum aktiven Training.',es:'Si tocaste Finish por error, vuelve al entrenamiento activo.'})}</div>
+    <button class="btn btn-primary" style="width:100%;margin-bottom:10px;" onclick="closeModal();finishWorkout()">${t('finish')}</button>
+    <button class="btn btn-ghost" style="width:100%;" onclick="closeModal()">${t('backBtn')}</button>
+  </div>`;
+  document.body.appendChild(ov);S.modal=ov;
+}
+window.confirmFinishWorkout=confirmFinishWorkout;
 
 function finishWorkout(){
   stopTimer();const w=S.activeWorkout;
@@ -1734,6 +1748,8 @@ function finishQuickWorkout(){
   S.workouts[k]=wo;
   S.activeWorkout=null;
   saveAll();if(typeof syncQueuedCloudChanges==='function')syncQueuedCloudChanges();
+  window._lastFinishedWorkout=wo;
+  window._lastFinishedPrs=prs;
   showSaveAsTemplateModal(wo,k,prs);
 }
 
@@ -1752,9 +1768,10 @@ function showSaveAsTemplateModal(wo,dateKey,prs=[]){
   ov.innerHTML=`<div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title" style="margin-bottom:20px;">${t('saveAsTemplate')}</div>
-    <div style="display:grid;grid-template-columns:1fr;gap:10px;">
+    <div style="display:grid;grid-template-columns:1fr;gap:9px;">
       <button class="btn btn-primary" onclick="promptSaveTemplate()">${t('saveAsTemplateYes')}</button>
       <button class="btn btn-ghost" onclick="dontSaveTemplate('${dateKey}')">${t('saveAsTemplateNo')}</button>
+      <button class="btn btn-ghost" onclick="restoreWorkoutFromFinish('${dateKey}')" style="margin-top:4px;">${t('backBtn')}</button>
     </div>
   </div>`;
   window.promptSaveTemplate=()=>{
@@ -1763,10 +1780,11 @@ function showSaveAsTemplateModal(wo,dateKey,prs=[]){
       <div class="modal-handle"></div>
       <div class="modal-title">${t('enterTemplateName')}</div>
       <div style="margin-bottom:14px;"><input type="text" id="quickTplName" placeholder="np. Push A" style="font-size:15px;"/></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
         <button class="btn btn-ghost" onclick="dontSaveTemplate('${dateKey}')">${t('cancelTemplate')}</button>
         <button class="btn btn-primary" onclick="confirmSaveTemplate('${dateKey}')">${t('saveTemplate')}</button>
-      </div>`;
+      </div>
+      <button class="btn btn-ghost" onclick="showSaveAsTemplateModal(window._lastFinishedWorkout,'${dateKey}',window._lastFinishedPrs||[])" style="width:100%;">${t('backBtn')}</button>`;
     setTimeout(()=>document.getElementById('quickTplName')?.focus(),100);
   };
   window.confirmSaveTemplate=wKey=>{
@@ -1780,6 +1798,23 @@ function showSaveAsTemplateModal(wo,dateKey,prs=[]){
     saveAll();closeModal();showWorkoutSummary(wKey,prs);showScreen('dashboard');
   };
   window.dontSaveTemplate=wKey=>{closeModal();showWorkoutSummary(wKey,prs);showScreen('dashboard');};
+  window.restoreWorkoutFromFinish=wKey=>{
+    const saved=S.workouts[wKey];
+    if(!saved)return closeModal();
+    delete S.workouts[wKey];
+    S.activeWorkout={
+      templateId:saved.templateId||null,
+      name:saved.name,
+      nameKey:saved.nameKey||null,
+      types:saved.types||[],
+      startTime:Date.now(),
+      restDefault:S.defaultRest||90,
+      exercises:(saved.exercises||[]).map(ex=>({...ex,sets:(Array.isArray(ex.sets)?ex.sets:[]).map(s=>({...s,done:!!s.done,rest:s.rest||S.defaultRest||90}))})),
+      isQuick:true,
+    };
+    document.body.classList.add('workout-active');
+    saveAll();closeModal();showScreen('workouts');renderWorkout();
+  };
   document.body.appendChild(ov);S.modal=ov;
 }
 

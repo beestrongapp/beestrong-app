@@ -615,7 +615,9 @@ async function requestCoach(coachId){
     showSyncToast(tt({pl:'Coach dodany.',en:'Coach added.',de:'Coach hinzugefügt.',es:'Coach añadido.'}),'success');
     renderUserCoaches();
   }catch(e){
-    showSyncToast(e.message||tt({pl:'Nie udało się wysłać prośby.',en:'Could not send request.',de:'Anfrage konnte nicht gesendet werden.',es:'No se pudo enviar la solicitud.'}),'error');
+    const msg=String(e.message||'');
+    const rls=msg.includes('row-level security')||msg.includes('violates row-level security');
+    showSyncToast(rls?tt({pl:'Brak policy Supabase dla wyboru coacha. Uruchom supabase-coach-visibility.sql.',en:'Supabase policy is missing for choosing a coach. Run supabase-coach-visibility.sql.',de:'Supabase-Policy für Coach-Auswahl fehlt. Führe supabase-coach-visibility.sql aus.',es:'Falta policy de Supabase para elegir coach. Ejecuta supabase-coach-visibility.sql.'}):(e.message||tt({pl:'Nie udało się wysłać prośby.',en:'Could not send request.',de:'Anfrage konnte nicht gesendet werden.',es:'No se pudo enviar la solicitud.'})),'error');
   }
 }
 window.requestCoach=requestCoach;
