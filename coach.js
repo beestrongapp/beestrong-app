@@ -524,25 +524,36 @@ async function renderUserCoaches(){
     const byInviteId=new Map([...(byId.data||[]),...(byEmail.data||[])].map(inv=>[inv.id,inv]));
     const coaches=[...byInviteId.values()];
     const[allById,allByEmail]=await Promise.all([
-      sb.from('coach_invitations').select('id,coach_id,status').eq('client_user_id',S.user.id),
-      sb.from('coach_invitations').select('id,coach_id,status').eq('client_email',email),
+      sb.from('coach_invitations').select('id,coach_id,status,coach_name,coach_email,decline_reason,responded_at').eq('client_user_id',S.user.id),
+      sb.from('coach_invitations').select('id,coach_id,status,coach_name,coach_email,decline_reason,responded_at').eq('client_email',email),
     ]);
     if(allById.error)throw allById.error;
     if(allByEmail.error)throw allByEmail.error;
     const relationByCoach=new Map([...(allById.data||[]),...(allByEmail.data||[])].map(inv=>[inv.coach_id,inv]));
+    const allRelations=[...(allById.data||[]),...(allByEmail.data||[])];
+    const pendingRelations=allRelations.filter(inv=>inv.status==='pending');
+    const declinedRelations=allRelations.filter(inv=>inv.status==='declined');
     const available=(availableRes.data||[])
       .filter(p=>p.id!==S.user.id)
       .filter(p=>p.coach_visible!==false)
-      .filter(p=>relationByCoach.get(p.id)?.status!=='accepted');
+      .filter(p=>!['accepted','pending'].includes(relationByCoach.get(p.id)?.status));
     const parts=[];
     parts.push(`<div class="section-label">${tt({pl:'Twoi coachowie',en:'Your coaches',de:'Deine Coaches',es:'Tus coaches'})}</div>`);
     parts.push(coaches.length
       ?coaches.map(inv=>userCoachCardHtml(inv)).join('')
       :`<div class="empty-state" style="padding:22px 12px;">${tt({pl:'Nie masz jeszcze przypisanego coacha.',en:'You do not have an assigned coach yet.',de:'Du hast noch keinen zugewiesenen Coach.',es:'Aún no tienes coach asignado.'})}</div>`);
+    if(pendingRelations.length){
+      parts.push(`<div class="section-label" style="margin-top:20px;">${tt({pl:'Oczekujące zaproszenia',en:'Pending invitations',de:'Ausstehende Einladungen',es:'Invitaciones pendientes'})}</div>`);
+      parts.push(pendingRelations.map(inv=>pendingCoachCardHtml(inv)).join(''));
+    }
     parts.push(`<div class="section-label" style="margin-top:20px;">${tt({pl:'Dostępni coachowie',en:'Available coaches',de:'Verfügbare Coaches',es:'Coaches disponibles'})}</div>`);
     parts.push(available.length
       ?available.map(p=>availableCoachCardHtml(p,relationByCoach.get(p.id))).join('')
       :`<div class="empty-state" style="padding:22px 12px;">${tt({pl:'Brak dostępnych coachów.',en:'No available coaches yet.',de:'Noch keine verfügbaren Coaches.',es:'Aún no hay coaches disponibles.'})}</div>`);
+    if(declinedRelations.length){
+      parts.push(`<div class="section-label" style="margin-top:20px;">${tt({pl:'Odrzucone zaproszenia',en:'Declined invitations',de:'Abgelehnte Einladungen',es:'Invitaciones rechazadas'})}</div>`);
+      parts.push(declinedRelations.map(inv=>declinedCoachCardHtml(inv)).join(''));
+    }
     el.innerHTML=parts.join('');
   }catch(e){
     el.innerHTML=`<div style="color:var(--red);padding:12px;">${e.message||tt({pl:'Nie udało się pobrać coacha.',en:'Could not load coach.',de:'Coach konnte nicht geladen werden.',es:'No se pudo cargar el coach.'})}</div>`;
@@ -577,6 +588,32 @@ function availableCoachCardHtml(profile,relation){
   </div>`;
 }
 
+function pendingCoachCardHtml(inv){
+  const name=chatEsc(inv.coach_name||inv.coach_email||'Coach');
+  return `<div class="client-card" style="cursor:default;">
+    <div style="width:38px;height:38px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--btn-text);flex-shrink:0;">${name[0]?.toUpperCase()||'C'}</div>
+    <div class="client-card-info">
+      <div class="client-card-name">${name}</div>
+      <div class="client-card-meta">${chatEsc(inv.coach_email||'')}</div>
+    </div>
+    <span class="client-status-badge client-status-pending">${tt({pl:'Oczekuje',en:'Pending',de:'Ausstehend',es:'Pendiente'})}</span>
+  </div>`;
+}
+
+function declinedCoachCardHtml(inv){
+  const name=chatEsc(inv.coach_name||inv.coach_email||'Coach');
+  const reason=(inv.decline_reason||'').trim();
+  return `<div class="client-card" style="cursor:default;align-items:flex-start;">
+    <div style="width:38px;height:38px;border-radius:50%;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--text2);flex-shrink:0;">${name[0]?.toUpperCase()||'C'}</div>
+    <div class="client-card-info">
+      <div class="client-card-name">${name}</div>
+      <div class="client-card-meta">${chatEsc(inv.coach_email||'')}</div>
+      ${reason?`<div style="font-size:12px;color:var(--text2);margin-top:6px;line-height:1.35;">${chatEsc(reason)}</div>`:''}
+    </div>
+    <span class="client-status-badge client-status-declined">${tt({pl:'Odrzucono',en:'Declined',de:'Abgelehnt',es:'Rechazado'})}</span>
+  </div>`;
+}
+
 async function requestCoach(coachId){
   if(!sb||!S.user||!coachId)return;
   try{
@@ -601,8 +638,7 @@ async function requestCoach(coachId){
       coach_name:coach.display_name||coach.email,
       client_email:email,
       client_user_id:S.user.id,
-      status:'accepted',
-      responded_at:new Date().toISOString(),
+      status:'pending',
     });
     if(error)throw error;
     if(typeof sendPushToUser==='function')sendPushToUser(coach.id,{
@@ -612,7 +648,7 @@ async function requestCoach(coachId){
       url:'./?screen=clients',
       tag:`coach-selected-${S.user.id}`,
     });
-    showSyncToast(tt({pl:'Coach dodany.',en:'Coach added.',de:'Coach hinzugefügt.',es:'Coach añadido.'}),'success');
+    showSyncToast(tt({pl:'Zaproszenie wysłane do coacha.',en:'Invitation sent to coach.',de:'Einladung an Coach gesendet.',es:'Invitación enviada al coach.'}),'success');
     renderUserCoaches();
   }catch(e){
     const msg=String(e.message||'');
@@ -718,7 +754,12 @@ function clientCardHtml(inv){
   const name=inv.client_display_name||inv.client_email||'—';
   const meta=inv.client_display_name&&inv.client_email
     ? inv.client_email
-    : `${tt({pl:'Zaproszono',en:'Invited',de:'Eingeladen',es:'Invitado'})}: ${inv.created_at?new Date(inv.created_at).toLocaleDateString():''}`;
+    : `${tt({pl:'Zaproszenie',en:'Invitation',de:'Einladung',es:'Invitación'})}: ${inv.created_at?new Date(inv.created_at).toLocaleDateString():''}`;
+  const pendingActions=inv.status==='pending'
+    ?`<div style="display:flex;gap:6px;margin-left:4px;flex-shrink:0;">
+        <button class="btn btn-sm btn-primary" style="font-size:11px;padding:6px 9px;" onclick="event.stopPropagation();acceptClientRequest('${inv.id}')">${tt({pl:'OK',en:'Accept',de:'OK',es:'OK'})}</button>
+        <button class="btn btn-sm btn-ghost" style="font-size:11px;padding:6px 9px;" onclick="event.stopPropagation();openDeclineClientRequest('${inv.id}')">✕</button>
+      </div>`:'';
   return `<div class="client-card" onclick="${clickable?`openClientDetail('${inv.id}')`:''}" style="${clickable?'':'cursor:default;'}">
     <div style="width:38px;height:38px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--btn-text);flex-shrink:0;">${(name||'?')[0].toUpperCase()}</div>
     <div class="client-card-info">
@@ -726,9 +767,47 @@ function clientCardHtml(inv){
       <div class="client-card-meta">${meta}</div>
     </div>
     <span class="client-status-badge client-status-${inv.status}">${statusLabel}</span>
-    ${inv.status==='pending'?`<button class="btn btn-ghost" style="padding:4px 10px;font-size:12px;margin-left:4px;" onclick="event.stopPropagation();cancelInvitation('${inv.id}')">✕</button>`:''}
+    ${pendingActions}
   </div>`;
 }
+
+async function acceptClientRequest(invId){
+  if(!sb||!S.user||!invId)return;
+  const{error}=await sb.from('coach_invitations').update({status:'accepted',responded_at:new Date().toISOString(),decline_reason:null}).eq('id',invId).eq('coach_id',S.user.id);
+  if(error)return showSyncToast(error.message,'error');
+  showSyncToast(tt({pl:'Klient zaakceptowany.',en:'Client accepted.',de:'Klient akzeptiert.',es:'Cliente aceptado.'}),'success');
+  renderClients();
+}
+window.acceptClientRequest=acceptClientRequest;
+
+function openDeclineClientRequest(invId){
+  closeModal();
+  const ov=document.createElement('div');ov.className='modal-overlay';
+  ov.innerHTML=`<div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">${tt({pl:'Odrzuć zaproszenie',en:'Decline invitation',de:'Einladung ablehnen',es:'Rechazar invitación'})}</div>
+    <div style="font-size:13px;color:var(--text2);line-height:1.45;margin-bottom:12px;">${tt({pl:'Możesz dodać krótką wiadomość, dlaczego odrzucasz zaproszenie.',en:'You can add a short message explaining why you declined.',de:'Du kannst kurz erklären, warum du ablehnst.',es:'Puedes añadir un mensaje breve explicando el motivo.'})}</div>
+    <textarea id="declineReasonInput" rows="4" maxlength="600" placeholder="${tt({pl:'Np. aktualnie nie przyjmuję nowych klientów...',en:'E.g. I am not taking new clients right now...',de:'Z.B. ich nehme aktuell keine neuen Klienten an...',es:'Ej. ahora no acepto nuevos clientes...'})}" style="resize:vertical;margin-bottom:12px;"></textarea>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <button class="btn btn-ghost" onclick="closeModal();renderClients()">${t('cancelTemplate')}</button>
+      <button class="btn btn-danger" onclick="declineClientRequest('${invId}')">${tt({pl:'Odrzuć',en:'Decline',de:'Ablehnen',es:'Rechazar'})}</button>
+    </div>
+  </div>`;
+  document.body.appendChild(ov);S.modal=ov;
+  setTimeout(()=>document.getElementById('declineReasonInput')?.focus(),120);
+}
+window.openDeclineClientRequest=openDeclineClientRequest;
+
+async function declineClientRequest(invId){
+  if(!sb||!S.user||!invId)return;
+  const reason=(document.getElementById('declineReasonInput')?.value||'').trim();
+  const{error}=await sb.from('coach_invitations').update({status:'declined',responded_at:new Date().toISOString(),decline_reason:reason||null}).eq('id',invId).eq('coach_id',S.user.id);
+  if(error)return showSyncToast(error.message,'error');
+  closeModal();
+  showSyncToast(tt({pl:'Zaproszenie odrzucone.',en:'Invitation declined.',de:'Einladung abgelehnt.',es:'Invitación rechazada.'}),'success');
+  renderClients();
+}
+window.declineClientRequest=declineClientRequest;
 
 async function loadClientsFromCloud(){
   if(!sb||!S.user)return null;
