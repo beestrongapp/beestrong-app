@@ -1045,7 +1045,7 @@ function renderWorkout(){
     ex.sets.forEach((s,si)=>{
       const last=getLastSet(ex,si);
       const lastHtml=last?`<div class="set-last">${dispW(last.weight)}<br><span style="color:var(--text3);font-size:10px;">×${last.reps}</span></div>`:`<div class="set-last" style="opacity:0.4;">—</div>`;
-      h+=`<div class="set-grid"><button class="rm-btn" onclick="removeSet(${ei},${si})">✕</button><div class="set-num">${si+1}</div>${lastHtml}<input class="si" type="number" value="${dispW(s.weight)}" onfocus="this.select()" onchange="upd(${ei},${si},'weight',this.value)"/><input class="si" type="number" value="${s.reps}" onfocus="this.select()" onchange="upd(${ei},${si},'reps',this.value)"/><input class="si" type="number" value="${s.rest}" onfocus="this.select()" onchange="upd(${ei},${si},'rest',this.value)"/><button class="set-done ${s.done?'completed':''}" onclick="toggleSet(${ei},${si})">${s.done?'✓':'○'}</button></div>`;
+      h+=`<div class="set-grid"><button class="rm-btn" onclick="removeSet(${ei},${si})">✕</button><div class="set-num">${si+1}</div>${lastHtml}<input class="si" type="number" value="${dispW(s.weight)}" onfocus="clearZeroInput(this)" onchange="upd(${ei},${si},'weight',this.value)"/><input class="si" type="number" value="${s.reps}" onfocus="this.select()" onchange="upd(${ei},${si},'reps',this.value)"/><input class="si" type="number" value="${s.rest}" onfocus="this.select()" onchange="upd(${ei},${si},'rest',this.value)"/><button class="set-done ${s.done?'completed':''}" onclick="toggleSet(${ei},${si})">${s.done?'✓':'○'}</button></div>`;
     });
     h+=`<button class="btn btn-sm btn-ghost" style="font-size:12px;padding:6px 12px;margin-top:6px;width:100%;justify-content:center;" onclick="addSet(${ei})">+ ${t('addSet')}</button>`;
     h+=`</div>`;
@@ -1063,6 +1063,8 @@ function renderWorkout(){
 }
 
 function upd(ei,si,f,v){S.activeWorkout.exercises[ei].sets[si][f]=f==='weight'?inputToKg(v):+v;}
+function clearZeroInput(input){if(input&&(+input.value===0))input.value='';else input?.select?.();}
+window.clearZeroInput=clearZeroInput;
 function toggleWorkoutSup(ei){S.activeWorkout.exercises[ei].sup=!S.activeWorkout.exercises[ei].sup;renderWorkout();}
 window.toggleWorkoutSup=toggleWorkoutSup;
 

@@ -521,18 +521,30 @@ async function renderUserCoaches(){
     if(byId.error)throw byId.error;
     if(byEmail.error)throw byEmail.error;
     if(availableRes.error)throw availableRes.error;
-    const byInviteId=new Map([...(byId.data||[]),...(byEmail.data||[])].map(inv=>[inv.id,inv]));
-    const coaches=[...byInviteId.values()];
+    const dedupeByCoach=rows=>{
+      const rank={accepted:3,pending:2,declined:1};
+      const byCoach=new Map();
+      rows.forEach(inv=>{
+        if(!inv?.coach_id)return;
+        const prev=byCoach.get(inv.coach_id);
+        const prevRank=rank[prev?.status]||0;
+        const nextRank=rank[inv.status]||0;
+        const prevTime=prev?.responded_at||prev?.created_at||'';
+        const nextTime=inv.responded_at||inv.created_at||'';
+        if(!prev||nextRank>prevRank||(nextRank===prevRank&&nextTime>prevTime))byCoach.set(inv.coach_id,inv);
+      });
+      return [...byCoach.values()];
+    };
+    const coaches=dedupeByCoach([...(byId.data||[]),...(byEmail.data||[])]);
     const[allById,allByEmail]=await Promise.all([
       sb.from('coach_invitations').select('id,coach_id,status,coach_name,coach_email,decline_reason,responded_at').eq('client_user_id',S.user.id),
       sb.from('coach_invitations').select('id,coach_id,status,coach_name,coach_email,decline_reason,responded_at').eq('client_email',email),
     ]);
     if(allById.error)throw allById.error;
     if(allByEmail.error)throw allByEmail.error;
-    const relationByCoach=new Map([...(allById.data||[]),...(allByEmail.data||[])].map(inv=>[inv.coach_id,inv]));
-    const allRelations=[...(allById.data||[]),...(allByEmail.data||[])];
+    const allRelations=dedupeByCoach([...(allById.data||[]),...(allByEmail.data||[])]);
+    const relationByCoach=new Map(allRelations.map(inv=>[inv.coach_id,inv]));
     const pendingRelations=allRelations.filter(inv=>inv.status==='pending');
-    const declinedRelations=allRelations.filter(inv=>inv.status==='declined');
     const available=(availableRes.data||[])
       .filter(p=>p.id!==S.user.id)
       .filter(p=>p.coach_visible!==false)
@@ -550,10 +562,6 @@ async function renderUserCoaches(){
     parts.push(available.length
       ?available.map(p=>availableCoachCardHtml(p,relationByCoach.get(p.id))).join('')
       :`<div class="empty-state" style="padding:22px 12px;">${tt({pl:'Brak dostępnych coachów.',en:'No available coaches yet.',de:'Noch keine verfügbaren Coaches.',es:'Aún no hay coaches disponibles.'})}</div>`);
-    if(declinedRelations.length){
-      parts.push(`<div class="section-label" style="margin-top:20px;">${tt({pl:'Odrzucone zaproszenia',en:'Declined invitations',de:'Abgelehnte Einladungen',es:'Invitaciones rechazadas'})}</div>`);
-      parts.push(declinedRelations.map(inv=>declinedCoachCardHtml(inv)).join(''));
-    }
     el.innerHTML=parts.join('');
   }catch(e){
     el.innerHTML=`<div style="color:var(--red);padding:12px;">${e.message||tt({pl:'Nie udało się pobrać coacha.',en:'Could not load coach.',de:'Coach konnte nicht geladen werden.',es:'No se pudo cargar el coach.'})}</div>`;
@@ -1793,7 +1801,7 @@ async function checkPendingInvitations(){
       .eq('client_email',email)
       .eq('status','pending');
     if(error)throw error;
-    S.pendingInvites=data||[];
+    S.pendingInvites=(data||[]).filter(inv=>inv.coach_id!==S.user.id&&inv.client_user_id!==S.user.id);
     // Update client_user_id on any rows that don't have it yet (first-time accept flow)
     if(S.pendingInvites.length){
       await sb.from('coach_invitations')
