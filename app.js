@@ -39,7 +39,7 @@ function renderDashboard(){
       action:"showScreen('calendar')",
     },
     {
-      icon:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.1c1.4 0 2.45 1 2.45 2.45S13.4 8.05 12 8.05 9.55 7 9.55 5.55 10.6 3.1 12 3.1Z"/><path d="M8.4 9.25c-1.45.65-2.65 1.8-3.55 3.45"/><path d="M15.6 9.25c1.45.65 2.65 1.8 3.55 3.45"/><path d="M9 9.2c.8.45 1.8.7 3 .7s2.2-.25 3-.7"/><path d="M9.25 10.2 8.4 14.7 6.9 20.2"/><path d="M14.75 10.2l.85 4.5 1.5 5.5"/><path d="M10.15 14.45h3.7"/><path d="M12 14.45v6.05"/></svg>',
+      icon:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="4.2" y="5.2" width="15.6" height="14.6" rx="3"/><path d="M8.1 10.4a4.8 4.8 0 0 1 7.8 0"/><path d="M12 10.3 14.1 8"/><path d="M8.4 15.7h7.2"/><path d="M10 18h4"/></svg>',
       labelKey:{pl:'Pomiary',en:'Measurements',de:'Messungen',es:'Medidas'},
       action:'openSettingsMeasurements()',
     },
@@ -675,7 +675,7 @@ function showTplModal(id){
       setArr.forEach((s,si)=>{
         setRows+=`<div style="display:grid;grid-template-columns:20px 1fr 1fr;gap:6px;align-items:center;margin-top:6px;">
           <div style="font-size:11px;color:var(--text3);text-align:center;">${si+1}</div>
-          <input class="si" type="number" placeholder="${t('reps')}" value="${s.reps}" oninput="updSetVal(${i},${si},'reps',this.value)" style="font-size:13px;padding:7px 4px;"/>
+          <input class="si" type="number" placeholder="${t('reps')}" value="${s.reps}" onfocus="clearZeroInput(this)" oninput="updSetVal(${i},${si},'reps',this.value)" style="font-size:13px;padding:7px 4px;"/>
           <input class="si" type="number" placeholder="${unitW()}" value="${dispW(s.weight)}" onfocus="clearZeroInput(this)" oninput="updSetVal(${i},${si},'weight',this.value)" style="font-size:13px;padding:7px 4px;"/>
         </div>`;
       });
@@ -1254,7 +1254,7 @@ function renderSettings(){
     language:'<circle cx="12" cy="12" r="9"/><path d="M12 3a15 15 0 0 1 0 18M3 12h18"/><path d="M3.6 8h16.8M3.6 16h16.8"/>',
     units:'<path d="M3 3h18M3 9h18M3 15h18M3 21h18M9 3v18M15 3v18"/>',
     timer:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
-    measure:'<path d="M12 3.1c1.4 0 2.45 1 2.45 2.45S13.4 8.05 12 8.05 9.55 7 9.55 5.55 10.6 3.1 12 3.1Z"/><path d="M8.4 9.25c-1.45.65-2.65 1.8-3.55 3.45"/><path d="M15.6 9.25c1.45.65 2.65 1.8 3.55 3.45"/><path d="M9 9.2c.8.45 1.8.7 3 .7s2.2-.25 3-.7"/><path d="M9.25 10.2 8.4 14.7 6.9 20.2"/><path d="M14.75 10.2l.85 4.5 1.5 5.5"/><path d="M10.15 14.45h3.7"/><path d="M12 14.45v6.05"/>',
+    measure:'<rect x="4.2" y="5.2" width="15.6" height="14.6" rx="3"/><path d="M8.1 10.4a4.8 4.8 0 0 1 7.8 0"/><path d="M12 10.3 14.1 8"/><path d="M8.4 15.7h7.2"/><path d="M10 18h4"/>',
     contact:'<path d="M4 4h16v12H5.2L4 19.5V4z"/><path d="M8 9h8M8 13h5"/>',
     news:'<path d="M4 4h13a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3V4z"/><path d="M8 8h6M8 12h8M8 16h5"/>',
     privacy:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9.5 12l1.7 1.7 3.6-4.2"/>',
