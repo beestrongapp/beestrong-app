@@ -48,8 +48,8 @@ function initSupabase(){
         S.user={id:session.user.id,email:session.user.email,name:(session.user.user_metadata?.display_name||'').trim()};
         if(S.coachMode&&!isCoachAllowed()){S.coachMode=false;saveAll();}
         if(!wasLoggedIn&&(event==='SIGNED_IN'||event==='INITIAL_SESSION')){
-          if(event==='SIGNED_IN'){setTimeout(async()=>{await upsertProfile();await syncProfileFlags();await postLoginSyncFlow();checkPendingInvitations();if(typeof checkPendingClientRequests==='function')checkPendingClientRequests(false);setupRealtimeSubscriptions();},400);}
-          if(event==='INITIAL_SESSION')setTimeout(async()=>{await upsertProfile();await syncProfileFlags();checkPendingInvitations();if(typeof checkPendingClientRequests==='function')checkPendingClientRequests(false);setupRealtimeSubscriptions();autoSyncFromCloud();},600);
+          if(event==='SIGNED_IN'){setTimeout(async()=>{await upsertProfile();await syncProfileFlags();await postLoginSyncFlow();checkPendingInvitations();if(typeof checkPendingClientRequests==='function')checkPendingClientRequests(false);if(typeof checkPendingCoachCheckins==='function')checkPendingCoachCheckins();setupRealtimeSubscriptions();},400);}
+          if(event==='INITIAL_SESSION')setTimeout(async()=>{await upsertProfile();await syncProfileFlags();checkPendingInvitations();if(typeof checkPendingClientRequests==='function')checkPendingClientRequests(false);if(typeof checkPendingCoachCheckins==='function')checkPendingCoachCheckins();setupRealtimeSubscriptions();autoSyncFromCloud();},600);
           setTimeout(()=>{if(typeof refreshPushSubscription==='function')refreshPushSubscription();},1200);
         }
       } else {

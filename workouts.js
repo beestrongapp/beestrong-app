@@ -344,6 +344,7 @@ function showExPicker(currentExs,onConfirm){
   const ov=document.createElement('div');ov.className='modal-overlay';
 
   function thumbHtml(e,gk){
+    if(typeof navigator!=='undefined'&&navigator.onLine===false)return dumbbellFallbackSvg();
     if(e.img){
       const svgFallback=dumbbellFallbackSvg().replace(/`/g,'\`');
       return`<img src="${e.img}" style="width:48px;height:48px;object-fit:contain;border-radius:6px;background:var(--bg4);" loading="lazy" onerror="this.outerHTML=\`${svgFallback}\`"/>`;

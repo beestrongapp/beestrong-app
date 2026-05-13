@@ -1782,6 +1782,10 @@ window.rememberChatMessageNotification=rememberChatMessageNotification;
 function rememberCoachCheckinNotification(payload){
   const c=payload?.new;
   if(!c||!S.user||c.coach_id!==S.user.id)return;
+  const seen=ld('bs-checkins-seen-v1',{});
+  if(seen[c.id])return;
+  seen[c.id]=c.created_at||new Date().toISOString();
+  sv('bs-checkins-seen-v1',seen);
   addAppNotification({
     type:'coach_checkin',
     title:tt({pl:'Nowy check-in klienta',en:'New client check-in',de:'Neuer Kunden-Check-in',es:'Nuevo check-in de cliente'}),
@@ -1794,6 +1798,25 @@ function rememberCoachCheckinNotification(payload){
 }
 
 window.rememberCoachCheckinNotification=rememberCoachCheckinNotification;
+
+async function checkPendingCoachCheckins(){
+  if(!sb||!S.user||!S.coachMode)return;
+  try{
+    const seen=ld('bs-checkins-seen-v1',{});
+    const{data,error}=await sb.from('coach_checkins')
+      .select('id,invitation_id,coach_id,client_user_id,measurement_date,created_at')
+      .eq('coach_id',S.user.id)
+      .order('created_at',{ascending:false})
+      .limit(10);
+    if(error)throw error;
+    const fresh=(data||[]).filter(c=>!seen[c.id]).reverse();
+    fresh.forEach(c=>rememberCoachCheckinNotification({new:c}));
+  }catch(e){
+    console.warn('checkPendingCoachCheckins',e);
+  }
+}
+
+window.checkPendingCoachCheckins=checkPendingCoachCheckins;
 
 // ── INVITATION BANNERS (client side) ──────────────────────
 
