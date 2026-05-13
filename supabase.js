@@ -48,8 +48,8 @@ function initSupabase(){
         S.user={id:session.user.id,email:session.user.email,name:(session.user.user_metadata?.display_name||'').trim()};
         if(S.coachMode&&!isCoachAllowed()){S.coachMode=false;saveAll();}
         if(!wasLoggedIn&&(event==='SIGNED_IN'||event==='INITIAL_SESSION')){
-          if(event==='SIGNED_IN'){setTimeout(async()=>{await upsertProfile();await syncProfileFlags();await postLoginSyncFlow();checkPendingInvitations();if(typeof checkPendingClientRequests==='function')checkPendingClientRequests(false);if(typeof checkPendingCoachCheckins==='function')checkPendingCoachCheckins();setupRealtimeSubscriptions();},400);}
-          if(event==='INITIAL_SESSION')setTimeout(async()=>{await upsertProfile();await syncProfileFlags();checkPendingInvitations();if(typeof checkPendingClientRequests==='function')checkPendingClientRequests(false);if(typeof checkPendingCoachCheckins==='function')checkPendingCoachCheckins();setupRealtimeSubscriptions();autoSyncFromCloud();},600);
+          if(event==='SIGNED_IN'){setTimeout(async()=>{await upsertProfile();await syncProfileFlags();await postLoginSyncFlow();checkPendingInvitations();if(typeof checkPendingClientRequests==='function')checkPendingClientRequests(false);if(typeof checkPendingCoachMessages==='function')checkPendingCoachMessages();if(typeof checkPendingCoachNotes==='function')checkPendingCoachNotes();if(typeof checkPendingCoachCheckins==='function')checkPendingCoachCheckins();setupRealtimeSubscriptions();},400);}
+          if(event==='INITIAL_SESSION')setTimeout(async()=>{await upsertProfile();await syncProfileFlags();checkPendingInvitations();if(typeof checkPendingClientRequests==='function')checkPendingClientRequests(false);if(typeof checkPendingCoachMessages==='function')checkPendingCoachMessages();if(typeof checkPendingCoachNotes==='function')checkPendingCoachNotes();if(typeof checkPendingCoachCheckins==='function')checkPendingCoachCheckins();setupRealtimeSubscriptions();autoSyncFromCloud();},600);
           setTimeout(()=>{if(typeof refreshPushSubscription==='function')refreshPushSubscription();},1200);
         }
       } else {
@@ -750,6 +750,12 @@ function setupRealtimeSubscriptions(){
     .subscribe();
   _realtimeChannels.push(coachCheckinCh);
 
+  const coachNoteCh=sb.channel('bs-coach-notes-'+S.user.id)
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'coach_client_notes',filter:`client_user_id=eq.${S.user.id}`},
+      payload=>{ if(typeof rememberCoachNoteNotification==='function')rememberCoachNoteNotification(payload); })
+    .subscribe();
+  _realtimeChannels.push(coachNoteCh);
+
   const friendInvitedCh=sb.channel('bs-friend-invites-in-'+S.user.id)
     .on('postgres_changes',{event:'INSERT',schema:'public',table:'friend_invitations',filter:`invitee_id=eq.${S.user.id}`},
       payload=>{
@@ -777,7 +783,12 @@ function setupRealtimeSubscriptions(){
 
 // Auto-sync when tab becomes visible
 document.addEventListener('visibilitychange',()=>{
-  if(document.visibilityState==='visible')autoSyncFromCloud();
+  if(document.visibilityState==='visible'){
+    autoSyncFromCloud();
+    if(typeof checkPendingCoachMessages==='function')checkPendingCoachMessages();
+    if(typeof checkPendingCoachNotes==='function')checkPendingCoachNotes();
+    if(typeof checkPendingCoachCheckins==='function')checkPendingCoachCheckins();
+  }
   else syncQueuedCloudChanges();
 });
 window.addEventListener('online',()=>{syncQueuedCloudChanges();});

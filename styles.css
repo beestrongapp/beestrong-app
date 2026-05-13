@@ -312,8 +312,8 @@ body.workout-active .mobile-fab-overlay{display:none!important;}
   .screen-bottom-back{display:block;position:fixed;left:0;right:0;bottom:calc(70px + env(safe-area-inset-bottom));padding:10px 16px;background:linear-gradient(to top,var(--bg) 78%,rgba(15,15,15,0));z-index:88;}
   body.light .screen-bottom-back{background:linear-gradient(to top,var(--bg) 78%,rgba(240,240,240,0));}
   .screen-bottom-back .btn{background:var(--accent);border-color:var(--accent);color:var(--btn-text);box-shadow:0 8px 24px rgba(0,0,0,0.25);}
-  .chat-messages{height:calc(100dvh - 150px);padding-bottom:96px;}
-  .chat-input-bar{position:fixed;left:50%;right:auto;bottom:calc(10px + env(safe-area-inset-bottom));width:min(calc(100% - 32px),728px);transform:translateX(-50%);}
+  .chat-messages{height:calc(100dvh - 150px);padding-bottom:156px;}
+  .chat-input-bar{position:fixed;left:50%;right:auto;bottom:calc(78px + env(safe-area-inset-bottom));width:min(calc(100% - 32px),728px);transform:translateX(-50%);padding:8px 0 6px;}
   .chat-bottom-actions{display:none;}
   body.light .chat-bottom-actions{background:linear-gradient(to top,var(--bg) 78%,rgba(240,240,240,0));}
   .chat-bottom-actions .btn{box-shadow:0 8px 24px rgba(0,0,0,0.28);}

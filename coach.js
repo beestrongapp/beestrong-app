@@ -1350,6 +1350,13 @@ async function saveCoachClientNote(){
     note,
   });
   if(error)return showSyncToast(error.message,'error');
+  if(typeof sendPushToUser==='function')sendPushToUser(ctx.clientId,{
+    type:'coach_note',
+    title:'BeeStrong',
+    body:tt({pl:'Coach wysłał nową notatkę.',en:'Your coach sent a new note.',de:'Dein Coach hat eine neue Notiz gesendet.',es:'Tu coach envió una nueva nota.'}),
+    url:'./?screen=notifications',
+    tag:`coach-note-${ctx.inv.id}`,
+  });
   showSyncToast(tt({pl:'Notatka wysłana ✓',en:'Note sent ✓',de:'Notiz gesendet ✓',es:'Nota enviada ✓'}),'success');
   renderCoachNotesView();
 }
@@ -1778,6 +1785,67 @@ function rememberChatMessageNotification(payload){
 }
 
 window.rememberChatMessageNotification=rememberChatMessageNotification;
+
+async function checkPendingCoachMessages(){
+  if(!sb||!S.user)return;
+  try{
+    const{data,error}=await sb.from('coach_messages')
+      .select('id,invitation_id,coach_id,client_user_id,sender_id,message,created_at')
+      .or(`coach_id.eq.${S.user.id},client_user_id.eq.${S.user.id}`)
+      .neq('sender_id',S.user.id)
+      .order('created_at',{ascending:false})
+      .limit(10);
+    if(error)throw error;
+    const rows=(data||[]).reverse();
+    rows.forEach(m=>{
+      const lastSeen=_lastSeenChatMessageAt[m.invitation_id];
+      if(lastSeen&&new Date(m.created_at)<=new Date(lastSeen))return;
+      rememberChatMessageNotification({new:m});
+    });
+  }catch(e){
+    console.warn('checkPendingCoachMessages',e);
+  }
+}
+
+window.checkPendingCoachMessages=checkPendingCoachMessages;
+
+function rememberCoachNoteNotification(payload){
+  const n=payload?.new;
+  if(!n||!S.user||n.client_user_id!==S.user.id)return;
+  const seen=ld('bs-coach-notes-seen-v1',{});
+  if(seen[n.id])return;
+  seen[n.id]=n.created_at||new Date().toISOString();
+  sv('bs-coach-notes-seen-v1',seen);
+  addAppNotification({
+    type:'coach_note',
+    title:tt({pl:'Nowa notatka od coacha',en:'New coach note',de:'Neue Coach-Notiz',es:'Nueva nota del coach'}),
+    body:(n.note||tt({pl:'Coach wysłał nową notatkę.',en:'Your coach sent a new note.',de:'Dein Coach hat eine neue Notiz gesendet.',es:'Tu coach envió una nueva nota.'})).slice(0,120),
+    at:n.created_at,
+    invitationId:n.invitation_id,
+    action:`renderUserCoachNotes('${chatEsc(n.invitation_id)}');showScreen('coaches')`,
+  });
+  showSyncToast(tt({pl:'Nowa notatka od coacha',en:'New coach note',de:'Neue Coach-Notiz',es:'Nueva nota del coach'}),'success');
+}
+
+window.rememberCoachNoteNotification=rememberCoachNoteNotification;
+
+async function checkPendingCoachNotes(){
+  if(!sb||!S.user)return;
+  try{
+    const seen=ld('bs-coach-notes-seen-v1',{});
+    const{data,error}=await sb.from('coach_client_notes')
+      .select('id,invitation_id,coach_id,client_user_id,note,created_at')
+      .eq('client_user_id',S.user.id)
+      .order('created_at',{ascending:false})
+      .limit(10);
+    if(error)throw error;
+    (data||[]).reverse().forEach(n=>{if(!seen[n.id])rememberCoachNoteNotification({new:n});});
+  }catch(e){
+    console.warn('checkPendingCoachNotes',e);
+  }
+}
+
+window.checkPendingCoachNotes=checkPendingCoachNotes;
 
 function rememberCoachCheckinNotification(payload){
   const c=payload?.new;
