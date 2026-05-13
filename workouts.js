@@ -282,6 +282,12 @@ function exSvgByGroup(gk){
 function dumbbellFallbackSvg(){
   return `<svg viewBox="0 0 48 48" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:32px;height:32px;"><path d="M5 20v8M10 17v14M16 21l16 6M32 21l-16 6M38 17v14M43 20v8"/></svg>`;
 }
+function exerciseThumbFallback(el){
+  if(!el)return;
+  el.innerHTML=dumbbellFallbackSvg();
+  el.classList.add('ex-thumb-fallback');
+}
+window.exerciseThumbFallback=exerciseThumbFallback;
 
 const DEFAULT_TEMPLATES=[
   {id:1,name:'Upper A',types:['upper'],restDefault:90,exercises:[
@@ -344,12 +350,11 @@ function showExPicker(currentExs,onConfirm){
   const ov=document.createElement('div');ov.className='modal-overlay';
 
   function thumbHtml(e,gk){
-    if(typeof navigator!=='undefined'&&navigator.onLine===false)return dumbbellFallbackSvg();
+    if(typeof navigator!=='undefined'&&navigator.onLine===false)return `<div class="ex-thumb-fallback">${dumbbellFallbackSvg()}</div>`;
     if(e.img){
-      const svgFallback=dumbbellFallbackSvg().replace(/`/g,'\`');
-      return`<img src="${e.img}" style="width:48px;height:48px;object-fit:contain;border-radius:6px;background:var(--bg4);" loading="lazy" onerror="this.outerHTML=\`${svgFallback}\`"/>`;
+      return`<img src="${e.img}" class="ex-thumb-img" loading="lazy" onerror="exerciseThumbFallback(this.parentElement)"/>`;
     }
-    return dumbbellFallbackSvg();
+    return `<div class="ex-thumb-fallback">${dumbbellFallbackSvg()}</div>`;
   }
 
   function updateList(){
