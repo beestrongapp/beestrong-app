@@ -191,7 +191,7 @@ function renderProgress(){
     const tpName=S.templates.find(tp=>tp.id===selId)?.name||'';
     el.innerHTML=tabsHtml+`<div style="display:flex;flex-wrap:wrap;margin-bottom:16px;">${btns}</div>
       <div style="font-size:14px;font-weight:600;margin-bottom:10px;color:var(--text2);">${t('objetosc')} — ${tpName}</div>
-      <div style="position:relative;width:100%;height:220px;margin-bottom:10px;"><canvas id="progressChart"></canvas></div>
+      <div style="position:relative;width:100%;height:220px;margin-bottom:10px;"><canvas id="progressChart"></canvas>${chartGrowthBadge(data)}</div>
       ${!data.length?`<div class="empty-state">${t('noData')}</div>`:''}`;
     if(data.length){
       setTimeout(()=>{
@@ -257,13 +257,14 @@ function renderProgress(){
       const stats=getExerciseStats(it.key);
       const prHtml=stats.bestSet?`<span style="color:var(--accent);font-weight:600;">${dispW(stats.bestSet.weight)}${unitW()}×${stats.bestSet.reps}</span> <span style="color:var(--text3);">· e1RM ${dispW(stats.est1RM)}${unitW()}</span>`:'';
       const meta=`${it.count}× ${tt({pl:'treningi',en:'workouts',de:'Trainings',es:'entrenamientos'})}${eqLbl?' · '+eqLbl:''}`;
+      const chartSeries=getExerciseProgress(it.key);
       topHtml+=`<div style="margin-bottom:18px;">
         <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:4px;gap:8px;">
           <div style="font-size:14px;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${it.name}</div>
           <div style="font-size:11px;color:var(--text3);flex-shrink:0;">${meta}</div>
         </div>
         ${prHtml?`<div style="font-size:11px;margin-bottom:6px;">${tt({pl:'Najlepsza seria',en:'Best set',de:'Beste Serie',es:'Mejor serie'})}: ${prHtml}</div>`:''}
-        <div style="position:relative;width:100%;height:120px;"><canvas id="liftChart_${i}"></canvas></div>
+        <div style="position:relative;width:100%;height:120px;"><canvas id="liftChart_${i}"></canvas>${chartGrowthBadge(chartSeries)}</div>
       </div>`;
     });
   }
@@ -272,7 +273,7 @@ function renderProgress(){
     `<div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin-bottom:4px;">${groupChips}</div>`+
     equipChipsHtml+
     `<div style="font-size:14px;font-weight:600;margin-bottom:10px;color:var(--text2);">${t('volume')} — ${gkLabel}</div>`+
-    `<div style="position:relative;width:100%;height:220px;margin-bottom:10px;"><canvas id="liftMainChart"></canvas></div>`+
+    `<div style="position:relative;width:100%;height:220px;margin-bottom:10px;"><canvas id="liftMainChart"></canvas>${chartGrowthBadge(mainData)}</div>`+
     (mainData.length?'':`<div class="empty-state">${tt({pl:'Brak danych dla tego filtra',en:'No data for this filter',de:'Keine Daten für diesen Filter',es:'Sin datos para este filtro'})}</div>`)+
     topHtml;
 
@@ -381,6 +382,7 @@ window.showRecordDetail=function(name){
     </div>
     <div style="position:relative;width:100%;height:190px;margin:8px 0 14px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:10px;">
       <canvas id="${chartId}"></canvas>
+      ${chartGrowthBadge(chartData.map(s=>s.e1RM))}
     </div>
     <div style="max-height:62vh;overflow-y:auto;margin-top:12px;">
       ${sorted.map((s,i)=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);${i===0?'background:var(--accent-dim);margin:0 -4px;padding:12px 4px;border-radius:8px;margin-bottom:4px;':''}">

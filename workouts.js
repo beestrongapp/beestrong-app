@@ -37,6 +37,27 @@ const GROUP_LABELS={
   glutes:{pl:'Pośladki',en:'Glutes',de:'Gesäß',es:'Glúteos'},
 };
 
+function chartGrowthPercent(data){
+  const vals=(data||[]).map(x=>typeof x==='number'?x:+(x&&x.v)).filter(Number.isFinite);
+  if(vals.length<2)return null;
+  const firstIndex=vals.findIndex(v=>Math.abs(v)>0.000001);
+  if(firstIndex<0||firstIndex>=vals.length-1)return null;
+  const first=vals[firstIndex];
+  const last=vals[vals.length-1];
+  if(!Number.isFinite(last))return null;
+  const pct=((last-first)/Math.abs(first))*100;
+  return Number.isFinite(pct)?pct:null;
+}
+function chartGrowthBadge(data){
+  const pct=chartGrowthPercent(data);
+  if(pct==null)return'';
+  const rounded=Math.abs(pct)<0.05?0:pct;
+  const cls=rounded>0?'':(rounded<0?' is-down':' is-flat');
+  return`<div class="chart-growth-badge${cls}">${rounded>0?'+':''}${rounded.toFixed(1)}%</div>`;
+}
+window.chartGrowthPercent=chartGrowthPercent;
+window.chartGrowthBadge=chartGrowthBadge;
+
 const OFFLINE_EX_GROUPS={
   chest:{pl:'Klatka',en:'Chest',items:[{id:'c001',en:'Barbell Bench Press',pl:'Wyciskanie sztangi płasko',img:null},{id:'c002',en:'Incline Barbell Bench Press',pl:'Wyciskanie sztangi skos dodatni',img:null},{id:'c003',en:'Decline Barbell Bench Press',pl:'Wyciskanie sztangi skos ujemny',img:null},{id:'c004',en:'Dumbbell Bench Press',pl:'Wyciskanie hantli płasko',img:null},{id:'c005',en:'Incline Dumbbell Press',pl:'Wyciskanie hantli skos dodatni',img:null},{id:'c006',en:'Decline Dumbbell Press',pl:'Wyciskanie hantli skos ujemny',img:null},{id:'c007',en:'Machine Chest Press',pl:'Maszyna chest press',img:null},{id:'c008',en:'Smith Machine Bench Press',pl:'Wyciskanie na maszynie Smitha',img:null},{id:'c009',en:'Dumbbell Flyes',pl:'Rozpiętki hantlami płasko',img:null},{id:'c010',en:'Incline Dumbbell Flyes',pl:'Rozpiętki hantlami skos',img:null},{id:'c011',en:'Cable Crossover',pl:'Kabel krzyżowy',img:null},{id:'c012',en:'Cable Fly High',pl:'Kabel krzyżowy górny',img:null},{id:'c013',en:'Cable Fly Low',pl:'Kabel krzyżowy dolny',img:null},{id:'c014',en:'Chest Dips',pl:'Dips klatka',img:null},{id:'c015',en:'Push-Ups',pl:'Pompki',img:null},{id:'c016',en:'Wide Push-Ups',pl:'Pompki szeroki chwyt',img:null},{id:'c017',en:'Diamond Push-Ups',pl:'Pompki diament',img:null},{id:'c018',en:'Pec Deck Machine',pl:'Maszyna pec deck',img:null},{id:'c019',en:'Around The Worlds',pl:'Koła hantlami',img:null},{id:'c020',en:'Svend Press',pl:'Wyciskanie z talerzem',img:null}]},
   back:{pl:'Plecy',en:'Back',items:[{id:'b001',en:'Barbell Deadlift',pl:'Martwy ciąg',img:null},{id:'b002',en:'Romanian Deadlift',pl:'Martwy ciąg rumuński',img:null},{id:'b003',en:'Sumo Deadlift',pl:'Martwy ciąg sumo',img:null},{id:'b004',en:'Barbell Row',pl:'Wiosłowanie sztangą',img:null},{id:'b005',en:'Dumbbell Row',pl:'Wiosłowanie hantlem',img:null},{id:'b006',en:'Machine Row',pl:'Wiosłowanie na maszynie',img:null},{id:'b007',en:'Cable Row',pl:'Wiosłowanie kabel',img:null},{id:'b008',en:'Pull-Ups',pl:'Podciąganie na drążku',img:null},{id:'b009',en:'Chin-Ups',pl:'Podciąganie podchwytem',img:null},{id:'b010',en:'Lat Pulldown',pl:'Ściąganie drążka',img:null},{id:'b011',en:'Wide-Grip Lat Pulldown',pl:'Ściąganie drążka szeroko',img:null},{id:'b012',en:'Close-Grip Lat Pulldown',pl:'Ściąganie drążka wąsko',img:null},{id:'b013',en:'Face Pull',pl:'Face pull',img:null},{id:'b014',en:'Seated Cable Row',pl:'Wiosłowanie siedząc kabel',img:null},{id:'b015',en:'T-Bar Row',pl:'Wiosłowanie T-bar',img:null},{id:'b016',en:'Hyperextension',pl:'Hyperextension',img:null},{id:'b017',en:'Good Morning',pl:'Good morning',img:null},{id:'b018',en:'Rack Pulls',pl:'Martwy ciąg z bloku',img:null},{id:'b019',en:'Pendlay Row',pl:'Wiosłowanie Pendlay',img:null},{id:'b020',en:'Inverted Row',pl:'Wiosłowanie odwrotne',img:null},{id:'b021',en:'Single Arm Cable Row',pl:'Wiosłowanie kabel jedną ręką',img:null},{id:'b022',en:'Meadows Row',pl:'Wiosłowanie Meadows',img:null}]},
@@ -1237,14 +1258,15 @@ function showWorkoutSummary(key,prs=[]){
     <div style="font-size:15px;font-weight:800;color:var(--accent);margin-bottom:6px;">${tt({pl:'Nowy rekord!',en:'New Personal Record!',de:'Neuer Rekord!',es:'¡Nuevo récord personal!'})}</div>
     ${prs.map(pr=>`<div style="font-size:13px;color:var(--text2);margin-bottom:2px;"><strong style="color:var(--text);">${pr.name}</strong>: ${dispW(pr.weight)}${unitW()}×${pr.reps} · e1RM <strong style="color:var(--accent);">${dispW(pr.e1RM)}${unitW()}</strong>${pr.prev?` <span style="color:var(--text3);font-size:11px;">(${tt({pl:'poprz.',en:'prev.',de:'vorh.',es:'ant.'})} ${dispW(pr.prev)}${unitW()})</span>`:''}</div>`).join('')}
   </div>`:'';
+  const summaryHistData=w.templateId?getProgress(w.templateId,key):[];
   const ov=document.createElement('div');ov.className='modal-overlay';
-  ov.innerHTML=`<div class="modal"><div class="modal-handle"></div><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;"><div class="modal-title" style="margin-bottom:0;">${t('summary')} ${d}.${m}.${y}</div><button class="btn btn-sm btn-ghost" onclick="closeModal()">✕</button></div><div style="font-size:13px;color:var(--text2);margin-bottom:14px;">${displayWorkoutName(w)}</div>${prBannerHtml}<div class="summary-grid"><div class="metric-card"><div class="metric-label">${t('totalLifted')}</div><div class="metric-value" style="font-size:22px;">${dispW(w.volume).toLocaleString()}</div><div style="font-size:11px;color:var(--text2);margin-top:2px;">${unitW()}</div>${dH(vd,unitVol(),false)}</div><div class="metric-card"><div class="metric-label">${t('time')}</div><div class="metric-value">${w.duration}</div><div style="font-size:11px;color:var(--text2);margin-top:2px;">min</div>${dH(dd,'min',true)}</div></div>${exBreakdown}<div style="font-size:13px;font-weight:600;margin:16px 0 10px;">${t('objetosc')} — ${displayWorkoutName(w)}</div><div style="position:relative;width:100%;height:180px;margin-bottom:16px;"><canvas id="summChart"></canvas></div>${prev?`<div style="background:var(--bg3);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--text2);">${t('prevWorkout')} ${dispW(prev.volume).toLocaleString()} ${unitW()} · ${prev.duration} min</div>`:`<div style="font-size:13px;color:var(--text2);text-align:center;padding:8px 0;">${t('firstWorkout')}</div>`}
+  ov.innerHTML=`<div class="modal"><div class="modal-handle"></div><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;"><div class="modal-title" style="margin-bottom:0;">${t('summary')} ${d}.${m}.${y}</div><button class="btn btn-sm btn-ghost" onclick="closeModal()">✕</button></div><div style="font-size:13px;color:var(--text2);margin-bottom:14px;">${displayWorkoutName(w)}</div>${prBannerHtml}<div class="summary-grid"><div class="metric-card"><div class="metric-label">${t('totalLifted')}</div><div class="metric-value" style="font-size:22px;">${dispW(w.volume).toLocaleString()}</div><div style="font-size:11px;color:var(--text2);margin-top:2px;">${unitW()}</div>${dH(vd,unitVol(),false)}</div><div class="metric-card"><div class="metric-label">${t('time')}</div><div class="metric-value">${w.duration}</div><div style="font-size:11px;color:var(--text2);margin-top:2px;">min</div>${dH(dd,'min',true)}</div></div>${exBreakdown}<div style="font-size:13px;font-weight:600;margin:16px 0 10px;">${t('objetosc')} — ${displayWorkoutName(w)}</div><div style="position:relative;width:100%;height:180px;margin-bottom:16px;"><canvas id="summChart"></canvas>${summaryHistData.length>=2?chartGrowthBadge(summaryHistData):''}</div>${prev?`<div style="background:var(--bg3);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--text2);">${t('prevWorkout')} ${dispW(prev.volume).toLocaleString()} ${unitW()} · ${prev.duration} min</div>`:`<div style="font-size:13px;color:var(--text2);text-align:center;padding:8px 0;">${t('firstWorkout')}</div>`}
     <button class="btn btn-danger" style="margin-top:14px;" onclick="deleteWorkout('${key}')">${lang==='pl'?'Usuń trening':'Delete workout'}</button>
   </div>`;
   document.body.appendChild(ov);S.modal=ov;
   setTimeout(()=>{
     const ctx=document.getElementById('summChart');if(!ctx)return;
-    const histData=w.templateId?getProgress(w.templateId,key):[];
+    const histData=summaryHistData;
     if(histData.length>=2){
       // Multiple sessions of this template — show history line chart
       new Chart(ctx,{type:'line',data:{labels:histData.map(x=>x.l),datasets:[{data:histData.map(x=>x.v),borderColor:'#c9a96e',backgroundColor:'rgba(201,169,110,0.07)',borderWidth:2.5,pointBackgroundColor:'#c9a96e',pointRadius:histData.map((_,i)=>i===histData.length-1?7:4),fill:true,tension:0.35}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:'rgba(128,128,128,0.08)'},ticks:{font:{size:10},callback:v=>fmtVolTick(v)}},x:{grid:{display:false},ticks:{font:{size:10}}}}}});
@@ -1336,7 +1358,7 @@ function bodyMeasurementsHtml(hideTitle){
     if(data.length<2)return'';
     return`<div style="margin-bottom:20px;">
       <div style="font-size:13px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:6px;">${mt.icon} ${t(mt.key)} <span style="font-size:11px;color:var(--text2);font-weight:400;">(${unitMeas(mt.key)})</span></div>
-      <div style="position:relative;width:100%;height:150px;"><canvas id="chart_${mt.key}"></canvas></div>
+      <div style="position:relative;width:100%;height:150px;"><canvas id="chart_${mt.key}"></canvas>${chartGrowthBadge(data)}</div>
     </div>`;
   }).join('');
   const historyLbl=tt({pl:'Historia pomiarów',en:'Measurement history',de:'Messhistorie',es:'Historial de medidas'});
