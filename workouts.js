@@ -1,5 +1,5 @@
 ﻿// ===== EXERCISE DATABASE (free-exercise-db) =====
-// Source: https://github.com/yuhonas/free-exercise-db (MIT)
+// Source: https://github.com/yuhonas/free-exercise-db (Unlicense / public domain)
 // Skipped categories: stretching, cardio (don't fit sets×reps×weight model)
 const FEDB_MUSCLE_MAP={
   'chest':'chest',

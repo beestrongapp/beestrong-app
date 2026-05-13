@@ -1257,6 +1257,7 @@ function renderSettings(){
     measure:'<rect x="4.2" y="5.2" width="15.6" height="14.6" rx="3"/><path d="M8.1 10.4a4.8 4.8 0 0 1 7.8 0"/><path d="M12 10.3 14.1 8"/><path d="M8.4 15.7h7.2"/><path d="M10 18h4"/>',
     contact:'<path d="M4 4h16v12H5.2L4 19.5V4z"/><path d="M8 9h8M8 13h5"/>',
     news:'<path d="M4 4h13a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3V4z"/><path d="M8 8h6M8 12h8M8 16h5"/>',
+    licenses:'<path d="M7 3h8l4 4v14H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M15 3v5h5"/><path d="M9 13h6M9 17h4"/><path d="M9 9h2"/>',
     privacy:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9.5 12l1.7 1.7 3.6-4.2"/>',
     delete:'<path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/>',
     name:'<circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>',
@@ -1340,6 +1341,7 @@ function renderSettings(){
   const preferencesTitle=tt({pl:'Preferencje',en:'Preferences',de:'Einstellungen',es:'Preferencias'});
   const contactTitle=tt({pl:'Kontakt',en:'Contact',de:'Kontakt',es:'Contacto'});
   const whatsNewTitle=tt({pl:'Co nowego',en:"What's new",de:'Was ist neu',es:'Novedades'});
+  const licensesTitle=tt({pl:'Licencje',en:'Licenses',de:'Lizenzen',es:'Licencias'});
   const privacyTitle=tt({pl:'Polityka prywatności',en:'Privacy Policy',de:'Datenschutz',es:'Política de privacidad'});
   const termsTitle=tt({pl:'Regulamin',en:'Terms of Service',de:'Nutzungsbedingungen',es:'Terminos de servicio'});
   const deleteTitle=tt({pl:'Usuń konto i dane',en:'Delete account and data',de:'Konto und Daten löschen',es:'Eliminar cuenta y datos'});
@@ -1350,6 +1352,7 @@ function renderSettings(){
     measurements:{title:tt({pl:'Twoje pomiary',en:'Body measurements',de:'Körpermaße',es:'Medidas corporales'}),rows:null},
     contact:{title:contactTitle,rows:null},
     whatsnew:{title:whatsNewTitle,rows:null},
+    licenses:{title:licensesTitle,rows:null},
     privacy:{title:privacyTitle,rows:null},
     terms:{title:termsTitle,rows:null},
     deleteAccount:{title:deleteTitle,rows:null},
@@ -1412,6 +1415,7 @@ function renderSettings(){
   window._profileSections.measurements={title:measurementsTitle,rows:measurementRows};
   window._profileSections.contact={title:contactTitle,rows:contactRows};
   window._profileSections.whatsnew={title:whatsNewTitle,rows:whatsNewRows};
+  window._profileSections.licenses={title:licensesTitle,rows:null};
   window._profileSections.privacy={title:privacyTitle,rows:privacyRows};
   window._profileSections.terms={title:termsTitle,rows:null};
   window._profileSections.deleteAccount={title:deleteTitle,rows:null};
@@ -1428,7 +1432,7 @@ function renderSettings(){
       else if(_profileSectionView==='subscription')sectionBody=profileSubscriptionHtml();
       else if(_profileSectionView==='measurements')sectionBody=profileMeasurementsHtml();
       else if(_profileSectionView==='deleteAccount')sectionBody=profileDeleteAccountHtml();
-      else if(['contact','whatsnew','privacy','terms'].includes(_profileSectionView))sectionBody=profileInfoSectionHtml(_profileSectionView);
+      else if(['contact','whatsnew','licenses','privacy','terms'].includes(_profileSectionView))sectionBody=profileInfoSectionHtml(_profileSectionView);
       else sectionBody=`<div style="border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border);background:var(--bg2);">${(section.rows||[]).map((row,i)=>profileRow(row,i)).join('')}</div>`;
       el.innerHTML=`<div style="font-size:20px;font-weight:900;margin-bottom:18px;">${section.title}</div>${sectionBody}<div style="height:96px;"></div>${versionLbl}${backBar}`;
       if(_profileSectionView==='measurements')renderBodyCharts();
@@ -1447,6 +1451,7 @@ function renderSettings(){
     +`</div><div style="margin-bottom:8px;">`
     +hubRow('contact',contactTitle,icon.contact)
     +hubRow('whatsnew',whatsNewTitle,icon.news)
+    +hubRow('licenses',licensesTitle,icon.licenses)
     +hubRow('privacy',privacyTitle,icon.privacy)
     +hubRow('terms',termsTitle,icon.news)
     +`</div><div style="margin-bottom:8px;">`
@@ -1597,6 +1602,61 @@ function contactSectionHtml(){
   </div>`;
 }
 
+function licensesSectionHtml(){
+  const intro=tt({
+    pl:'BeeStrong korzysta z ponizszych bibliotek open-source i publicznych danych.',
+    en:'BeeStrong uses the open-source libraries and public datasets below.',
+    de:'BeeStrong nutzt die folgenden Open-Source-Bibliotheken und oeffentlichen Daten.',
+    es:'BeeStrong usa las siguientes bibliotecas open-source y datos publicos.'
+  });
+  const note=tt({
+    pl:'Te pozycje warto trzymac w aplikacji, bo czesc licencji wymaga zachowania informacji o autorach i warunkach uzycia.',
+    en:'These entries should stay in the app because some licenses require attribution and license notices.',
+    de:'Diese Eintraege sollten in der App bleiben, weil einige Lizenzen Urheber- und Lizenzhinweise verlangen.',
+    es:'Estas entradas deben mantenerse en la app porque algunas licencias requieren atribucion y avisos de licencia.'
+  });
+  const usedFor=tt({pl:'Uzycie',en:'Used for',de:'Verwendung',es:'Uso'});
+  const source=tt({pl:'Zrodlo',en:'Source',de:'Quelle',es:'Fuente'});
+  const licenseLabel=tt({pl:'Licencja',en:'License',de:'Lizenz',es:'Licencia'});
+  const items=[
+    {
+      name:'Chart.js',
+      license:'MIT License',
+      url:'https://www.chartjs.org/',
+      desc:tt({pl:'Wykresy progresu, rekordow i pomiarow.',en:'Progress, records, and measurements charts.',de:'Diagramme fuer Fortschritt, Rekorde und Messungen.',es:'Graficos de progreso, records y medidas.'})
+    },
+    {
+      name:'Supabase JavaScript Client',
+      license:'MIT License',
+      url:'https://github.com/supabase/supabase-js',
+      desc:tt({pl:'Logowanie, synchronizacja danych, Coach Mode i powiadomienia w czasie rzeczywistym.',en:'Authentication, data sync, Coach Mode, and realtime notifications.',de:'Anmeldung, Datensynchronisierung, Coach Mode und Echtzeit-Benachrichtigungen.',es:'Autenticacion, sincronizacion de datos, Coach Mode y notificaciones en tiempo real.'})
+    },
+    {
+      name:'free-exercise-db',
+      license:'Unlicense / Public Domain',
+      url:'https://github.com/yuhonas/free-exercise-db',
+      desc:tt({pl:'Baza cwiczen i powiazane grafiki cwiczen.',en:'Exercise database and related exercise images.',de:'Uebungsdatenbank und zugehoerige Uebungsbilder.',es:'Base de ejercicios e imagenes relacionadas.'})
+    }
+  ];
+  return `<div style="display:grid;gap:12px;">
+    <div style="font-size:13px;color:var(--text2);line-height:1.5;">${intro}</div>
+    ${items.map(item=>`<article style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px;flex-wrap:wrap;">
+        <div style="min-width:0;">
+          <div style="font-size:16px;font-weight:900;color:var(--text);">${escHtml(item.name)}</div>
+        </div>
+        <div style="font-size:11px;font-weight:900;color:var(--accent);background:var(--accentSoft);border:1px solid rgba(47,70,111,.18);border-radius:999px;padding:5px 8px;white-space:nowrap;">${escHtml(item.license)}</div>
+      </div>
+      <div style="display:grid;gap:8px;font-size:12px;color:var(--text2);">
+        <div><strong>${usedFor}:</strong> ${escHtml(item.desc)}</div>
+        <div><strong>${licenseLabel}:</strong> ${escHtml(item.license)}</div>
+        <div><strong>${source}:</strong> <a href="${item.url}" target="_blank" rel="noopener" style="color:var(--accent);font-weight:800;word-break:break-all;">${item.url}</a></div>
+      </div>
+    </article>`).join('')}
+    <div style="font-size:12px;color:var(--text3);line-height:1.45;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px;">${note}</div>
+  </div>`;
+}
+
 function defaultWhatsNewData(){
   return {
     version:'1.0',
@@ -1665,6 +1725,7 @@ function profileInfoSectionHtml(id){
   if(id==='terms')return legalDocHtml('terms')+profileActionCard(tt({pl:'Polityka prywatności',en:'Privacy Policy',de:'Datenschutz',es:'Politica de privacidad'}),tt({pl:'Pokaż dokument offline',en:'Show offline document',de:'Offline-Dokument anzeigen',es:'Mostrar documento offline'}),'openPrivacyPolicy()','margin-top:14px;');
   if(id==='contact')return contactSectionHtml();
   if(id==='whatsnew')return whatsNewSectionHtml();
+  if(id==='licenses')return licensesSectionHtml();
   return '';
 }
 
