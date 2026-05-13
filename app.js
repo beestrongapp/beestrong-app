@@ -2034,6 +2034,7 @@ function renderNotifications(){
     checkPendingClientRequests(true).finally(()=>setTimeout(()=>{window._pendingClientRequestRefresh=false;},1000));
   }
   cleanupNotifications();
+  const clearBtn=document.getElementById('clearNotificationsBtn');
   const items=[];
   const chatItems=ld('bs-notifications-v1',[]).slice(0,3);
   chatItems.forEach(n=>items.push({
@@ -2071,10 +2072,12 @@ function renderNotifications(){
     }));
   }
   if(!items.length){
+    if(clearBtn)clearBtn.style.display='none';
     el.innerHTML=`<div class="empty-state">${tt({pl:'Brak powiadomień.',en:'No notifications.',de:'Keine Benachrichtigungen.',es:'Sin notificaciones.'})}</div>`;
     markLocalNotificationsRead(chatItems);
     return;
   }
+  if(clearBtn)clearBtn.style.display=(chatItems.length||(isAdmin()&&updates.length))?'inline-flex':'none';
   const fmt=iso=>{try{return iso?new Date(iso).toLocaleString():'';}catch(e){return '';}};
   el.innerHTML=items.slice(0,3).map(item=>{
     const click=item.id?`openNotificationItem('${chatEsc(item.id)}')`:(item.action||'');
@@ -2091,6 +2094,15 @@ function renderNotifications(){
   }).join('');
   markLocalNotificationsRead(chatItems);
 }
+
+function clearNotifications(){
+  sv('bs-notifications-v1',[]);
+  sv('bs-admin-changelog-v1',[]);
+  cleanupNotifications();
+  renderNotifications();
+  updateNotificationBadge();
+}
+window.clearNotifications=clearNotifications;
 
 function openNotificationItem(id){
   const entries=ld('bs-notifications-v1',[]);
