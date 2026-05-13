@@ -1693,6 +1693,13 @@ async function sendCoachCheckin(invId,date){
   };
   const{error}=await sb.from('coach_checkins').insert(payload);
   if(error)return showSyncToast(error.message,'error');
+  if(typeof sendPushToUser==='function')sendPushToUser(inv.coach_id,{
+    type:'coach_checkin',
+    title:'BeeStrong',
+    body:tt({pl:'Klient wysłał nowy check-in z pomiarami.',en:'A client sent a new measurement check-in.',de:'Ein Kunde hat einen neuen Messungs-Check-in gesendet.',es:'Un cliente envió un nuevo check-in de medidas.'}),
+    url:'./?screen=notifications',
+    tag:`coach-checkin-${inv.id}-${date}`,
+  });
   showSyncToast(tt({pl:'Check-in wysłany do coacha ✓',en:'Check-in sent to coach ✓',de:'Check-in gesendet ✓',es:'Check-in enviado ✓'}),'success');
 }
 
@@ -1771,6 +1778,22 @@ function rememberChatMessageNotification(payload){
 }
 
 window.rememberChatMessageNotification=rememberChatMessageNotification;
+
+function rememberCoachCheckinNotification(payload){
+  const c=payload?.new;
+  if(!c||!S.user||c.coach_id!==S.user.id)return;
+  addAppNotification({
+    type:'coach_checkin',
+    title:tt({pl:'Nowy check-in klienta',en:'New client check-in',de:'Neuer Kunden-Check-in',es:'Nuevo check-in de cliente'}),
+    body:tt({pl:'Klient wysłał nowe pomiary.',en:'A client sent new measurements.',de:'Ein Kunde hat neue Messungen gesendet.',es:'Un cliente envió nuevas medidas.'}),
+    at:c.created_at,
+    invitationId:c.invitation_id,
+    action:"showScreen('clients')",
+  });
+  showSyncToast(tt({pl:'Nowy check-in klienta',en:'New client check-in',de:'Neuer Kunden-Check-in',es:'Nuevo check-in de cliente'}),'success');
+}
+
+window.rememberCoachCheckinNotification=rememberCoachCheckinNotification;
 
 // ── INVITATION BANNERS (client side) ──────────────────────
 

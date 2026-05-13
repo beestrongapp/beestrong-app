@@ -279,6 +279,10 @@ function exSvgByGroup(gk){
   return svgs[gk]||svgs.chest;
 }
 
+function dumbbellFallbackSvg(){
+  return `<svg viewBox="0 0 48 48" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:32px;height:32px;"><path d="M5 20v8M10 17v14M16 21l16 6M32 21l-16 6M38 17v14M43 20v8"/></svg>`;
+}
+
 const DEFAULT_TEMPLATES=[
   {id:1,name:'Upper A',types:['upper'],restDefault:90,exercises:[
     {id:11,en:'Bench Press',pl:'Wyciskanie sztangi płasko',sets:4,reps:6,weight:80,sup:false,gk:'chest',equipment:'barbell'},
@@ -341,10 +345,10 @@ function showExPicker(currentExs,onConfirm){
 
   function thumbHtml(e,gk){
     if(e.img){
-      const svgFallback=exSvgByGroup(gk).replace(/`/g,'\`');
+      const svgFallback=dumbbellFallbackSvg().replace(/`/g,'\`');
       return`<img src="${e.img}" style="width:48px;height:48px;object-fit:contain;border-radius:6px;background:var(--bg4);" loading="lazy" onerror="this.outerHTML=\`${svgFallback}\`"/>`;
     }
-    return exSvgByGroup(gk);
+    return dumbbellFallbackSvg();
   }
 
   function updateList(){
@@ -374,7 +378,7 @@ function showExPicker(currentExs,onConfirm){
         const isSel=selected.has(key);
         const safeId=(e.id||'').toString().replace(/'/g,"\'");
         return`<div class="ex-picker-item ${isSel?'selected':''}" onclick="toggleExPick('${safeId}','${gk}')">
-          <div class="ex-thumb">${e.img?`<img src="${e.img}" style="width:48px;height:48px;object-fit:contain;border-radius:6px;" loading="lazy"/>`:`${exSvgByGroup(gk)}`}</div>
+          <div class="ex-thumb">${thumbHtml(e,gk)}</div>
           <div class="ex-info"><div class="ex-info-name">${nm}</div><div class="ex-info-group">${label}</div></div>
           <button class="ex-info-btn" onclick="event.stopPropagation();showExerciseDetail('${safeId}','${gk}')" aria-label="Details"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
           <div class="ex-check">${isSel?'✓':''}</div>

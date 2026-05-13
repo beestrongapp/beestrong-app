@@ -744,6 +744,12 @@ function setupRealtimeSubscriptions(){
     .subscribe();
   _realtimeChannels.push(chatReceivedCh);
 
+  const coachCheckinCh=sb.channel('bs-coach-checkins-'+S.user.id)
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'coach_checkins',filter:`coach_id=eq.${S.user.id}`},
+      payload=>{ if(typeof rememberCoachCheckinNotification==='function')rememberCoachCheckinNotification(payload); })
+    .subscribe();
+  _realtimeChannels.push(coachCheckinCh);
+
   const friendInvitedCh=sb.channel('bs-friend-invites-in-'+S.user.id)
     .on('postgres_changes',{event:'INSERT',schema:'public',table:'friend_invitations',filter:`invitee_id=eq.${S.user.id}`},
       payload=>{
