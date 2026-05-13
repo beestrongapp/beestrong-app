@@ -163,9 +163,9 @@ input.si:focus{outline:none;border-color:var(--accent);}
 @keyframes timerPulse{0%,100%{opacity:1;}50%{opacity:0.7;}}
 .timer-display{font-size:52px;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums;letter-spacing:-3px;line-height:1;}
 .timer-label{font-size:12px;color:var(--accent);opacity:0.7;margin-top:6px;}
-.timer-controls{display:grid;grid-template-columns:74px minmax(82px,1fr) 74px;gap:8px;align-items:center;justify-content:center;margin:10px auto 0;max-width:260px;}
+.timer-controls{display:grid;grid-template-columns:74px 58px 74px;gap:8px;align-items:center;justify-content:center;margin:10px auto 0;max-width:230px;}
 .timer-adjust,.timer-skip{border:1px solid var(--border);border-radius:9px;background:var(--bg2);color:var(--text);font-family:inherit;font-size:11px;font-weight:800;line-height:1;padding:9px 8px;cursor:pointer;min-height:34px;}
-.timer-skip{font-size:12px;background:var(--bg3);}
+.timer-skip{font-size:11px;background:var(--bg3);}
 .timer-minus{background:rgba(217,45,32,0.10);border-color:rgba(217,45,32,0.22);color:#c94a3f;}
 .timer-plus{background:rgba(35,134,84,0.11);border-color:rgba(35,134,84,0.24);color:#2d8659;}
 input[type=text],input[type=number],input[type=date],input[type=email],input[type=password],textarea{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:11px 13px;font-size:15px;color:var(--text);width:100%;font-family:inherit;-webkit-appearance:none;transition:border-color 0.15s;}
@@ -343,7 +343,6 @@ body.workout-active .mobile-fab-overlay{display:none!important;}
 .qa-tile{background:var(--bg2);border:1px solid var(--border);border-radius:16px;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;cursor:pointer;transition:transform 0.12s,background 0.12s;padding:8px;-webkit-tap-highlight-color:transparent;}
 .qa-tile:active{transform:scale(0.93);background:var(--bg3);}
 .qa-tile-icon{width:38px;height:38px;display:flex;align-items:center;justify-content:center;background:var(--accent-dim);border-radius:12px;color:var(--accent);flex-shrink:0;}
-.measure-shape-icon{display:inline-block;width:22px;height:22px;background:currentColor;mask:url('./shape.png') center / contain no-repeat;-webkit-mask:url('./shape.png') center / contain no-repeat;}
 .qa-tile-label{font-size:12px;font-weight:600;text-align:center;color:var(--text);line-height:1.25;max-width:100%;}
 .qa-tile-primary{background:var(--accent);border-color:var(--accent);}
 .qa-tile-primary .qa-tile-icon{background:rgba(255,255,255,0.18);color:#fff;}

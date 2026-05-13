@@ -1133,7 +1133,7 @@ function _renderTimerBar(){
   }
   const isWarning=S.timerSecs>0&&S.timerSecs<=5;
   tb.className='timer-bar'+(isWarning?' timer-warning':'');
-  tb.innerHTML=`<div class="timer-display" style="${isWarning?'color:var(--red);':''}">${min}:${sec}</div><div class="timer-label">${t('restBreak')}</div><div class="timer-controls"><button class="timer-adjust timer-minus" onclick="adjustTimer(-10)">- 10 sec</button><button class="timer-skip" onclick="stopTimer()">${t('skipRest')}</button><button class="timer-adjust timer-plus" onclick="adjustTimer(10)">+ 10 sec</button></div>`;
+  tb.innerHTML=`<div class="timer-display" style="${isWarning?'color:var(--red);':''}">${min}:${sec}</div><div class="timer-label">${t('restBreak')}</div><div class="timer-controls"><button class="timer-adjust timer-minus" onclick="adjustTimer(-10)">- 10 sec</button><button class="timer-skip" onclick="stopTimer()">SKIP</button><button class="timer-adjust timer-plus" onclick="adjustTimer(10)">+ 10 sec</button></div>`;
 }
 
 function confirmFinishWorkout(){
