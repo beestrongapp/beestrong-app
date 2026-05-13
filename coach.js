@@ -608,20 +608,6 @@ function pendingCoachCardHtml(inv){
   </div>`;
 }
 
-function declinedCoachCardHtml(inv){
-  const name=chatEsc(inv.coach_name||inv.coach_email||'Coach');
-  const reason=(inv.decline_reason||'').trim();
-  return `<div class="client-card" style="cursor:default;align-items:flex-start;">
-    <div style="width:38px;height:38px;border-radius:50%;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--text2);flex-shrink:0;">${name[0]?.toUpperCase()||'C'}</div>
-    <div class="client-card-info">
-      <div class="client-card-name">${name}</div>
-      <div class="client-card-meta">${chatEsc(inv.coach_email||'')}</div>
-      ${reason?`<div style="font-size:12px;color:var(--text2);margin-top:6px;line-height:1.35;">${chatEsc(reason)}</div>`:''}
-    </div>
-    <span class="client-status-badge client-status-declined">${tt({pl:'Odrzucono',en:'Declined',de:'Abgelehnt',es:'Rechazado'})}</span>
-  </div>`;
-}
-
 async function requestCoach(coachId){
   if(!sb||!S.user||!coachId)return;
   try{
@@ -728,13 +714,12 @@ function filterClients(){
 function renderClientList(invitations){
   const el=document.getElementById('clientList');
   if(!el)return;
-  if(!invitations.length){
+  const pending=invitations.filter(i=>i.status==='pending');
+  const accepted=invitations.filter(i=>i.status==='accepted');
+  if(!pending.length&&!accepted.length){
     el.innerHTML=`<div style="text-align:center;color:var(--text3);padding:32px;">${tt({pl:'Brak klientów',en:'No clients found',de:'Keine Klienten',es:'Sin clientes'})}</div>`;
     return;
   }
-  const pending=invitations.filter(i=>i.status==='pending');
-  const accepted=invitations.filter(i=>i.status==='accepted');
-  const declined=invitations.filter(i=>i.status==='declined');
   let html='';
   const sectionHdr=(lbl)=>`<div class="section-label" style="margin-top:16px;">${lbl}</div>`;
   if(accepted.length){
@@ -745,10 +730,6 @@ function renderClientList(invitations){
     html+=sectionHdr(tt({pl:'Oczekujące zaproszenia',en:'Pending invitations',de:'Ausstehende Einladungen',es:'Invitaciones pendientes'}));
     html+=pending.map(inv=>clientCardHtml(inv)).join('');
   }
-  if(declined.length){
-    html+=sectionHdr(tt({pl:'Odrzucone',en:'Declined',de:'Abgelehnt',es:'Rechazados'}));
-    html+=declined.map(inv=>clientCardHtml(inv)).join('');
-  }
   el.innerHTML=html;
 }
 
@@ -756,7 +737,6 @@ function clientCardHtml(inv){
   const statusLabel={
     pending:tt({pl:'Oczekuje',en:'Pending',de:'Ausstehend',es:'Pendiente'}),
     accepted:tt({pl:'Aktywny',en:'Active',de:'Aktiv',es:'Activo'}),
-    declined:tt({pl:'Odrzucono',en:'Declined',de:'Abgelehnt',es:'Rechazado'}),
   }[inv.status]||inv.status;
   const clickable=inv.status==='accepted';
   const name=inv.client_display_name||inv.client_email||'—';

@@ -1479,6 +1479,19 @@ function profileActionCard(title,subtitle,action,extraStyle=''){
   </div>`;
 }
 
+function proSubscriptionItems(){
+  const B=(pl,en,de,es)=>tt({pl,en,de,es});
+  return [
+    `📋 ${B('Nieograniczone szablony treningowe','Unlimited workout templates','Unbegrenzte Trainingsvorlagen','Plantillas de entrenamiento ilimitadas')}`,
+    `🏋️ ${B('Pełna baza ~700 ćwiczeń z obrazkami','Full ~700-exercise database with images','Volle ~700-Übungen-Datenbank mit Bildern','Base de ~700 ejercicios con imágenes')}`,
+    `🔧 ${B('Filtr po sprzęcie (multi-choose)','Equipment filter (multi-choose)','Gerätefilter (Mehrfachauswahl)','Filtro de equipo (multi-selección)')}`,
+    `📊 ${B('Twoje wyniki: top ćwiczenia + analiza per partia','Your Lifts: top exercises + per-muscle analysis','Deine Leistung: Top-Übungen + Muskel-Analyse','Tu Rendimiento: top ejercicios + análisis por músculo')}`,
+    `📏 ${B('Wszystkie pomiary ciała + wykresy','All body measurements + charts','Alle Körpermaße + Diagramme','Todas las medidas corporales + gráficos')}`,
+    `💾 ${B('Eksport i backup danych','Data export and backup','Datenexport und Backup','Exportación y backup de datos')}`,
+    `🚫 ${B('Bez reklam','Ad-free','Werbefrei','Sin anuncios')}`,
+  ];
+}
+
 function profileLoginDataHtml(dataState){
   if(!S.user){
     return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;margin-bottom:14px;">
@@ -1508,12 +1521,7 @@ function profileSubscriptionHtml(){
       tt({pl:'Szablony treningowe, podstawowe pomiary i tryb offline.',en:'Workout templates, basic measurements, and offline mode.',de:'Trainingsvorlagen, Basismessungen und Offline-Modus.',es:'Plantillas, medidas basicas y modo offline.'}),
       tt({pl:'Dodawanie znajomych i dane zapisane lokalnie na urządzeniu.',en:'Add friends and keep data stored locally on your device.',de:'Freunde hinzufuegen und Daten lokal auf dem Geraet speichern.',es:'Anade amigos y guarda datos localmente en tu dispositivo.'}),
     ]},
-    {name:'PRO',price:'£5.99',sub:tt({pl:'Jednorazowy zakup',en:'One-time purchase',de:'Einmalkauf',es:'Compra unica'}),cta:{label:'BUY',action:'buyPro()'},items:[
-      tt({pl:'Wszystko z FREE oraz pełna appka dla osoby trenującej solo.',en:'Everything in FREE plus the full solo training experience.',de:'Alles aus FREE plus die volle Solo-Trainingserfahrung.',es:'Todo lo de FREE mas la experiencia completa para entrenar solo.'}),
-      tt({pl:'Nielimitowane szablony, pełna baza ćwiczeń i filtrowanie po sprzęcie.',en:'Unlimited templates, full exercise database, and equipment filters.',de:'Unbegrenzte Vorlagen, volle Uebungsdatenbank und Geraetefilter.',es:'Plantillas ilimitadas, base completa de ejercicios y filtros por equipo.'}),
-      tt({pl:'Zaawansowana analityka, pełne pomiary ciała, eksport i cloud backup.',en:'Advanced analytics, full body measurements, export, and cloud backup.',de:'Erweiterte Analysen, alle Koerpermessungen, Export und Cloud-Backup.',es:'Analitica avanzada, todas las medidas corporales, exportacion y backup en nube.'}),
-      tt({pl:'Płacisz raz i zachowujesz Pro na zawsze.',en:'Pay once and keep Pro forever.',de:'Einmal zahlen und Pro dauerhaft behalten.',es:'Paga una vez y conserva Pro para siempre.'}),
-    ]},
+    {name:'PRO',price:'£5.99',sub:tt({pl:'Jednorazowy zakup',en:'One-time purchase',de:'Einmalkauf',es:'Compra unica'}),cta:{label:'BUY',action:'buyPro()'},items:proSubscriptionItems()},
     {name:'COACH',price:'£19.99 / month',sub:tt({pl:'Miesięczna subskrypcja',en:'Monthly subscription',de:'Monatliches Abo',es:'Suscripcion mensual'}),cta:{label:'SUBSCRIBE',action:'subscribeCoach()'},items:[
       tt({pl:'Wszystko z PRO oraz narzędzia dla trenera personalnego.',en:'Everything in PRO plus tools for personal trainers.',de:'Alles aus PRO plus Tools fuer Personal Trainer.',es:'Todo lo de PRO mas herramientas para entrenadores personales.'}),
       tt({pl:'Lista klientów, zaproszenia email i przypisywanie programów.',en:'Client list, email invitations, and program assignments.',de:'Klientenliste, E-Mail-Einladungen und Programmzuweisung.',es:'Lista de clientes, invitaciones por email y asignacion de programas.'}),
@@ -1963,11 +1971,7 @@ function openSubscriptionModal(){
       tt({pl:'Podstawowe pomiary ciała i dodawanie znajomych.',en:'Basic body measurements and adding friends.',de:'Basismessungen und Freunde hinzufuegen.',es:'Medidas basicas y anadir amigos.'}),
       tt({pl:'Dane zapisane lokalnie na urządzeniu.',en:'Data stored locally on your device.',de:'Daten lokal auf deinem Geraet.',es:'Datos guardados localmente en tu dispositivo.'}),
     ]},
-    {name:'PRO',price:'£5.99',sub:tt({pl:'Jednorazowy zakup',en:'One-time purchase',de:'Einmalkauf',es:'Compra unica'}),cta:{label:'BUY',action:'buyPro()'},items:[
-      tt({pl:'Wszystko z FREE oraz pełna appka solo.',en:'Everything in FREE plus the full solo app.',de:'Alles aus FREE plus die volle Solo-App.',es:'Todo lo de FREE mas la app completa solo.'}),
-      tt({pl:'Nielimitowane szablony, pełna baza ćwiczeń i filtrowanie po sprzęcie.',en:'Unlimited templates, full exercise database, and equipment filters.',de:'Unbegrenzte Vorlagen, volle Uebungsdatenbank und Geraetefilter.',es:'Plantillas ilimitadas, base completa de ejercicios y filtros por equipo.'}),
-      tt({pl:'Analityka, pełne pomiary, eksport, cloud backup i brak reklam.',en:'Analytics, full measurements, export, cloud backup, and no ads.',de:'Analysen, alle Messungen, Export, Cloud-Backup und werbefrei.',es:'Analitica, medidas completas, exportacion, backup en nube y sin anuncios.'}),
-    ]},
+    {name:'PRO',price:'£5.99',sub:tt({pl:'Jednorazowy zakup',en:'One-time purchase',de:'Einmalkauf',es:'Compra unica'}),cta:{label:'BUY',action:'buyPro()'},items:proSubscriptionItems()},
     {name:'COACH',price:'£19.99 / month',sub:tt({pl:'Miesięczna subskrypcja',en:'Monthly subscription',de:'Monatliches Abo',es:'Suscripcion mensual'}),cta:{label:'SUBSCRIBE',action:'subscribeCoach()'},items:[
       tt({pl:'Wszystko z PRO oraz Coach Mode.',en:'Everything in PRO plus Coach Mode.',de:'Alles aus PRO plus Coach Mode.',es:'Todo lo de PRO mas Coach Mode.'}),
       tt({pl:'Klienci, zaproszenia email, programy i podgląd progresu.',en:'Clients, email invites, programs, and progress visibility.',de:'Klienten, E-Mail-Einladungen, Programme und Fortschrittsansicht.',es:'Clientes, invitaciones por email, programas y vista de progreso.'}),
