@@ -39,7 +39,7 @@ function renderDashboard(){
       action:"showScreen('calendar')",
     },
     {
-      icon:'<span class="measure-shape-icon" aria-hidden="true"></span>',
+      icon:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2c1.7 0 2.9 1.1 2.9 2.8s-1.2 3-2.9 3-2.9-1.3-2.9-3 1.2-2.8 2.9-2.8Z"/><path d="M8.6 9.8 5.8 13c-.5.6-1.4.7-2 .2-.6-.5-.7-1.4-.2-2l3.3-3.8c.5-.6 1.2-.9 2-.9h6.2c.8 0 1.5.3 2 .9l3.3 3.8c.5.6.4 1.5-.2 2-.6.5-1.5.4-2-.2l-2.8-3.2"/><path d="M9.5 10.2 8.7 15l-1.5 4.4c-.3.8.1 1.6.9 1.9.8.3 1.6-.1 1.9-.9l2-5.3 2 5.3c.3.8 1.1 1.2 1.9.9.8-.3 1.2-1.1.9-1.9L15.3 15l-.8-4.8"/></svg>',
       labelKey:{pl:'Pomiary',en:'Measurements',de:'Messungen',es:'Medidas'},
       action:'openSettingsMeasurements()',
     },
@@ -367,15 +367,20 @@ window.showRecordDetail=function(name){
     }
   }
   const sorted=Object.values(sets).sort((a,b)=>b.e1RM-a.e1RM);
+  const chartData=Object.values(sets).sort((a,b)=>a.date.localeCompare(b.date));
+  const chartId='recordChart_'+Date.now();
   const ov=document.createElement('div');ov.className='modal-overlay';
   ov.innerHTML=`<div class="modal">
     <div class="modal-handle"></div>
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px;">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;">
       <div>
         <div style="font-size:18px;font-weight:700;">${tt({pl:'Rekordy',en:'Records',de:'Rekorde',es:'Récords'})}</div>
         <div style="font-size:13px;color:var(--text2);margin-top:2px;">${name}</div>
       </div>
-      <button onclick="closeModal();" style="background:none;border:none;color:var(--text3);font-size:24px;cursor:pointer;padding:0 4px;line-height:1;">×</button>
+      <button onclick="closeModal();" aria-label="Close" style="width:38px;height:38px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-size:28px;cursor:pointer;padding:0;line-height:1;display:flex;align-items:center;justify-content:center;">×</button>
+    </div>
+    <div style="position:relative;width:100%;height:190px;margin:8px 0 14px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:10px;">
+      <canvas id="${chartId}"></canvas>
     </div>
     <div style="max-height:62vh;overflow-y:auto;margin-top:12px;">
       ${sorted.map((s,i)=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);${i===0?'background:var(--accent-dim);margin:0 -4px;padding:12px 4px;border-radius:8px;margin-bottom:4px;':''}">
@@ -392,6 +397,15 @@ window.showRecordDetail=function(name){
     </div>
   </div>`;
   document.body.appendChild(ov);S.modal=ov;
+  setTimeout(()=>{
+    const ctx=document.getElementById(chartId);
+    if(!ctx||typeof Chart==='undefined'||!chartData.length)return;
+    const labels=chartData.map(s=>{const parts=String(s.date||'').split('-');return parts.length===3?`${parts[2]}.${parts[1]}`:s.date;});
+    new Chart(ctx,{type:'line',data:{labels,datasets:[
+      {label:unitW(),data:chartData.map(s=>dispW(s.weight)),borderColor:'#2f405f',backgroundColor:'rgba(47,64,95,0.08)',borderWidth:2.5,pointRadius:4,pointBackgroundColor:'#2f405f',tension:0.3},
+      {label:'e1RM',data:chartData.map(s=>dispW(s.e1RM)),borderColor:'#2d8659',backgroundColor:'rgba(45,134,89,0.08)',borderWidth:2.5,pointRadius:4,pointBackgroundColor:'#2d8659',tension:0.3}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{boxWidth:10,font:{size:10}}}},scales:{y:{grid:{color:'rgba(128,128,128,0.10)'},ticks:{font:{size:10},callback:v=>v+unitW()}},x:{grid:{display:false},ticks:{font:{size:10}}}}}});
+  },50);
 };
 
 window.setProgressTab=function(tab){
@@ -662,7 +676,7 @@ function showTplModal(id){
         setRows+=`<div style="display:grid;grid-template-columns:20px 1fr 1fr;gap:6px;align-items:center;margin-top:6px;">
           <div style="font-size:11px;color:var(--text3);text-align:center;">${si+1}</div>
           <input class="si" type="number" placeholder="${t('reps')}" value="${s.reps}" oninput="updSetVal(${i},${si},'reps',this.value)" style="font-size:13px;padding:7px 4px;"/>
-          <input class="si" type="number" placeholder="${unitW()}" value="${dispW(s.weight)}" oninput="updSetVal(${i},${si},'weight',this.value)" style="font-size:13px;padding:7px 4px;"/>
+          <input class="si" type="number" placeholder="${unitW()}" value="${dispW(s.weight)}" onfocus="clearZeroInput(this)" oninput="updSetVal(${i},${si},'weight',this.value)" style="font-size:13px;padding:7px 4px;"/>
         </div>`;
       });
 
@@ -714,6 +728,7 @@ function showTplModal(id){
   }
 
   window.toggleType=tp=>{const i=curTypes.indexOf(tp);if(i>=0)curTypes.splice(i,1);else curTypes.push(tp);renderTplModal();};
+  window.clearZeroInput=input=>{if(input&&(+input.value===0))input.value='';else input?.select?.();};
   window.rmEx=i=>{exs.splice(i,1);renderTplModal();};
   window.toggleSup=i=>{exs[i].sup=!exs[i].sup;renderTplModal();};
   window.updSetVal=(ei,si,field,val)=>{
@@ -1239,7 +1254,7 @@ function renderSettings(){
     language:'<circle cx="12" cy="12" r="9"/><path d="M12 3a15 15 0 0 1 0 18M3 12h18"/><path d="M3.6 8h16.8M3.6 16h16.8"/>',
     units:'<path d="M3 3h18M3 9h18M3 15h18M3 21h18M9 3v18M15 3v18"/>',
     timer:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
-    measure:'shape',
+    measure:'<path d="M12 3.2c1.7 0 2.9 1.1 2.9 2.8s-1.2 3-2.9 3-2.9-1.3-2.9-3 1.2-2.8 2.9-2.8Z"/><path d="M8.6 9.8 5.8 13c-.5.6-1.4.7-2 .2-.6-.5-.7-1.4-.2-2l3.3-3.8c.5-.6 1.2-.9 2-.9h6.2c.8 0 1.5.3 2 .9l3.3 3.8c.5.6.4 1.5-.2 2-.6.5-1.5.4-2-.2l-2.8-3.2"/><path d="M9.5 10.2 8.7 15l-1.5 4.4c-.3.8.1 1.6.9 1.9.8.3 1.6-.1 1.9-.9l2-5.3 2 5.3c.3.8 1.1 1.2 1.9.9.8-.3 1.2-1.1.9-1.9L15.3 15l-.8-4.8"/>',
     contact:'<path d="M4 4h16v12H5.2L4 19.5V4z"/><path d="M8 9h8M8 13h5"/>',
     news:'<path d="M4 4h13a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3V4z"/><path d="M8 8h6M8 12h8M8 16h5"/>',
     privacy:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9.5 12l1.7 1.7 3.6-4.2"/>',
@@ -1380,7 +1395,7 @@ function renderSettings(){
   }
   const measurementsTitle=tt({pl:'Twoje pomiary',en:'Body measurements',de:'Körpermaße',es:'Medidas corporales'});
   const measurementRows=[
-    {key:'measurements',label:measurementsTitle,value:measValue,icon:'<span class="measure-shape-icon" aria-hidden="true"></span>',action:'openSettingsMeasurements'},
+    {key:'measurements',label:measurementsTitle,value:measValue,icon:svg(icon.measure),action:'openSettingsMeasurements'},
   ];
   const contactRows=[
     {key:'contact',label:'Contact',value:tt({pl:'Wkrótce',en:'Coming soon',de:'Bald verfügbar',es:'Próximamente'}),icon:svg(icon.contact),action:'openProfilePlaceholderContact'},
