@@ -48,12 +48,14 @@ function initSupabase(){
         S.user={id:session.user.id,email:session.user.email,name:(session.user.user_metadata?.display_name||'').trim()};
         if(S.coachMode&&!isCoachAllowed()){S.coachMode=false;saveAll();}
         if(!wasLoggedIn&&(event==='SIGNED_IN'||event==='INITIAL_SESSION')){
-          if(event==='SIGNED_IN'){setTimeout(async()=>{await upsertProfile();await syncProfileFlags();await postLoginSyncFlow();checkPendingInvitations();setupRealtimeSubscriptions();},400);}
-          if(event==='INITIAL_SESSION')setTimeout(async()=>{await upsertProfile();await syncProfileFlags();checkPendingInvitations();setupRealtimeSubscriptions();autoSyncFromCloud();},600);
+          if(event==='SIGNED_IN'){setTimeout(async()=>{await upsertProfile();await syncProfileFlags();await postLoginSyncFlow();checkPendingInvitations();if(typeof checkPendingClientRequests==='function')checkPendingClientRequests(false);setupRealtimeSubscriptions();},400);}
+          if(event==='INITIAL_SESSION')setTimeout(async()=>{await upsertProfile();await syncProfileFlags();checkPendingInvitations();if(typeof checkPendingClientRequests==='function')checkPendingClientRequests(false);setupRealtimeSubscriptions();autoSyncFromCloud();},600);
+          setTimeout(()=>{if(typeof refreshPushSubscription==='function')refreshPushSubscription();},1200);
         }
       } else {
         S.user=null;
         S.pendingInvites=[];
+        S.pendingClientRequests=[];
         clearLocalUserData();
       }
       if(typeof renderSettings==='function')renderSettings();
@@ -715,6 +717,13 @@ function setupRealtimeSubscriptions(){
       ()=>{ checkPendingInvitations(); })
     .subscribe();
   _realtimeChannels.push(invCh);
+
+  // 1b. Client requests channel (coach receives Choose requests in real-time)
+  const coachReqCh=sb.channel('bs-coach-requests-'+S.user.id)
+    .on('postgres_changes',{event:'*',schema:'public',table:'coach_invitations',filter:`coach_id=eq.${S.user.id}`},
+      ()=>{ if(typeof checkPendingClientRequests==='function')checkPendingClientRequests(); })
+    .subscribe();
+  _realtimeChannels.push(coachReqCh);
 
   // 2. Coach program assignments (client gets program immediately when coach assigns)
   const assignCh=sb.channel('bs-assignments-'+S.user.id)

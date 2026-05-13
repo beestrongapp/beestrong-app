@@ -320,13 +320,15 @@ const PRO_PRICE='£5.99';
 const COACH_WHITELIST=[
   'deka.dsz@gmail.com', // ← zamień na swój email
   'beestrong@beestrongapp.com',
+  'beestrong.pt@gmail.com',
+  'dylanlaura1513@gmail.com'
 ];
 function isCoachAllowed(){
   const email=(S.user?.email||'').toLowerCase().trim();
   return COACH_WHITELIST.map(e=>e.toLowerCase().trim()).includes(email);
 }
 
-const ADMIN_EMAILS=['beestrong@beestrongapp.com','deka.dsz@gmail.com'];
+const ADMIN_EMAILS=['beestrong@beestrongapp.com','deka.dsz@gmail.com','beestrong.pt@gmail.com','dylanlaura1513@gmail.com'];
 function isAdmin(){return S.user&&ADMIN_EMAILS.includes(S.user.email);}
 // ===== EXERCISE PICKER =====
 function showExPicker(currentExs,onConfirm){

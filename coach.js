@@ -784,6 +784,7 @@ async function acceptClientRequest(invId){
   const{error}=await sb.from('coach_invitations').update({status:'accepted',responded_at:new Date().toISOString(),decline_reason:null}).eq('id',invId).eq('coach_id',S.user.id);
   if(error)return showSyncToast(error.message,'error');
   showSyncToast(tt({pl:'Klient zaakceptowany.',en:'Client accepted.',de:'Klient akzeptiert.',es:'Cliente aceptado.'}),'success');
+  if(typeof checkPendingClientRequests==='function')checkPendingClientRequests(false);
   renderClients();
 }
 window.acceptClientRequest=acceptClientRequest;
@@ -813,6 +814,7 @@ async function declineClientRequest(invId){
   if(error)return showSyncToast(error.message,'error');
   closeModal();
   showSyncToast(tt({pl:'Zaproszenie odrzucone.',en:'Invitation declined.',de:'Einladung abgelehnt.',es:'Invitación rechazada.'}),'success');
+  if(typeof checkPendingClientRequests==='function')checkPendingClientRequests(false);
   renderClients();
 }
 window.declineClientRequest=declineClientRequest;
@@ -1815,6 +1817,41 @@ async function checkPendingInvitations(){
     console.warn('checkPendingInvitations',e);
   }
 }
+
+async function checkPendingClientRequests(rerenderNotifications=true){
+  if(!sb||!S.user||!S.coachMode)return;
+  try{
+    const{data,error}=await sb.from('coach_invitations')
+      .select('*')
+      .eq('coach_id',S.user.id)
+      .eq('status','pending')
+      .order('created_at',{ascending:false});
+    if(error)throw error;
+    const requests=data||[];
+    const clientIds=[...new Set(requests.map(inv=>inv.client_user_id).filter(Boolean))];
+    if(clientIds.length){
+      const{data:profiles,error:profilesError}=await sb.from('profiles')
+        .select('id,email,display_name')
+        .in('id',clientIds);
+      if(!profilesError&&profiles){
+        const byId=new Map(profiles.map(p=>[p.id,p]));
+        requests.forEach(inv=>{
+          const profile=byId.get(inv.client_user_id);
+          if(profile){
+            inv.client_display_name=profile.display_name||null;
+            inv.client_email=inv.client_email||profile.email;
+          }
+        });
+      }
+    }
+    S.pendingClientRequests=requests;
+    if(typeof updateNotificationBadge==='function')updateNotificationBadge();
+    if(rerenderNotifications&&document.getElementById('screen-notifications')?.classList.contains('active')&&typeof renderNotifications==='function')renderNotifications();
+  }catch(e){
+    console.warn('checkPendingClientRequests',e);
+  }
+}
+window.checkPendingClientRequests=checkPendingClientRequests;
 
 function renderInvitationBanners(){
   const el=document.getElementById('inviteBanners');

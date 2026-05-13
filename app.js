@@ -2025,6 +2025,10 @@ window.openProfilePlaceholderPrivacy=openPrivacyPolicy;
 function renderNotifications(){
   const el=document.getElementById('notificationsContent');
   if(!el)return;
+  if(typeof checkPendingClientRequests==='function'&&!window._pendingClientRequestRefresh){
+    window._pendingClientRequestRefresh=true;
+    checkPendingClientRequests(true).finally(()=>setTimeout(()=>{window._pendingClientRequestRefresh=false;},1000));
+  }
   cleanupNotifications();
   const items=[];
   const chatItems=ld('bs-notifications-v1',[]).slice(0,3);
@@ -2043,6 +2047,14 @@ function renderNotifications(){
       body:`${inv.coach_name||inv.coach_email||'Coach'} ${tt({pl:'chce mieć wgląd w Twoje treningi.',en:'wants to follow your progress.',de:'möchte deinen Fortschritt verfolgen.',es:'quiere seguir tu progreso.'})}`,
       at:inv.created_at,
       action:"showScreen('dashboard')",
+    }));
+  }
+  if(S.pendingClientRequests&&S.pendingClientRequests.length){
+    S.pendingClientRequests.forEach(inv=>items.push({
+      title:tt({pl:'Nowa prośba od klienta',en:'New client request',de:'Neue Klientenanfrage',es:'Nueva solicitud de cliente'}),
+      body:`${inv.client_display_name||inv.client_email||tt({pl:'Klient',en:'Client',de:'Klient',es:'Cliente'})} ${tt({pl:'chce wybrać Cię jako coacha.',en:'wants to choose you as coach.',de:'möchte dich als Coach wählen.',es:'quiere elegirte como coach.'})}`,
+      at:inv.created_at,
+      action:"showScreen('clients')",
     }));
   }
   const updates=ld('bs-admin-changelog-v1',[]).slice(0,3);
@@ -2187,7 +2199,8 @@ function markLocalNotificationsRead(items){
 function getUnreadNotificationCount(){
   const local=cleanupNotifications().filter(n=>!n.read).length;
   const pending=(S.pendingInvites||[]).length;
-  return local+pending;
+  const clientRequests=(S.pendingClientRequests||[]).length;
+  return local+pending+clientRequests;
 }
 
 function updateNotificationBadge(){
