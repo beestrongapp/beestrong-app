@@ -1541,9 +1541,11 @@ function openManualWorkout(dateStr){
             <div style="font-size:11px;color:var(--text3);text-align:center;">${si+1}</div>
             <input class="si" type="number" placeholder="${L?'Powt':'Reps'}" value="${s.reps}"
               style="font-size:13px;padding:6px 4px;"
+              onfocus="clearZeroInput(this)"
               oninput="window.mwExercises[${ei}].sets[${si}].reps=+this.value"/>
             <input class="si" type="number" placeholder="${unitW()}" value="${dispW(s.weight)}"
               style="font-size:13px;padding:6px 4px;"
+              onfocus="clearZeroInput(this)"
               oninput="window.mwExercises[${ei}].sets[${si}].weight=inputToKg(+this.value)"/>
           </div>`).join('');
         return`<div class="tpl-edit-ex-card" data-reorder-item data-reorder-index="${ei}" style="background:var(--bg3);border-radius:10px;padding:10px 12px;margin-bottom:8px;">
@@ -1584,9 +1586,11 @@ function openManualWorkout(dateStr){
             <div style="font-size:11px;color:var(--text3);text-align:center;">${si+1}</div>
             <input class="si" type="number" placeholder="${L?'Powt':'Reps'}" value="${s.reps}"
               style="font-size:13px;padding:6px 4px;"
+              onfocus="clearZeroInput(this)"
               oninput="window.mwExercises[${ei}].sets[${si}].reps=+this.value"/>
             <input class="si" type="number" placeholder="${unitW()}" value="${dispW(s.weight)}"
               style="font-size:13px;padding:6px 4px;"
+              onfocus="clearZeroInput(this)"
               oninput="window.mwExercises[${ei}].sets[${si}].weight=inputToKg(+this.value)"/>
             <button onclick="window.mwRmSet(${ei},${si})"
               style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:0;font-family:inherit;">✕</button>

@@ -39,7 +39,7 @@ function renderDashboard(){
       action:"showScreen('calendar')",
     },
     {
-      icon:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2c1.7 0 2.9 1.1 2.9 2.8s-1.2 3-2.9 3-2.9-1.3-2.9-3 1.2-2.8 2.9-2.8Z"/><path d="M8.6 9.8 5.8 13c-.5.6-1.4.7-2 .2-.6-.5-.7-1.4-.2-2l3.3-3.8c.5-.6 1.2-.9 2-.9h6.2c.8 0 1.5.3 2 .9l3.3 3.8c.5.6.4 1.5-.2 2-.6.5-1.5.4-2-.2l-2.8-3.2"/><path d="M9.5 10.2 8.7 15l-1.5 4.4c-.3.8.1 1.6.9 1.9.8.3 1.6-.1 1.9-.9l2-5.3 2 5.3c.3.8 1.1 1.2 1.9.9.8-.3 1.2-1.1.9-1.9L15.3 15l-.8-4.8"/></svg>',
+      icon:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.1c1.4 0 2.45 1 2.45 2.45S13.4 8.05 12 8.05 9.55 7 9.55 5.55 10.6 3.1 12 3.1Z"/><path d="M8.4 9.25c-1.45.65-2.65 1.8-3.55 3.45"/><path d="M15.6 9.25c1.45.65 2.65 1.8 3.55 3.45"/><path d="M9 9.2c.8.45 1.8.7 3 .7s2.2-.25 3-.7"/><path d="M9.25 10.2 8.4 14.7 6.9 20.2"/><path d="M14.75 10.2l.85 4.5 1.5 5.5"/><path d="M10.15 14.45h3.7"/><path d="M12 14.45v6.05"/></svg>',
       labelKey:{pl:'Pomiary',en:'Measurements',de:'Messungen',es:'Medidas'},
       action:'openSettingsMeasurements()',
     },
@@ -1254,7 +1254,7 @@ function renderSettings(){
     language:'<circle cx="12" cy="12" r="9"/><path d="M12 3a15 15 0 0 1 0 18M3 12h18"/><path d="M3.6 8h16.8M3.6 16h16.8"/>',
     units:'<path d="M3 3h18M3 9h18M3 15h18M3 21h18M9 3v18M15 3v18"/>',
     timer:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
-    measure:'<path d="M12 3.2c1.7 0 2.9 1.1 2.9 2.8s-1.2 3-2.9 3-2.9-1.3-2.9-3 1.2-2.8 2.9-2.8Z"/><path d="M8.6 9.8 5.8 13c-.5.6-1.4.7-2 .2-.6-.5-.7-1.4-.2-2l3.3-3.8c.5-.6 1.2-.9 2-.9h6.2c.8 0 1.5.3 2 .9l3.3 3.8c.5.6.4 1.5-.2 2-.6.5-1.5.4-2-.2l-2.8-3.2"/><path d="M9.5 10.2 8.7 15l-1.5 4.4c-.3.8.1 1.6.9 1.9.8.3 1.6-.1 1.9-.9l2-5.3 2 5.3c.3.8 1.1 1.2 1.9.9.8-.3 1.2-1.1.9-1.9L15.3 15l-.8-4.8"/>',
+    measure:'<path d="M12 3.1c1.4 0 2.45 1 2.45 2.45S13.4 8.05 12 8.05 9.55 7 9.55 5.55 10.6 3.1 12 3.1Z"/><path d="M8.4 9.25c-1.45.65-2.65 1.8-3.55 3.45"/><path d="M15.6 9.25c1.45.65 2.65 1.8 3.55 3.45"/><path d="M9 9.2c.8.45 1.8.7 3 .7s2.2-.25 3-.7"/><path d="M9.25 10.2 8.4 14.7 6.9 20.2"/><path d="M14.75 10.2l.85 4.5 1.5 5.5"/><path d="M10.15 14.45h3.7"/><path d="M12 14.45v6.05"/>',
     contact:'<path d="M4 4h16v12H5.2L4 19.5V4z"/><path d="M8 9h8M8 13h5"/>',
     news:'<path d="M4 4h13a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3V4z"/><path d="M8 8h6M8 12h8M8 16h5"/>',
     privacy:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9.5 12l1.7 1.7 3.6-4.2"/>',
