@@ -39,7 +39,7 @@ function renderDashboard(){
       action:"showScreen('calendar')",
     },
     {
-      icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="22" height="22"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></svg>',
+      icon:'<svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M12 2.5c1.8 0 3.1 1.2 3.1 3 0 1.4-.7 2.6-1.8 3.1.6.3 1.2.8 1.6 1.5l.8 1.4 2.7-1.7c.7-.4 1.5-.2 1.9.5.4.7.2 1.5-.5 1.9l-3.7 2.3c-.8.5-1.9.2-2.4-.6l-.4-.7-.4 2.4 1.8 5.1c.3.8-.1 1.6-.9 1.9-.8.3-1.6-.1-1.9-.9L12 18.8l-1 2.9c-.3.8-1.1 1.2-1.9.9-.8-.3-1.2-1.1-.9-1.9l1.8-5.1-.4-2.4-.4.7c-.5.8-1.6 1.1-2.4.6l-3.7-2.3c-.7-.4-.9-1.2-.5-1.9.4-.7 1.2-.9 1.9-.5l2.7 1.7.8-1.4c.4-.7 1-1.2 1.6-1.5-1.1-.5-1.8-1.7-1.8-3.1 0-1.8 1.3-3 3.1-3Z"/></svg>',
       labelKey:{pl:'Pomiary',en:'Measurements',de:'Messungen',es:'Medidas'},
       action:'openSettingsMeasurements()',
     },
@@ -303,7 +303,7 @@ function renderRecordsTab(el,tabsHtml){
       const nm=exName(ex).trim();
       if(!nm)continue;
       if(!exMap[nm])exMap[nm]=[];
-      for(const s of (ex.sets||[])){
+      for(const s of (Array.isArray(ex.sets)?ex.sets:[])){
         const wt=+(s.weight||0),r=+(s.reps||0);
         if(wt<=0||r<=0)continue;
         exMap[nm].push({weight:wt,reps:r,e1RM:epleyEst1RM(wt,r),date:dateStr});
@@ -358,7 +358,7 @@ window.showRecordDetail=function(name){
     const dateStr=w.date||wk.split('_')[0]||wk;
     for(const ex of (w.exercises||[])){
       if(exName(ex).trim()!==name)continue;
-      for(const s of (ex.sets||[])){
+      for(const s of (Array.isArray(ex.sets)?ex.sets:[])){
         const wt=+(s.weight||0),r=+(s.reps||0);
         if(wt<=0||r<=0)continue;
         const key=`${dateStr}|${wt}|${r}`;
@@ -1239,12 +1239,13 @@ function renderSettings(){
     language:'<circle cx="12" cy="12" r="9"/><path d="M12 3a15 15 0 0 1 0 18M3 12h18"/><path d="M3.6 8h16.8M3.6 16h16.8"/>',
     units:'<path d="M3 3h18M3 9h18M3 15h18M3 21h18M9 3v18M15 3v18"/>',
     timer:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
-    measure:'<rect x="2" y="8" width="20" height="8" rx="2"/><path d="M7 8v2M10 8v3M13 8v2M17 8v3"/>',
+    measure:'<path fill="currentColor" stroke="none" d="M12 2.5c1.8 0 3.1 1.2 3.1 3 0 1.4-.7 2.6-1.8 3.1.6.3 1.2.8 1.6 1.5l.8 1.4 2.7-1.7c.7-.4 1.5-.2 1.9.5.4.7.2 1.5-.5 1.9l-3.7 2.3c-.8.5-1.9.2-2.4-.6l-.4-.7-.4 2.4 1.8 5.1c.3.8-.1 1.6-.9 1.9-.8.3-1.6-.1-1.9-.9L12 18.8l-1 2.9c-.3.8-1.1 1.2-1.9.9-.8-.3-1.2-1.1-.9-1.9l1.8-5.1-.4-2.4-.4.7c-.5.8-1.6 1.1-2.4.6l-3.7-2.3c-.7-.4-.9-1.2-.5-1.9.4-.7 1.2-.9 1.9-.5l2.7 1.7.8-1.4c.4-.7 1-1.2 1.6-1.5-1.1-.5-1.8-1.7-1.8-3.1 0-1.8 1.3-3 3.1-3Z"/>',
     contact:'<path d="M4 4h16v12H5.2L4 19.5V4z"/><path d="M8 9h8M8 13h5"/>',
     news:'<path d="M4 4h13a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3V4z"/><path d="M8 8h6M8 12h8M8 16h5"/>',
     privacy:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9.5 12l1.7 1.7 3.6-4.2"/>',
     delete:'<path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/>',
     name:'<circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>',
+    coachVisible:'<path d="M4 18c1.6-3.5 4.1-5.2 8-5.2s6.4 1.7 8 5.2"/><path d="M9.5 5.5c.8-1.1 4.2-1.1 5 0 .7 1 .4 4.4-.6 5.5-.9 1-2.9 1-3.8 0-1-1.1-1.3-4.5-.6-5.5z"/><path d="M7 20c.8-3.4 2.1-5.1 5-5.1s4.2 1.7 5 5.1"/>',
   };
   const svg=path=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">${path}</svg>`;
   const profileRow=(row,i)=>{
@@ -1252,6 +1253,7 @@ function renderSettings(){
       const isTheme=row.key==='theme';
       const isLayout=row.key==='layout';
       const isPush=row.key==='push';
+      const isCoachVisible=row.key==='coachVisible';
       if(isLayout){
         const isOn=S.layoutMode==='minimal';
         return`<div style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--bg2);transition:background 0.12s;${i>0?'border-top:1px solid var(--border);':''}">
@@ -1295,6 +1297,17 @@ function renderSettings(){
             <div style="font-size:12px;color:var(--text2);margin-top:2px;">${row.value}</div>
           </div>
           <div class="toggle-switch ${isOn?'on':''}" style="${disabled?'opacity:0.45;':''}" onclick="event.stopPropagation();togglePushNotifications()"><div class="toggle-knob"></div></div>
+        </div>`;
+      }
+      if(isCoachVisible){
+        const isOn=S.coachVisible!==false;
+        return`<div style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--bg2);transition:background 0.12s;${i>0?'border-top:1px solid var(--border);':''}">
+          <div style="width:36px;height:36px;border-radius:10px;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;color:var(--accent);flex-shrink:0;">${row.icon}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:14px;font-weight:600;">${row.label}</div>
+            <div style="font-size:12px;color:var(--text2);margin-top:2px;">${row.value}</div>
+          </div>
+          <div class="toggle-switch ${isOn?'on':''}" onclick="event.stopPropagation();toggleCoachVisibility()"><div class="toggle-knob"></div></div>
         </div>`;
       }
       return`<div onclick="${row.action}()" style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--bg2);cursor:pointer;transition:background 0.12s;${i>0?'border-top:1px solid var(--border);':''}"
@@ -1362,6 +1375,9 @@ function renderSettings(){
     {key:'restTimer',label:tt({pl:'Czas odpoczynku',en:'Rest timer',de:'Pausenzeit',es:'Tiempo de descanso'}),value:`${S.defaultRest||90} s`,icon:svg(icon.timer),action:'openSettingsRestTimer'},
     {key:'push',label:tt({pl:'Powiadomienia telefonu',en:'Phone notifications',de:'Telefon-Benachrichtigungen',es:'Notificaciones del teléfono'}),value:typeof pushStatusLabel==='function'?pushStatusLabel():tt({pl:'Niedostępne',en:'Unavailable',de:'Nicht verfügbar',es:'No disponible'}),icon:svg(icon.bell),action:'togglePushNotifications'},
   ];
+  if(S.user&&S.coachMode){
+    preferenceRows.push({key:'coachVisible',label:tt({pl:'Widoczny dla PRO',en:'Visible to PRO users',de:'Für PRO sichtbar',es:'Visible para PRO'}),value:S.coachVisible!==false?tt({pl:'Pokazuj w dostępnych coachach',en:'Show in available coaches',de:'In verfügbaren Coaches anzeigen',es:'Mostrar en coaches disponibles'}):tt({pl:'Ukryty dla nowych klientów',en:'Hidden from new clients',de:'Für neue Klienten verborgen',es:'Oculto para nuevos clientes'}),icon:svg(icon.coachVisible),action:'toggleCoachVisibility'});
+  }
   const measurementsTitle=tt({pl:'Twoje pomiary',en:'Body measurements',de:'Körpermaße',es:'Medidas corporales'});
   const measurementRows=[
     {key:'measurements',label:measurementsTitle,value:measValue,icon:svg(icon.measure),action:'openSettingsMeasurements'},
@@ -1499,6 +1515,22 @@ function profileSubscriptionHtml(){
     ${p.cta?`<button class="btn ${p.name==='PRO'?'btn-primary':'btn-ghost'}" onclick="${p.cta.action}" style="width:100%;margin-top:12px;font-size:13px;">${p.cta.label}</button>`:''}
   </div>`).join('')}</div>`;
 }
+
+async function toggleCoachVisibility(){
+  if(!S.user||!S.coachMode)return;
+  S.coachVisible=!(S.coachVisible!==false);
+  saveAll();
+  renderSettings();
+  if(sb){
+    const{error}=await sb.from('profiles').update({coach_visible:S.coachVisible!==false}).eq('id',S.user.id);
+    if(error){
+      showSyncToast(error.message||'Could not update coach visibility','error');
+    }else{
+      showSyncToast(tt({pl:'Widoczność coacha zapisana.',en:'Coach visibility saved.',de:'Coach-Sichtbarkeit gespeichert.',es:'Visibilidad de coach guardada.'}),'success');
+    }
+  }
+}
+window.toggleCoachVisibility=toggleCoachVisibility;
 
 function profileMeasurementsHtml(){
   return `${bodyMeasurementsHtml(true)}<button class="btn btn-primary" onclick="openAddMeasure()" style="width:100%;font-size:15px;padding:14px;margin-top:14px;">+ ${t('addMeasure')}</button>`;

@@ -1044,11 +1044,11 @@ function renderWorkout(){
   const _supLabels=computeSupLabels(w.exercises);
   w.exercises.forEach((ex,ei)=>{
     const _slbl=_supLabels[ei];
-    h+=`<div class="ex-card${ex.sup?' super':''}" data-reorder-item data-reorder-index="${ei}"><div class="ex-card-header"><div class="exercise-title-drag">${reorderHandle(lang==='pl'?'Zmień kolejność':'Reorder')}<button class="workout-ex-name-btn" onclick="event.stopPropagation();showWorkoutExerciseDetail(${ei})" title="${lang==='pl'?'Podgląd ćwiczenia':'Exercise preview'}">${_slbl?`<span class="super-tag">${_slbl}</span>`:''}<span>${exName(ex)}</span></button></div><div style="display:flex;align-items:center;gap:6px;flex-shrink:0;"><button class="ex-info-btn workout-ex-info-btn" onclick="event.stopPropagation();showWorkoutExerciseDetail(${ei})" aria-label="${lang==='pl'?'Podgląd ćwiczenia':'Exercise preview'}" title="${lang==='pl'?'Podgląd ćwiczenia':'Exercise preview'}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button><button onclick="toggleWorkoutSup(${ei})" style="padding:3px 8px;border-radius:6px;border:1px solid ${ex.sup?'var(--accent)':'var(--border2)'};background:${ex.sup?'var(--accent-dim)':'var(--bg3)'};color:${ex.sup?'var(--accent)':'var(--text3)'};font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;transition:all 0.15s;">SS</button></div></div><div class="set-grid-labels"><div></div><div class="set-lbl" style="font-size:9px;">LAST</div><div class="set-lbl">${unitW()}</div><div class="set-lbl">${t('reps')}</div><div class="set-lbl">${t('exRest')}</div><div></div><div></div></div>`;
+    h+=`<div class="ex-card${ex.sup?' super':''}" data-reorder-item data-reorder-index="${ei}"><div class="ex-card-header"><div class="exercise-title-drag">${reorderHandle(lang==='pl'?'Zmień kolejność':'Reorder')}<button class="workout-ex-name-btn" onclick="event.stopPropagation();showWorkoutExerciseDetail(${ei})" title="${lang==='pl'?'Podgląd ćwiczenia':'Exercise preview'}">${_slbl?`<span class="super-tag">${_slbl}</span>`:''}<span>${exName(ex)}</span></button></div><div style="display:flex;align-items:center;gap:6px;flex-shrink:0;"><button class="ex-info-btn workout-ex-info-btn" onclick="event.stopPropagation();showWorkoutExerciseDetail(${ei})" aria-label="${lang==='pl'?'Podgląd ćwiczenia':'Exercise preview'}" title="${lang==='pl'?'Podgląd ćwiczenia':'Exercise preview'}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button><button onclick="toggleWorkoutSup(${ei})" style="padding:3px 8px;border-radius:6px;border:1px solid ${ex.sup?'var(--accent)':'var(--border2)'};background:${ex.sup?'var(--accent-dim)':'var(--bg3)'};color:${ex.sup?'var(--accent)':'var(--text3)'};font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;transition:all 0.15s;">SS</button></div></div><div class="set-grid-labels"><div></div><div></div><div class="set-lbl" style="font-size:9px;">LAST</div><div class="set-lbl">${unitW()}</div><div class="set-lbl">${t('reps')}</div><div class="set-lbl">${t('exRest')}</div><div></div></div>`;
     ex.sets.forEach((s,si)=>{
       const last=getLastSet(ex,si);
       const lastHtml=last?`<div class="set-last">${dispW(last.weight)}<br><span style="color:var(--text3);font-size:10px;">×${last.reps}</span></div>`:`<div class="set-last" style="opacity:0.4;">—</div>`;
-      h+=`<div class="set-grid"><div class="set-num">${si+1}</div>${lastHtml}<input class="si" type="number" value="${dispW(s.weight)}" onfocus="this.select()" onchange="upd(${ei},${si},'weight',this.value)"/><input class="si" type="number" value="${s.reps}" onfocus="this.select()" onchange="upd(${ei},${si},'reps',this.value)"/><input class="si" type="number" value="${s.rest}" onfocus="this.select()" onchange="upd(${ei},${si},'rest',this.value)"/><button class="set-done ${s.done?'completed':''}" onclick="toggleSet(${ei},${si})">${s.done?'✓':'○'}</button><button class="rm-btn" onclick="removeSet(${ei},${si})">✕</button></div>`;
+      h+=`<div class="set-grid"><button class="rm-btn" onclick="removeSet(${ei},${si})">✕</button><div class="set-num">${si+1}</div>${lastHtml}<input class="si" type="number" value="${dispW(s.weight)}" onfocus="this.select()" onchange="upd(${ei},${si},'weight',this.value)"/><input class="si" type="number" value="${s.reps}" onfocus="this.select()" onchange="upd(${ei},${si},'reps',this.value)"/><input class="si" type="number" value="${s.rest}" onfocus="this.select()" onchange="upd(${ei},${si},'rest',this.value)"/><button class="set-done ${s.done?'completed':''}" onclick="toggleSet(${ei},${si})">${s.done?'✓':'○'}</button></div>`;
     });
     h+=`<button class="btn btn-sm btn-ghost" style="font-size:12px;padding:6px 12px;margin-top:6px;width:100%;justify-content:center;" onclick="addSet(${ei})">+ ${t('addSet')}</button>`;
     h+=`</div>`;
@@ -1056,7 +1056,7 @@ function renderWorkout(){
   h+=`<div style="height:90px;"></div>`;
   h+=`<div class="workout-actions-bar">`;
   h+=`<button class="workout-action-btn danger" onclick="cancelWorkout()">${t('cancelWorkout')}</button>`;
-  if(w.isQuick) h+=`<button class="workout-action-btn" onclick="addExToQuickWorkout()">${t('addExerciseToWorkout')}</button>`;
+  h+=`<button class="workout-action-btn" onclick="addExToActiveWorkout()">${t('addExerciseToWorkout')}</button>`;
   h+=`<button class="workout-action-btn primary" onclick="${finishFn}">${t('finish')}</button>`;
   h+=`</div>`;
   el.innerHTML=h;
@@ -1090,6 +1090,12 @@ function getLastSet(currentEx,setIndex){
 function toggleSet(ei,si){const s=S.activeWorkout.exercises[ei].sets[si];s.done=!s.done;if(s.done)startTimer(s.rest||S.activeWorkout.restDefault);else stopTimer();renderWorkout();}
 function addSet(ei){const ex=S.activeWorkout.exercises[ei];const last=ex.sets[ex.sets.length-1]||{reps:ex.reps,weight:ex.weight};ex.sets.push({reps:last.reps,weight:last.weight,done:false,rest:S.activeWorkout.restDefault});renderWorkout();}
 function removeSet(ei,si){const ex=S.activeWorkout.exercises[ei];if(ex.sets.length<=1)return;ex.sets.splice(si,1);renderWorkout();}
+function adjustTimer(delta){
+  if(!S.timerSecs)return;
+  S.timerSecs=Math.max(1,S.timerSecs+delta);
+  _renderTimerBar();
+}
+window.adjustTimer=adjustTimer;
 function startTimer(s){
   stopTimer();
   S.timerSecs=s;
@@ -1130,7 +1136,7 @@ function _renderTimerBar(){
   }
   const isWarning=S.timerSecs>0&&S.timerSecs<=5;
   tb.className='timer-bar'+(isWarning?' timer-warning':'');
-  tb.innerHTML=`<div class="timer-display" style="${isWarning?'color:var(--red);':''}">${min}:${sec}</div><div class="timer-label">${t('restBreak')}</div><button class="btn btn-sm btn-ghost" style="margin-top:10px;" onclick="stopTimer()">${t('skipRest')}</button>`;
+  tb.innerHTML=`<div class="timer-display" style="${isWarning?'color:var(--red);':''}">${min}:${sec}</div><div class="timer-label">${t('restBreak')}</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px;"><button class="btn btn-sm btn-ghost" onclick="adjustTimer(-10)">- 10 sec</button><button class="btn btn-sm btn-ghost" onclick="stopTimer()">${t('skipRest')}</button><button class="btn btn-sm btn-ghost" onclick="adjustTimer(10)">+ 10 sec</button></div>`;
 }
 
 function finishWorkout(){
@@ -1691,8 +1697,8 @@ function startQuickWorkout(){
   showScreen('workouts');
 }
 
-function addExToQuickWorkout(){
-  if(!S.activeWorkout||!S.activeWorkout.isQuick)return;
+function addExToActiveWorkout(){
+  if(!S.activeWorkout)return;
   const existingExes=S.activeWorkout.exercises; // keep reference to preserve user data
   const pickerFormat=existingExes.map(e=>({...e}));
   showExPicker(pickerFormat,picked=>{
@@ -1708,6 +1714,8 @@ function addExToQuickWorkout(){
     renderWorkout();
   });
 }
+window.addExToActiveWorkout=addExToActiveWorkout;
+function addExToQuickWorkout(){addExToActiveWorkout();}
 
 function finishQuickWorkout(){
   stopTimer();

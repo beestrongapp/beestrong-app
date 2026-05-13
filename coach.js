@@ -429,16 +429,26 @@ async function upsertProfile(){
     localStorage.setItem('bs-username',name);
     const unEl=document.getElementById('sidebarUserName');if(unEl)unEl.textContent=name;
   }
-  await sb.from('profiles').upsert({id:S.user.id,email:S.user.email,display_name:name},{onConflict:'id'});
+  const payload={id:S.user.id,email:S.user.email,display_name:name};
+  if(S.coachMode)payload.coach_visible=S.coachVisible!==false;
+  const{error}=await sb.from('profiles').upsert(payload,{onConflict:'id'});
+  if(error&&String(error.message||'').includes('coach_visible')){
+    delete payload.coach_visible;
+    await sb.from('profiles').upsert(payload,{onConflict:'id'});
+  }
 }
 
 async function syncProfileFlags(){
   if(!sb||!S.user)return;
-  const {data,error}=await sb.from('profiles').select('is_pro,is_coach,display_name').eq('id',S.user.id).single();
+  let {data,error}=await sb.from('profiles').select('is_pro,is_coach,display_name,coach_visible').eq('id',S.user.id).single();
+  if(error&&String(error.message||'').includes('coach_visible')){
+    ({data,error}=await sb.from('profiles').select('is_pro,is_coach,display_name').eq('id',S.user.id).single());
+  }
   if(error||!data)return;
   let changed=false;
   const newIsPro=!!data.is_pro;
   if(newIsPro!==S.isPro){S.isPro=newIsPro;changed=true;}
+  if(Object.prototype.hasOwnProperty.call(data,'coach_visible')&&!!data.coach_visible!==!!S.coachVisible){S.coachVisible=data.coach_visible!==false;changed=true;}
   if(data.is_coach){
     const email=(S.user.email||'').toLowerCase().trim();
     if(!COACH_WHITELIST.map(e=>e.toLowerCase()).includes(email)){COACH_WHITELIST.push(S.user.email);}
@@ -500,11 +510,14 @@ async function renderUserCoaches(){
   el.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;padding:40px 0;"><div class="spinner"></div></div>`;
   try{
     const email=(S.user.email||'').toLowerCase();
-    const[byId,byEmail,availableRes]=await Promise.all([
+    let[byId,byEmail,availableRes]=await Promise.all([
       sb.from('coach_invitations').select('*').eq('client_user_id',S.user.id).eq('status','accepted').order('responded_at',{ascending:false}),
       sb.from('coach_invitations').select('*').eq('client_email',email).eq('status','accepted').order('responded_at',{ascending:false}),
-      sb.from('profiles').select('id,email,display_name,is_coach').eq('is_coach',true).order('display_name',{ascending:true}),
+      sb.from('profiles').select('id,email,display_name,is_coach,coach_visible').eq('is_coach',true).order('display_name',{ascending:true}),
     ]);
+    if(availableRes.error&&String(availableRes.error.message||'').includes('coach_visible')){
+      availableRes=await sb.from('profiles').select('id,email,display_name,is_coach').eq('is_coach',true).order('display_name',{ascending:true});
+    }
     if(byId.error)throw byId.error;
     if(byEmail.error)throw byEmail.error;
     if(availableRes.error)throw availableRes.error;
@@ -519,6 +532,7 @@ async function renderUserCoaches(){
     const relationByCoach=new Map([...(allById.data||[]),...(allByEmail.data||[])].map(inv=>[inv.coach_id,inv]));
     const available=(availableRes.data||[])
       .filter(p=>p.id!==S.user.id)
+      .filter(p=>p.coach_visible!==false)
       .filter(p=>relationByCoach.get(p.id)?.status!=='accepted');
     const parts=[];
     parts.push(`<div class="section-label">${tt({pl:'Twoi coachowie',en:'Your coaches',de:'Deine Coaches',es:'Tus coaches'})}</div>`);

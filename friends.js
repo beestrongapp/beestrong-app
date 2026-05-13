@@ -13,6 +13,13 @@ function friendName(inv){
 function friendId(inv){return S.user?.id===inv.inviter_id?inv.invitee_id:inv.inviter_id;}
 function friendEmail(inv){return S.user?.id===inv.inviter_id?inv.invitee_email:inv.inviter_email;}
 function friendEsc(v){return String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
+function friendsLimit(){
+  if(typeof isAdmin==='function'&&isAdmin())return Infinity;
+  if(S.coachMode)return 50;
+  if(S.isPro)return 10;
+  return 3;
+}
+function friendsLimitLabel(limit){return Number.isFinite(limit)?String(limit):'∞';}
 
 async function renderFriends(){
   const el=document.getElementById('friendsContent');
@@ -61,7 +68,8 @@ function renderFriendsList(){
   const accepted=_friendInvitations.filter(i=>i.status==='accepted');
   const pendingIn=_friendInvitations.filter(i=>i.status==='pending'&&i.invitee_id===S.user?.id);
   const pendingOut=_friendInvitations.filter(i=>i.status==='pending'&&i.inviter_id===S.user?.id);
-  let html=`<div class="section-label">${tt({pl:'Friends',en:'Friends',de:'Friends',es:'Friends'})} (${accepted.length}/3)</div>`;
+  const limit=friendsLimit();
+  let html=`<div class="section-label">${tt({pl:'Friends',en:'Friends',de:'Friends',es:'Friends'})} (${accepted.length}/${friendsLimitLabel(limit)})</div>`;
   html+=accepted.length?accepted.map(inv=>friendCardHtml(inv,false)).join(''):`<div class="empty-state" style="padding:24px 16px;">${tt({pl:'Nie masz jeszcze znajomych.',en:'No friends yet.',de:'Noch keine Freunde.',es:'Aún no tienes amigos.'})}</div>`;
   if(pendingIn.length){
     html+=`<div class="section-label" style="margin-top:16px;">${tt({pl:'Zaproszenia',en:'Invitations',de:'Einladungen',es:'Invitaciones'})}</div>`;
@@ -148,8 +156,9 @@ async function searchFriendByEmail(){
     return;
   }
   const accepted=_friendInvitations.filter(i=>i.status==='accepted').length;
-  if(accepted>=3){
-    out.innerHTML=`<div style="color:var(--red);font-size:13px;margin-bottom:12px;">${tt({pl:'Limit Friends to 3 osoby.',en:'Friends limit is 3 people.',de:'Friends-Limit ist 3 Personen.',es:'El límite de Friends es 3 personas.'})}</div>`;
+  const limit=friendsLimit();
+  if(accepted>=limit){
+    out.innerHTML=`<div style="color:var(--red);font-size:13px;margin-bottom:12px;">${tt({pl:`Limit Friends: ${friendsLimitLabel(limit)}.`,en:`Friends limit: ${friendsLimitLabel(limit)}.`,de:`Friends-Limit: ${friendsLimitLabel(limit)}.`,es:`Límite de Friends: ${friendsLimitLabel(limit)}.`})}</div>`;
     return;
   }
   out.innerHTML=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><div class="spinner"></div><span style="font-size:13px;color:var(--text2);">${tt({pl:'Szukam...',en:'Searching...',de:'Suche...',es:'Buscando...'})}</span></div>`;
@@ -176,7 +185,8 @@ window.searchFriendByEmail=searchFriendByEmail;
 async function sendFriendInvitation(inviteeId,email,name){
   if(!sb||!S.user)return;
   const accepted=_friendInvitations.filter(i=>i.status==='accepted').length;
-  if(accepted>=3)return showSyncToast(tt({pl:'Limit Friends to 3 osoby.',en:'Friends limit is 3 people.',de:'Friends-Limit ist 3 Personen.',es:'El límite de Friends es 3 personas.'}),'error');
+  const limit=friendsLimit();
+  if(accepted>=limit)return showSyncToast(tt({pl:`Limit Friends: ${friendsLimitLabel(limit)}.`,en:`Friends limit: ${friendsLimitLabel(limit)}.`,de:`Friends-Limit: ${friendsLimitLabel(limit)}.`,es:`Límite de Friends: ${friendsLimitLabel(limit)}.`}),'error');
   try{
     const existing=_friendInvitations.find(i=>
       (i.inviter_id===S.user.id&&i.invitee_id===inviteeId)||(i.inviter_id===inviteeId&&i.invitee_id===S.user.id)
@@ -206,7 +216,8 @@ window.sendFriendInvitation=sendFriendInvitation;
 async function acceptFriendInvitation(invId){
   if(!sb||!S.user)return;
   const accepted=_friendInvitations.filter(i=>i.status==='accepted').length;
-  if(accepted>=3)return showSyncToast(tt({pl:'Limit Friends to 3 osoby.',en:'Friends limit is 3 people.',de:'Friends-Limit ist 3 Personen.',es:'El límite de Friends es 3 personas.'}),'error');
+  const limit=friendsLimit();
+  if(accepted>=limit)return showSyncToast(tt({pl:`Limit Friends: ${friendsLimitLabel(limit)}.`,en:`Friends limit: ${friendsLimitLabel(limit)}.`,de:`Friends-Limit: ${friendsLimitLabel(limit)}.`,es:`Límite de Friends: ${friendsLimitLabel(limit)}.`}),'error');
   const inv=_friendInvitations.find(i=>i.id===invId);
   if(!inv)return;
   try{
