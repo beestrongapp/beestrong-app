@@ -1053,7 +1053,7 @@ function renderWorkout(){
         h+=`<div class="workout-row" onclick="showWorkoutSummary('${k}')" style="margin-bottom:8px;">
           <div class="workout-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><path d="M6 4v16M18 4v16M3 12h18M3 7h3M18 7h3M3 17h3M18 17h3"/></svg></div>
           <div class="workout-row-info">
-            <div class="workout-row-name">${displayWorkoutName(w)}</div>
+            <div class="workout-row-name">${escHtml(displayWorkoutName(w))}</div>
             <div class="workout-row-meta">${w.duration||0} min · ${(w.volume/1000).toFixed(1)}t · ${exCount} ${t('exExercises')} · ${setCount} ${t('exSets')}</div>
           </div>
           <div>${typeTagHtml(w.types||[])}</div>
@@ -1070,7 +1070,7 @@ function renderWorkout(){
   const total=w.exercises.reduce((a,ex)=>a+ex.sets.length,0);
   const pct=total?Math.round(done/total*100):0;
   const finishFn=w.isQuick?'finishQuickWorkout()':'finishWorkout()';
-  let h=`<div class="workout-header"><div style="flex:1;"><div style="font-size:19px;font-weight:700;">${displayWorkoutName(w)}${w.isQuick?` <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:var(--accent-dim);color:var(--accent);vertical-align:middle;">${t('quickWorkout')}</span>`:''}</div><div style="font-size:12px;color:var(--text2);margin-top:3px;">${elapsed} min · ${done}/${total} ${t('exSets')}</div><div style="margin-top:8px;height:4px;background:var(--bg4);border-radius:2px;width:100%;max-width:220px;"><div style="height:4px;background:var(--accent);border-radius:2px;width:${pct}%;transition:width 0.3s;"></div></div></div></div>`;
+  let h=`<div class="workout-header"><div style="flex:1;"><div style="font-size:19px;font-weight:700;">${escHtml(displayWorkoutName(w))}${w.isQuick?` <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:var(--accent-dim);color:var(--accent);vertical-align:middle;">${t('quickWorkout')}</span>`:''}</div><div style="font-size:12px;color:var(--text2);margin-top:3px;">${elapsed} min · ${done}/${total} ${t('exSets')}</div><div style="margin-top:8px;height:4px;background:var(--bg4);border-radius:2px;width:100%;max-width:220px;"><div style="height:4px;background:var(--accent);border-radius:2px;width:${pct}%;transition:width 0.3s;"></div></div></div></div>`;
   const _supLabels=computeSupLabels(w.exercises);
   w.exercises.forEach((ex,ei)=>{
     const _slbl=_supLabels[ei];
@@ -1256,7 +1256,7 @@ function showWorkoutSummary(key,prs=[]){
   const prBannerHtml=prs.length?`<div class="pr-banner">
     <div style="font-size:28px;margin-bottom:4px;">🏆</div>
     <div style="font-size:15px;font-weight:800;color:var(--accent);margin-bottom:6px;">${tt({pl:'Nowy rekord!',en:'New Personal Record!',de:'Neuer Rekord!',es:'¡Nuevo récord personal!'})}</div>
-    ${prs.map(pr=>`<div style="font-size:13px;color:var(--text2);margin-bottom:2px;"><strong style="color:var(--text);">${pr.name}</strong>: ${dispW(pr.weight)}${unitW()}×${pr.reps} · e1RM <strong style="color:var(--accent);">${dispW(pr.e1RM)}${unitW()}</strong>${pr.prev?` <span style="color:var(--text3);font-size:11px;">(${tt({pl:'poprz.',en:'prev.',de:'vorh.',es:'ant.'})} ${dispW(pr.prev)}${unitW()})</span>`:''}</div>`).join('')}
+    ${prs.map(pr=>`<div style="font-size:13px;color:var(--text2);margin-bottom:2px;"><strong style="color:var(--text);">${escHtml(pr.name)}</strong>: ${dispW(pr.weight)}${unitW()}×${pr.reps} · e1RM <strong style="color:var(--accent);">${dispW(pr.e1RM)}${unitW()}</strong>${pr.prev?` <span style="color:var(--text3);font-size:11px;">(${tt({pl:'poprz.',en:'prev.',de:'vorh.',es:'ant.'})} ${dispW(pr.prev)}${unitW()})</span>`:''}</div>`).join('')}
   </div>`:'';
   const summaryHistData=w.templateId?getProgress(w.templateId,key):[];
   const ov=document.createElement('div');ov.className='modal-overlay';

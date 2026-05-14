@@ -569,8 +569,8 @@ async function renderUserCoaches(){
 }
 
 function userCoachCardHtml(inv){
-  const name=inv.coach_name||inv.coach_email||'Coach';
-  const meta=inv.coach_name&&inv.coach_email?inv.coach_email:tt({pl:'Twój coach',en:'Your coach',de:'Dein Coach',es:'Tu coach'});
+  const name=chatEsc(inv.coach_name||inv.coach_email||'Coach');
+  const meta=chatEsc(inv.coach_name&&inv.coach_email?inv.coach_email:tt({pl:'Twój coach',en:'Your coach',de:'Dein Coach',es:'Tu coach'}));
   return `<div class="client-card" onclick="openUserCoachDetail('${inv.id}')">
     <div style="width:38px;height:38px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--btn-text);flex-shrink:0;">${(name||'?')[0].toUpperCase()}</div>
     <div class="client-card-info">
@@ -739,10 +739,10 @@ function clientCardHtml(inv){
     accepted:tt({pl:'Aktywny',en:'Active',de:'Aktiv',es:'Activo'}),
   }[inv.status]||inv.status;
   const clickable=inv.status==='accepted';
-  const name=inv.client_display_name||inv.client_email||'—';
-  const meta=inv.client_display_name&&inv.client_email
+  const name=chatEsc(inv.client_display_name||inv.client_email||'—');
+  const meta=chatEsc(inv.client_display_name&&inv.client_email
     ? inv.client_email
-    : `${tt({pl:'Zaproszenie',en:'Invitation',de:'Einladung',es:'Invitación'})}: ${inv.created_at?new Date(inv.created_at).toLocaleDateString():''}`;
+    : `${tt({pl:'Zaproszenie',en:'Invitation',de:'Einladung',es:'Invitación'})}: ${inv.created_at?new Date(inv.created_at).toLocaleDateString():''}`);
   const pendingActions=inv.status==='pending'
     ?`<div style="display:flex;gap:6px;margin-left:4px;flex-shrink:0;">
         <button class="btn btn-sm btn-primary" style="font-size:11px;padding:6px 9px;" onclick="event.stopPropagation();acceptClientRequest('${inv.id}')">${tt({pl:'OK',en:'Accept',de:'OK',es:'OK'})}</button>
@@ -1103,7 +1103,7 @@ function renderClientWorkoutsView(){
     const[y,m,d]=(w.date||'').split('-');
     return `<div class="workout-row" onclick="renderClientWorkoutDetail(${i})">
       <div class="workout-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><path d="M6 4v16M18 4v16M3 12h18"/></svg></div>
-      <div class="workout-row-info"><div class="workout-row-name">${remoteWorkoutName(w)}</div><div class="workout-row-meta">${d?`${d}.${m}.${y}`:''}${w.duration_min?` · ${w.duration_min} min`:''} · ${fmtVol(+(w.volume_kg||0))}${unitVol()}</div></div>
+      <div class="workout-row-info"><div class="workout-row-name">${chatEsc(remoteWorkoutName(w))}</div><div class="workout-row-meta">${d?`${d}.${m}.${y}`:''}${w.duration_min?` · ${w.duration_min} min`:''} · ${fmtVol(+(w.volume_kg||0))}${unitVol()}</div></div>
       <div>${typeTagHtml(w.types)}</div>
     </div>`;
   }).join('');
@@ -1226,7 +1226,7 @@ function renderClientProgressView(){
   <div class="section-label">${tt({pl:'Najczęściej obciążane ćwiczenia',en:'Top exercises by volume',de:'Top-Übungen nach Volumen',es:'Top ejercicios por volumen'})}</div>
   ${top.length?top.map(ex=>`<div class="workout-row" style="cursor:default;">
     <div class="workout-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><path d="M6 4v16M18 4v16M3 12h18"/></svg></div>
-    <div class="workout-row-info"><div class="workout-row-name">${ex.name}</div><div class="workout-row-meta">${ex.count}× · ${fmtVol(ex.volume)}${unitVol()} · ${tt({pl:'max',en:'max',de:'max',es:'max'})} ${dispW(ex.bestWeight)}${unitW()}</div></div>
+    <div class="workout-row-info"><div class="workout-row-name">${chatEsc(ex.name)}</div><div class="workout-row-meta">${ex.count}× · ${fmtVol(ex.volume)}${unitVol()} · ${tt({pl:'max',en:'max',de:'max',es:'max'})} ${dispW(ex.bestWeight)}${unitW()}</div></div>
   </div>`).join(''):`<div class="empty-state">${t('noData')}</div>`}`;
   el.innerHTML=html;
 }
@@ -2097,7 +2097,7 @@ function openAssignProgramModal(invId, clientUserId, assignmentId){
           const n=localizedField(p,'name')||p.name?.en||p.name?.pl||'Program';
           const active=(state.selectedProgramIndex===i)||(!state.selectedProgramData?false:(localizedField(state.selectedProgramData,'name')||state.selectedProgramData.name?.en)===(localizedField(p,'name')||p.name?.en));
           return `<div class="workout-row" style="cursor:pointer;margin-bottom:8px;border-color:${active?'var(--accent)':'var(--border)'};background:${active?'var(--accent-dim)':'var(--bg2)'};" onclick="window.assignSelectProgram(${i})">
-            <div class="workout-row-info"><div class="workout-row-name">${n}</div><div class="workout-row-meta">${p.daysPerWeek||3}× ${tt({pl:'tyg.',en:'/wk',de:'/Wo.',es:'/sem.'})} · ${p.duration||8} ${tt({pl:'tyg.',en:'wks',de:'Wo.',es:'sem.'})}</div></div>
+            <div class="workout-row-info"><div class="workout-row-name">${chatEsc(n)}</div><div class="workout-row-meta">${p.daysPerWeek||3}× ${tt({pl:'tyg.',en:'/wk',de:'/Wo.',es:'/sem.'})} · ${p.duration||8} ${tt({pl:'tyg.',en:'wks',de:'Wo.',es:'sem.'})}</div></div>
             <div style="color:var(--accent);font-size:18px;">${active?'✓':'›'}</div>
           </div>`;
         }).join(''):`<div class="empty-state">${tt({pl:'Brak programów.',en:'No programs.',de:'Keine Programme.',es:'Sin programas.'})}</div>`}
@@ -2109,7 +2109,7 @@ function openAssignProgramModal(invId, clientUserId, assignmentId){
         ${coachTemplates.length?coachTemplates.map((tp,i)=>{
           const active=state.selectedTemplateIndex===i;
           return `<div class="workout-row" style="cursor:pointer;margin-bottom:8px;border-color:${active?'var(--accent)':'var(--border)'};background:${active?'var(--accent-dim)':'var(--bg2)'};" onclick="window.assignSelectTemplate(${i})">
-          <div class="workout-row-info"><div class="workout-row-name">${tp.name||'Template'}</div><div class="workout-row-meta">${(tp.exercises||[]).length} ${t('exExercises')} · ${t('exRest')} ${tp.restDefault||90}s</div></div>
+          <div class="workout-row-info"><div class="workout-row-name">${chatEsc(tp.name||'Template')}</div><div class="workout-row-meta">${(tp.exercises||[]).length} ${t('exExercises')} · ${t('exRest')} ${tp.restDefault||90}s</div></div>
           <div style="color:var(--accent);font-size:18px;">${active?'✓':'›'}</div>
         </div>`;}).join(''):`<div class="empty-state">${tt({pl:'Brak templates coacha.',en:'No coach templates.',de:'Keine Coach-Vorlagen.',es:'Sin templates del coach.'})}</div>`}
       </div>

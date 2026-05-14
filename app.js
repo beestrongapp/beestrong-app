@@ -72,7 +72,7 @@ function renderDashboard(){
   const el=document.getElementById('recentWorkouts');
   if(!el)return;
   if(!recent.length){el.innerHTML=`<div class="empty-state">${t('noWorkouts')}</div>`;return;}
-  el.innerHTML=recent.map(([k,w])=>{const dateStr=w.date||k.split('_')[0];const[y,m,d]=dateStr.split('-');return`<div class="workout-row" onclick="showWorkoutSummary('${k}')"><div class="workout-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><path d="M6 4v16M18 4v16M3 12h18M3 7h3M18 7h3M3 17h3M18 17h3"/></svg></div><div class="workout-row-info"><div class="workout-row-name">${displayWorkoutName(w)}</div><div class="workout-row-meta">${d}.${m}.${y} · ${w.duration} min · ${fmtVol(w.volume)}${unitVol()}</div></div><div>${typeTagHtml(w.types)}</div></div>`;}).join('');
+  el.innerHTML=recent.map(([k,w])=>{const dateStr=w.date||k.split('_')[0];const[y,m,d]=dateStr.split('-');return`<div class="workout-row" onclick="showWorkoutSummary('${k}')"><div class="workout-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><path d="M6 4v16M18 4v16M3 12h18M3 7h3M18 7h3M3 17h3M18 17h3"/></svg></div><div class="workout-row-info"><div class="workout-row-name">${escHtml(displayWorkoutName(w))}</div><div class="workout-row-meta">${d}.${m}.${y} · ${w.duration} min · ${fmtVol(w.volume)}${unitVol()}</div></div><div>${typeTagHtml(w.types)}</div></div>`;}).join('');
 }
 
 // ===== CALENDAR =====
@@ -139,7 +139,7 @@ function renderDayDetail(){
   if(planned){
     html+=`<div class="workout-row" onclick="showPlanDetailModal('${dateKey}')" style="margin-bottom:8px;border-color:var(--accent-dim2);">
       <div class="workout-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg></div>
-      <div class="workout-row-info"><div class="workout-row-name">${planned.name||t('workout')}</div><div class="workout-row-meta">${planned.fromCoach?tt({pl:'Przypisane przez coacha',en:'Assigned by coach',de:'Vom Coach zugewiesen',es:'Asignado por coach'}):tt({pl:'Zaplanowany trening',en:'Planned workout',de:'Geplantes Training',es:'Entrenamiento planificado'})}</div></div>
+      <div class="workout-row-info"><div class="workout-row-name">${escHtml(planned.name||t('workout'))}</div><div class="workout-row-meta">${planned.fromCoach?tt({pl:'Przypisane przez coacha',en:'Assigned by coach',de:'Vom Coach zugewiesen',es:'Asignado por coach'}):tt({pl:'Zaplanowany trening',en:'Planned workout',de:'Geplantes Training',es:'Entrenamiento planificado'})}</div></div>
       <button class="btn btn-sm btn-primary" onclick="event.stopPropagation();startPlannedWorkout('${dateKey}')" style="font-size:12px;padding:7px 12px;">${t('startWorkout')}</button>
     </div>`;
   }
@@ -150,7 +150,7 @@ function renderDayDetail(){
     dayWorkouts.sort((a,b)=>a[0]>b[0]?1:-1).forEach(([wk,w])=>{
       html+=`<div class="workout-row" onclick="showWorkoutSummary('${wk}')" style="margin-bottom:8px;">
         <div class="workout-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><path d="M6 4v16M18 4v16M3 12h18M3 7h3M18 7h3M3 17h3M18 17h3"/></svg></div>
-        <div class="workout-row-info"><div class="workout-row-name">${displayWorkoutName(w)}</div><div class="workout-row-meta">${w.duration} min · ${fmtVol(w.volume)}${unitVol()}</div></div>
+        <div class="workout-row-info"><div class="workout-row-name">${escHtml(displayWorkoutName(w))}</div><div class="workout-row-meta">${w.duration} min · ${fmtVol(w.volume)}${unitVol()}</div></div>
         <div>${typeTagHtml(w.types)}</div>
       </div>`;
     });
@@ -643,7 +643,7 @@ window.startProgramWorkout=function(pid,tidx){
 function renderTemplates(){
   const el=document.getElementById('templateList');
   if(!S.templates.length){el.innerHTML=`<div class="empty-state">${t('noTemplates')}</div>`;return;}
-  el.innerHTML=S.templates.map(tp=>`<div class="tpl-card"><div class="tpl-card-header"><div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><div class="tpl-name">${tp.name}</div>${typeTagHtml(tp.types||[])}</div><div class="tpl-meta">${tp.exercises.length} ${t('exExercises')} · ${t('exRest')} ${tp.restDefault}s</div></div><div style="display:flex;gap:6px;flex-shrink:0;"><button class="btn btn-sm btn-primary" onclick="startWorkout(${tp.id})">${t('startTemplate')}</button><button class="btn btn-sm btn-ghost" onclick="editTemplate(${tp.id})">${t('editTemplate')}</button></div></div><div class="tpl-exercises">${tp.exercises.map(e=>`<div class="tpl-ex-row">${e.sup?'<span class="super-tag">SS</span>':'<span style="width:20px;display:inline-block;flex-shrink:0;"></span>'}<span class="name">${exName(e)}</span><span>${e.sets}×${e.reps}${e.weight?' · '+dispW(e.weight)+unitW():''}</span></div>`).join('')}</div></div>`).join('');
+  el.innerHTML=S.templates.map(tp=>`<div class="tpl-card"><div class="tpl-card-header"><div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><div class="tpl-name">${escHtml(tp.name)}</div>${typeTagHtml(tp.types||[])}</div><div class="tpl-meta">${tp.exercises.length} ${t('exExercises')} · ${t('exRest')} ${tp.restDefault}s</div></div><div style="display:flex;gap:6px;flex-shrink:0;"><button class="btn btn-sm btn-primary" onclick="startWorkout(${tp.id})">${t('startTemplate')}</button><button class="btn btn-sm btn-ghost" onclick="editTemplate(${tp.id})">${t('editTemplate')}</button></div></div><div class="tpl-exercises">${tp.exercises.map(e=>`<div class="tpl-ex-row">${e.sup?'<span class="super-tag">SS</span>':'<span style="width:20px;display:inline-block;flex-shrink:0;"></span>'}<span class="name">${escHtml(exName(e))}</span><span>${e.sets}×${e.reps}${e.weight?' · '+dispW(e.weight)+unitW():''}</span></div>`).join('')}</div></div>`).join('');
 }
 
 function openNewTemplate(){
