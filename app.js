@@ -1997,6 +1997,7 @@ async function profileDeleteAccountAndCloudData(){
 }
 
 async function profileUploadToCloud(){
+  if(!navigator.onLine)return showSyncToast(tt({pl:'Brak połączenia z internetem.',en:'No internet connection.',de:'Keine Internetverbindung.',es:'Sin conexión a internet.'}),'error');
   if(!cloudSyncAllowed())return showSyncToast(tt({pl:'Cloud sync jest tylko dla PRO / COACH.',en:'Cloud sync is only for PRO / COACH.',de:'Cloud Sync ist nur für PRO / COACH.',es:'Cloud sync es solo para PRO / COACH.'}),'error');
   showSyncToast(tt({pl:'Wysyłanie...',en:'Uploading...',de:'Hochladen...',es:'Subiendo...'}));
   if(typeof queueAllCloudData==='function')queueAllCloudData();
@@ -2005,6 +2006,7 @@ async function profileUploadToCloud(){
   else showSyncToast((tt({pl:'Błąd: ',en:'Error: ',de:'Fehler: ',es:'Error: '}))+(r.error||''),'error');
 }
 async function profileDownloadFromCloud(){
+  if(!navigator.onLine)return showSyncToast(tt({pl:'Brak połączenia z internetem.',en:'No internet connection.',de:'Keine Internetverbindung.',es:'Sin conexión a internet.'}),'error');
   if(!cloudSyncAllowed())return showSyncToast(tt({pl:'Cloud sync jest tylko dla PRO / COACH.',en:'Cloud sync is only for PRO / COACH.',de:'Cloud Sync ist nur für PRO / COACH.',es:'Cloud sync es solo para PRO / COACH.'}),'error');
   if(!confirm(tt({pl:'Pobrać dane z chmury? Nadpisze lokalne.',en:'Download cloud data? This overwrites local data.',de:'Cloud-Daten herunterladen? Lokale Daten werden überschrieben.',es:'¿Descargar datos de la nube? Sobrescribe los locales.'})))return;
   showSyncToast(tt({pl:'Pobieranie...',en:'Downloading...',de:'Herunterladen...',es:'Descargando...'}));

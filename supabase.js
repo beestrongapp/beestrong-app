@@ -56,7 +56,7 @@ function initSupabase(){
         S.user=null;
         S.pendingInvites=[];
         S.pendingClientRequests=[];
-        clearLocalUserData();
+        // Keep local data on sign-out — data belongs to the device, not the session.
       }
       if(typeof renderSettings==='function')renderSettings();
       updateCoachNav();updateProCoachNav();updateAdminNav();
@@ -202,6 +202,10 @@ async function pullAllFromCloud(){
     if(woRes.error)throw woRes.error;
     if(mRes.error)throw mRes.error;
     if(pRes.error)throw pRes.error;
+    // Rule #1: never overwrite non-empty local data with empty cloud response
+    const cloudHasData=(tplsRes.data||[]).length>0||(woRes.data||[]).length>0||(mRes.data||[]).length>0;
+    const localIsEmpty=!Object.keys(S.workouts||{}).length&&!(S.templates||[]).length&&!Object.keys(S.measurements||{}).length;
+    if(!cloudHasData&&!localIsEmpty){return{error:'cloud_returned_empty'};}
     // coach_clients may fail if not a coach — ignore that error gracefully
     if(ccRes.error&&ccRes.error.code!=='PGRST116')console.warn('coach_clients pull:',ccRes.error);
     // coach_program_assignments may fail if table doesn't exist yet — ignore gracefully
@@ -304,6 +308,10 @@ async function pullAllFromCloud(){
     _suppressCloudQueue=true;
     saveAll();
     _suppressCloudQueue=false;
+    // Align both timestamps so local changes made after this pull are detectable
+    const pullAt=Date.now().toString();
+    localStorage.setItem('bs-last-cloud-pull-at',pullAt);
+    localStorage.setItem('bs-local-modified-at',pullAt);
     if(typeof resetCloudSyncSnapshot==='function')resetCloudSyncSnapshot();
     // Re-render every screen
     if(typeof renderDashboard==='function')renderDashboard();
@@ -658,6 +666,7 @@ function showAccountModal(){
     else showSyncToast((tt({pl:'Błąd: ',en:'Error: ',de:'Fehler: ',es:'Error: '}))+(r.error||''),'error');
   };
   document.getElementById('acctPull').onclick=async()=>{
+    if(!navigator.onLine)return showSyncToast(tt({pl:'Brak połączenia z internetem.',en:'No internet connection.',de:'Keine Internetverbindung.',es:'Sin conexión a internet.'}),'error');
     if(!cloudSyncAllowed()){
       showSyncToast(tt({pl:'Cloud sync jest tylko dla PRO / COACH.',en:'Cloud sync is only for PRO / COACH.',de:'Cloud Sync ist nur für PRO / COACH.',es:'Cloud sync es solo para PRO / COACH.'}),'error');
       return;
