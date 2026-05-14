@@ -268,7 +268,7 @@ input:focus,textarea:focus{outline:none;border-color:var(--accent);}
 .week-plan-rest{font-size:9px;color:var(--text3);margin-top:7px;line-height:1;}
 .empty-state{text-align:center;padding:48px 20px;color:var(--text2);}
 .save-pill{position:fixed;top:calc(14px + env(safe-area-inset-top));right:14px;font-size:12px;padding:7px 14px;border-radius:20px;background:var(--accent);color:#000;font-weight:700;opacity:0;transition:opacity 0.3s;pointer-events:none;z-index:300;}
-.save-pill.show{opacity:1;}
+.save-pill.show{opacity:0;}
 .spinner-wrap{display:flex;align-items:center;justify-content:center;min-height:200px;flex-direction:column;gap:14px;color:var(--text2);}
 .spinner{width:26px;height:26px;border:2px solid var(--bg4);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
