@@ -691,17 +691,12 @@ async function autoSyncFromCloud(){
   const now=Date.now();
   if(now-_lastAutoSync<120000)return; // 2 min cooldown
   _lastAutoSync=now;
-  // Show subtle indicator
-  const ind=document.getElementById('autoSyncDot');
-  if(ind)ind.classList.add('syncing');
   const pushed=await syncQueuedCloudChanges();
   if(pushed?.error&&pushed.error!=='offline'&&pushed.error!=='cloud_sync_requires_pro'){
-    if(ind)ind.classList.remove('syncing');
     console.warn('autoSync push error:',pushed.error);
     return;
   }
   const r=await pullAllFromCloud();
-  if(ind)ind.classList.remove('syncing');
   if(r.error)console.warn('autoSync error:',r.error);
 }
 

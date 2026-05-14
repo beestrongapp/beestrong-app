@@ -168,7 +168,6 @@ function queueAllCloudData(){
 }
 function saveAll(){
   sv('bs-tpl-v4',S.templates);sv('bs-wo-v4',S.workouts);sv('bs-meas-v1',S.measurements);sv('bs-ispro-v1',S.isPro);sv('bs-coach-v1',S.coachMode);sv('bs-coach-visible-v1',S.coachVisible!==false);sv('bs-programs-v1',S.programs);sv('bs-clients-v1',S.clients);sv('bs-default-rest-v1',S.defaultRest);sv('bs-units-v1',S.units);sv('bs-week-plan-v1',S.weekPlan||{});if(S.layoutMode)localStorage.setItem('bs-layout-mode-v1',S.layoutMode);if(S.goal)localStorage.setItem('bs-goal-v1',S.goal);if(S.level)localStorage.setItem('bs-level-v1',S.level);
-  const p=document.getElementById('savePill');if(p){p.classList.add('show');setTimeout(()=>p.classList.remove('show'),1800);}
   enqueueChangedCloudData();
 }
 

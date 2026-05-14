@@ -267,8 +267,6 @@ input:focus,textarea:focus{outline:none;border-color:var(--accent);}
 .week-plan-pill.template{background:var(--accent-dim);color:var(--accent);}
 .week-plan-rest{font-size:9px;color:var(--text3);margin-top:7px;line-height:1;}
 .empty-state{text-align:center;padding:48px 20px;color:var(--text2);}
-/*.save-pill{position:fixed;top:calc(14px + env(safe-area-inset-top));right:14px;font-size:12px;padding:7px 14px;border-radius:20px;background:var(--accent);color:#000;font-weight:700;opacity:0;transition:opacity 0.3s;pointer-events:none;z-index:300;}
-.save-pill.show{opacity:0;}*/
 .spinner-wrap{display:flex;align-items:center;justify-content:center;min-height:200px;flex-direction:column;gap:14px;color:var(--text2);}
 .spinner{width:26px;height:26px;border:2px solid var(--bg4);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
@@ -324,10 +322,6 @@ body.workout-active .mobile-fab-overlay{display:none!important;}
   .chat-bottom-actions .btn{box-shadow:0 8px 24px rgba(0,0,0,0.28);}
   .chat-bottom-actions .btn-primary{background:var(--accent);border-color:var(--accent);color:var(--btn-text);}
 }
-/* ── Auto-sync indicator ── */
-#autoSyncDot{position:fixed;top:10px;right:12px;width:8px;height:8px;border-radius:50%;background:var(--accent);opacity:0;transition:opacity 0.3s;z-index:500;pointer-events:none;}
-#autoSyncDot.syncing{opacity:1;animation:syncPulse 1s ease-in-out infinite;}
-@keyframes syncPulse{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.5);opacity:0.5;}}
 /* ── Mobile brand header (hidden on desktop, visible on mobile dashboard) ── */
 .mobile-brand{display:none;align-items:center;gap:10px;padding-bottom:1px;border-bottom:1px solid var(--border);margin-bottom:2px;justify-content:space-between;}
 .mobile-brand-logo{width:105px;height:105px;border-radius:13px;object-fit:cover;flex-shrink:0;}
