@@ -3,6 +3,7 @@ let _friendInvitations=[];
 let _friendDetail=null;
 let _friendChatChannel=null;
 let _friendDetailView=null;
+let _friendRecordsList=[];
 
 function friendName(inv){
   const mine=S.user?.id===inv.inviter_id;
@@ -330,15 +331,74 @@ function friendRecords(workouts){
 function renderFriendRecords(){
   const el=document.getElementById('friendDetailContent'),ctx=_friendDetail;if(!el||!ctx)return;
   const records=friendRecords(ctx.workouts);
+  _friendRecordsList=records;
   _friendDetailView='records';window._friendDetailView='records';
   el.style.display='block';el.style.padding='0';
   el.innerHTML=friendHeader('Records',ctx.profile?.display_name||friendName(ctx.inv),'hub')+
-    (records.length?records.map(r=>`<div class="workout-row" style="cursor:default;">
+    (records.length?records.map((r,i)=>`<div class="workout-row" style="cursor:pointer;" onclick="showFriendRecordDetail(${i})">
       <div class="workout-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><path d="M6 4v16M18 4v16M3 12h18"/></svg></div>
       <div class="workout-row-info"><div class="workout-row-name">${friendEsc(r.name)}</div><div class="workout-row-meta">${dispW(r.weight)}${unitW()} × ${r.reps} · e1RM ${dispW(r.score)}${unitW()} · ${r.date||''}</div></div>
+      <span style="color:var(--text3);font-size:20px;flex-shrink:0;">›</span>
     </div>`).join(''):`<div class="empty-state">${t('noData')}</div>`);
 }
 window.renderFriendRecords=renderFriendRecords;
+
+function showFriendRecordDetail(idx){
+  const r=_friendRecordsList[idx];
+  if(!r||!_friendDetail)return;
+  const name=r.name;
+  const sets={};
+  _friendDetail.workouts.forEach(w=>{
+    const dateStr=w.date||'';
+    (w.exercises||[]).forEach(ex=>{
+      if((exName(ex)||ex.name||'').trim()!==name)return;
+      (ex.sets||[]).forEach(s=>{
+        const wt=+(s.weight||0),reps=+(s.reps||0);
+        if(wt<=0||reps<=0)return;
+        const key=`${dateStr}|${wt}|${reps}`;
+        if(!sets[key])sets[key]={weight:wt,reps,date:dateStr};
+      });
+    });
+  });
+  const sorted=Object.values(sets).sort((a,b)=>b.weight-a.weight||b.reps-a.reps);
+  const chartData=Object.values(sets).sort((a,b)=>a.date.localeCompare(b.date));
+  const chartId='frc_'+Date.now();
+  const ov=document.createElement('div');ov.className='modal-overlay';
+  ov.innerHTML=`<div class="modal">
+    <div class="modal-handle"></div>
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;">
+      <div>
+        <div style="font-size:18px;font-weight:700;">Records</div>
+        <div style="font-size:13px;color:var(--text2);margin-top:2px;">${friendEsc(name)}</div>
+      </div>
+      <button onclick="this.closest('.modal-overlay').remove();" aria-label="Close" style="width:38px;height:38px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-size:28px;cursor:pointer;padding:0;line-height:1;display:flex;align-items:center;justify-content:center;">×</button>
+    </div>
+    ${chartData.length?`<div style="position:relative;width:100%;height:190px;margin:8px 0 14px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:10px;">
+      <canvas id="${chartId}"></canvas>
+      ${chartGrowthBadge(chartData.map(s=>s.weight))}
+    </div>`:''}
+    <div style="max-height:62vh;overflow-y:auto;margin-top:4px;">
+      ${sorted.map((s,i)=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);${i===0?'background:var(--accent-dim);margin:0 -4px;padding:12px 4px;border-radius:8px;margin-bottom:4px;':''}">
+        <div>
+          <div style="font-size:15px;font-weight:700;">${dispW(s.weight)}${unitW()} × ${s.reps}${i===0?` <span style="font-size:10px;background:var(--accent);color:var(--btn-text);padding:2px 6px;border-radius:4px;font-weight:700;vertical-align:middle;">PR</span>`:''}</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px;">${s.date}</div>
+        </div>
+      </div>`).join('')}
+    </div>
+  </div>`;
+  document.body.appendChild(ov);
+  if(chartData.length){
+    setTimeout(()=>{
+      const c=document.getElementById(chartId);
+      if(!c||typeof Chart==='undefined')return;
+      const labels=chartData.map(s=>{const p=String(s.date||'').split('-');return p.length===3?`${p[2]}.${p[1]}`:s.date;});
+      new Chart(c,{type:'line',data:{labels,datasets:[
+        {label:unitW(),data:chartData.map(s=>dispW(s.weight)),borderColor:'#2f405f',backgroundColor:'rgba(47,64,95,0.08)',borderWidth:2.5,pointRadius:4,pointBackgroundColor:'#2f405f',tension:0.3}
+      ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:'rgba(128,128,128,0.10)'},ticks:{font:{size:10},callback:v=>v+unitW()}},x:{grid:{display:false},ticks:{font:{size:10}}}}}});
+    },50);
+  }
+}
+window.showFriendRecordDetail=showFriendRecordDetail;
 
 function stopFriendChatRealtime(){
   if(_friendChatChannel&&sb){try{sb.removeChannel(_friendChatChannel);}catch(e){}}
