@@ -540,7 +540,8 @@ async function renderUserCoaches(){
     const allRelations=dedupeByCoach([...(allById.data||[]),...(allByEmail.data||[])]);
     const relationByCoach=new Map(allRelations.map(inv=>[inv.coach_id,inv]));
     const pendingRelations=allRelations.filter(inv=>inv.status==='pending');
-    const declinedRelations=allRelations.filter(inv=>inv.status==='declined');
+    const _dismissed=JSON.parse(localStorage.getItem('bs-dismissed-invites')||'[]');
+    const declinedRelations=allRelations.filter(inv=>inv.status==='declined'&&!_dismissed.includes(inv.id));
     const available=(availableRes.data||[])
       .filter(p=>p.id!==S.user.id)
       .filter(p=>p.coach_visible!==false)
@@ -707,6 +708,7 @@ async function requestCoach(coachId,applicationData){
       url:'./?screen=clients',
       tag:`coach-selected-${S.user.id}`,
     });
+    closeModal();
     showSyncToast(tt({pl:'Zaproszenie wysłane do coacha.',en:'Invitation sent to coach.',de:'Einladung an Coach gesendet.',es:'Invitación enviada al coach.'}),'success');
     renderUserCoaches();
   }catch(e){
@@ -717,11 +719,9 @@ async function requestCoach(coachId,applicationData){
 }
 window.requestCoach=requestCoach;
 
-window.dismissDeclinedCoach=async function(invId){
-  if(!sb||!S.user)return;
-  try{
-    await sb.from('coach_invitations').delete().eq('id',invId).eq('client_user_id',S.user.id);
-  }catch(e){}
+window.dismissDeclinedCoach=function(invId){
+  const key='bs-dismissed-invites';
+  try{const d=JSON.parse(localStorage.getItem(key)||'[]');if(!d.includes(invId)){d.push(invId);localStorage.setItem(key,JSON.stringify(d));}}catch(e){}
   renderUserCoaches();
 };
 
