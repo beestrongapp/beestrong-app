@@ -1582,6 +1582,7 @@ function renderSettings(){
     {key:'language',label:t('language'),value:({en:t('langEnglish'),pl:t('langPolish'),de:t('langGerman'),es:t('langSpanish')}[lang]||t('langEnglish')),icon:svg(icon.language),action:'openSettingsLanguage'},
     {key:'units',label:tt({pl:'Jednostki',en:'Units',de:'Einheiten',es:'Unidades'}),value:S.units==='imperial'?'Imperial (lbs / in)':'Metric (kg / cm)',icon:svg(icon.units),action:'openSettingsUnits'},
     {key:'restTimer',label:tt({pl:'Czas odpoczynku',en:'Rest timer',de:'Pausenzeit',es:'Tiempo de descanso'}),value:`${S.defaultRest||90} s`,icon:svg(icon.timer),action:'openSettingsRestTimer'},
+    {key:'workoutView',label:tt({pl:'Widok treningu',en:'Workout view',de:'Trainingsansicht',es:'Vista de entrenamiento'}),value:(localStorage.getItem('bs-workout-view')||'standard')==='minimal'?tt({pl:'Minimalny',en:'Minimal',de:'Minimal',es:'Mínimo'}):tt({pl:'Standardowy',en:'Standard',de:'Standard',es:'Estándar'}),icon:svg(icon.layout),action:'openSettingsWorkoutView'},
     {key:'push',label:tt({pl:'Powiadomienia telefonu',en:'Phone notifications',de:'Telefon-Benachrichtigungen',es:'Notificaciones del teléfono'}),value:typeof pushStatusLabel==='function'?pushStatusLabel():tt({pl:'Niedostępne',en:'Unavailable',de:'Nicht verfügbar',es:'No disponible'}),icon:svg(icon.bell),action:'togglePushNotifications'},
   ];
   if(S.user&&S.coachMode){
@@ -2737,6 +2738,20 @@ function openSettingsRestTimer(){
   render();
 }
 window.openSettingsRestTimer=openSettingsRestTimer;
+
+function openSettingsWorkoutView(){
+  closeModal();
+  const ov=document.createElement('div');ov.className='modal-overlay';
+  ov._backHandler=()=>{closeModal();return true;};
+  const cur=localStorage.getItem('bs-workout-view')||'standard';
+  const options=[
+    {val:'standard',emoji:'📋',label:tt({pl:'Standardowy',en:'Standard',de:'Standard',es:'Estándar'}),desc:tt({pl:'Pełna lista ćwiczeń i serii',en:'Full exercise and set list',de:'Vollständige Übungs- und Satzliste',es:'Lista completa de ejercicios y series'})},
+    {val:'minimal',emoji:'⚡',label:tt({pl:'Minimalny',en:'Minimal',de:'Minimal',es:'Mínimo'}),desc:tt({pl:'Skupiony widok: duży timer + aktualny set',en:'Focused view: large timer + current set',de:'Fokussiert: großer Timer + aktueller Satz',es:'Vista enfocada: temporizador + serie actual'})},
+  ];
+  ov.innerHTML=`<div class="modal"><div class="modal-handle"></div><div class="modal-title">${tt({pl:'Widok treningu',en:'Workout view',de:'Trainingsansicht',es:'Vista de entrenamiento'})}</div>${options.map(o=>`<div onclick="localStorage.setItem('bs-workout-view','${o.val}');closeModal();renderSettings();" style="display:flex;align-items:center;gap:14px;padding:14px 12px;border-radius:12px;cursor:pointer;background:${cur===o.val?'var(--accent-dim)':'none'};border:1px solid ${cur===o.val?'var(--accent)':'var(--border)'};margin-bottom:8px;transition:all 0.12s;"><span style="font-size:22px;line-height:1;">${o.emoji}</span><div style="flex:1;"><div style="font-size:15px;font-weight:${cur===o.val?'700':'500'};color:${cur===o.val?'var(--accent)':'var(--text)'};">${o.label}</div><div style="font-size:12px;color:var(--text2);margin-top:2px;">${o.desc}</div></div></div>`).join('')}</div>`;
+  document.body.appendChild(ov);S.modal=ov;
+}
+window.openSettingsWorkoutView=openSettingsWorkoutView;
 
 function openSettingsMeasurements(){
   closeModal();

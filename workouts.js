@@ -1065,13 +1065,14 @@ function renderWorkout(){
     return;
   }
   const w=S.activeWorkout;
+  if(getWorkoutViewMode()==='minimal'){renderWorkoutMinimal();return;}
   const elapsed=Math.max(0,Math.floor((Date.now()-w.startTime)/60000));
   const done=w.exercises.reduce((a,ex)=>a+ex.sets.filter(s=>s.done).length,0);
   const total=w.exercises.reduce((a,ex)=>a+ex.sets.length,0);
   const pct=total?Math.round(done/total*100):0;
   const pctColor=pct<=50?'#ff5c5c':pct<=89?'#ff9800':'#4caf50';
   const finishFn=w.isQuick?'finishQuickWorkout()':'finishWorkout()';
-  let h=`<div class="workout-header"><div style="flex:1;"><div style="font-size:19px;font-weight:700;">${escHtml(displayWorkoutName(w))}${w.isQuick?` <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:var(--accent-dim);color:var(--accent);vertical-align:middle;">${t('quickWorkout')}</span>`:''}</div><div style="font-size:12px;color:var(--text2);margin-top:3px;">${elapsed} min · ${done}/${total} ${t('exSets')} · <span style="color:${pctColor};font-weight:700;">${pct}%</span></div><div style="margin-top:8px;height:4px;background:var(--bg4);border-radius:2px;width:100%;max-width:220px;"><div style="height:4px;background:${pctColor};border-radius:2px;width:${pct}%;transition:width 0.3s;"></div></div></div></div>`;
+  let h=`<div class="workout-header"><div style="flex:1;"><div style="font-size:19px;font-weight:700;">${escHtml(displayWorkoutName(w))}${w.isQuick?` <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:var(--accent-dim);color:var(--accent);vertical-align:middle;">${t('quickWorkout')}</span>`:''}</div><div style="font-size:12px;color:var(--text2);margin-top:3px;">${elapsed} min · ${done}/${total} ${t('exSets')} · <span style="color:${pctColor};font-weight:700;">${pct}%</span></div><div style="margin-top:8px;height:4px;background:var(--bg4);border-radius:2px;width:100%;max-width:220px;"><div style="height:4px;background:${pctColor};border-radius:2px;width:${pct}%;transition:width 0.3s;"></div></div></div><button class="minimal-view-toggle" onclick="toggleWorkoutViewMode()" title="${tt({pl:'Widok minimalny',en:'Minimal view',de:'Minimalansicht',es:'Vista mínima'})}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button></div>`;
   const _supLabels=computeSupLabels(w.exercises);
   w.exercises.forEach((ex,ei)=>{
     const _slbl=_supLabels[ei];
@@ -1094,6 +1095,105 @@ function renderWorkout(){
   initExerciseReorder(el,(from,to)=>{moveArrayItem(S.activeWorkout.exercises,from,to);renderWorkout();});
   // If timer was running, re-insert timer bar (DOM was rebuilt)
   if(S.timerSecs>0) _renderTimerBar();
+}
+
+// ===== MINIMAL WORKOUT VIEW =====
+function getWorkoutViewMode(){return localStorage.getItem('bs-workout-view')||'standard';}
+window.getWorkoutViewMode=getWorkoutViewMode;
+window.toggleWorkoutViewMode=function(){
+  localStorage.setItem('bs-workout-view',getWorkoutViewMode()==='minimal'?'standard':'minimal');
+  renderWorkout();
+};
+window.minimalDoneSet=function(ei,si){
+  const s=S.activeWorkout.exercises[ei].sets[si];
+  s.done=true;
+  startTimer(s.rest||S.activeWorkout.restDefault);
+  renderWorkout();
+};
+window.minimalUndoSet=function(){
+  const w=S.activeWorkout;
+  let lastEi=-1,lastSi=-1;
+  for(let ei=0;ei<w.exercises.length;ei++){
+    for(let si=0;si<w.exercises[ei].sets.length;si++){
+      if(w.exercises[ei].sets[si].done){lastEi=ei;lastSi=si;}
+    }
+  }
+  if(lastEi!==-1){w.exercises[lastEi].sets[lastSi].done=false;stopTimer();renderWorkout();}
+};
+
+function renderWorkoutMinimal(){
+  const el=document.getElementById('workoutContent');
+  if(!el)return;
+  const w=S.activeWorkout;
+  const elapsed=Math.max(0,Math.floor((Date.now()-w.startTime)/60000));
+  const done=w.exercises.reduce((a,ex)=>a+ex.sets.filter(s=>s.done).length,0);
+  const total=w.exercises.reduce((a,ex)=>a+ex.sets.length,0);
+  const pct=total?Math.round(done/total*100):0;
+  const pctColor=pct<=50?'#ff5c5c':pct<=89?'#ff9800':'#4caf50';
+
+  let curEi=-1,curSi=-1;
+  for(let ei=0;ei<w.exercises.length;ei++){
+    const si=w.exercises[ei].sets.findIndex(s=>!s.done);
+    if(si!==-1){curEi=ei;curSi=si;break;}
+  }
+  const allDone=curEi===-1;
+
+  const gridIcon=`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>`;
+
+  let h='';
+  h+=`<div class="minimal-header"><div class="minimal-header-info"><div class="minimal-workout-name">${escHtml(displayWorkoutName(w))}</div><div class="minimal-workout-meta">${elapsed} min · <span style="color:${pctColor};font-weight:700;">${pct}%</span></div><div style="height:3px;background:var(--bg4);border-radius:2px;width:100%;margin-top:5px;"><div style="height:3px;background:${pctColor};border-radius:2px;width:${pct}%;transition:width 0.3s;"></div></div></div><button class="minimal-view-toggle" onclick="toggleWorkoutViewMode()" title="${tt({pl:'Widok standardowy',en:'Standard view',de:'Standardansicht',es:'Vista estándar'})}">${gridIcon}</button></div>`;
+
+  if(allDone){
+    h+=`<div class="minimal-all-done"><div style="font-size:56px;margin-bottom:12px;">🏆</div><div style="font-size:22px;font-weight:800;margin-bottom:8px;">${tt({pl:'Wszystkie serie!',en:'All sets done!',de:'Alle Sätze fertig!',es:'¡Todo completado!'})}</div><button class="btn btn-primary" style="margin-top:16px;width:180px;" onclick="${w.isQuick?'finishQuickWorkout()':'confirmFinishWorkout()'}">${t('finish')}</button></div>`;
+  } else {
+    const curEx=w.exercises[curEi];
+    const curSet=curEx.sets[curSi];
+    const nextSi=curSi+1;
+    const hasNextInEx=nextSi<curEx.sets.length;
+
+    let nextExIdx=-1;
+    for(let ei=curEi+1;ei<w.exercises.length;ei++){
+      if(w.exercises[ei].sets.some(s=>!s.done)){nextExIdx=ei;break;}
+    }
+
+    const tMin=Math.floor(S.timerSecs/60);
+    const tSec=String(S.timerSecs%60).padStart(2,'0');
+    const tActive=S.timerSecs>0;
+    const tWarn=tActive&&S.timerSecs<=5;
+    const tColor=tWarn?'var(--red)':tActive?'var(--accent)':'var(--text2)';
+
+    h+=`<div class="minimal-exercise-name">${exName(curEx)}</div>`;
+    h+=`<div class="minimal-set-label">${tt({pl:'Seria',en:'Set',de:'Satz',es:'Serie'})} ${curSi+1} / ${curEx.sets.length}</div>`;
+
+    h+=`<div class="minimal-action-row">`;
+    h+=`<button class="minimal-btn minimal-btn-left" onclick="minimalUndoSet()" title="${tt({pl:'Cofnij ostatnią serię',en:'Undo last set',de:'Letzten Satz rückgängig',es:'Deshacer último set'})}">✕</button>`;
+    h+=`<div class="minimal-timer-block"><div id="minimalTimerDisplay" class="minimal-timer${tWarn?' timer-warning':''}" style="color:${tColor};">${tMin}:${tSec}</div>`;
+    if(tActive){
+      h+=`<div class="minimal-rest-label">${t('restBreak')}</div><div class="minimal-timer-controls"><button class="timer-adjust timer-minus" onclick="adjustTimer(-10)">-10s</button><button class="timer-skip" onclick="stopTimer();renderWorkout()">SKIP</button><button class="timer-adjust timer-plus" onclick="adjustTimer(10)">+10s</button></div>`;
+    }
+    h+=`</div>`;
+    h+=`<button class="minimal-btn minimal-btn-right" onclick="minimalDoneSet(${curEi},${curSi})" title="${tt({pl:'Gotowe',en:'Done',de:'Fertig',es:'Listo'})}">✓</button>`;
+    h+=`</div>`;
+
+    h+=`<div class="minimal-sets-area">`;
+    h+=`<div class="minimal-set-row minimal-set-current"><div class="minimal-set-num">${curSi+1}</div><div class="minimal-set-inputs"><div class="minimal-input-group"><label class="minimal-input-label">${unitW()}</label><input class="si minimal-input" type="number" value="${dispW(curSet.weight)}" onfocus="clearZeroInput(this)" onchange="upd(${curEi},${curSi},'weight',this.value)"/></div><div class="minimal-input-group"><label class="minimal-input-label">${t('reps')}</label><input class="si minimal-input" type="number" value="${curSet.reps}" onfocus="clearZeroInput(this)" onchange="upd(${curEi},${curSi},'reps',this.value)"/></div></div></div>`;
+
+    if(hasNextInEx){
+      const nextSet=curEx.sets[nextSi];
+      h+=`<div class="minimal-set-row minimal-set-next"><div class="minimal-set-num" style="opacity:0.45;">${nextSi+1}</div><div class="minimal-set-inputs"><div class="minimal-input-group"><label class="minimal-input-label" style="opacity:0.45;">${unitW()}</label><input class="si minimal-input minimal-input-next" type="number" value="${dispW(nextSet.weight)}" onfocus="clearZeroInput(this)" onchange="upd(${curEi},${nextSi},'weight',this.value)"/></div><div class="minimal-input-group"><label class="minimal-input-label" style="opacity:0.45;">${t('reps')}</label><input class="si minimal-input minimal-input-next" type="number" value="${nextSet.reps}" onfocus="clearZeroInput(this)" onchange="upd(${curEi},${nextSi},'reps',this.value)"/></div></div></div>`;
+    } else if(nextExIdx!==-1){
+      const nextEx=w.exercises[nextExIdx];
+      const ns0=nextEx.sets[0];
+      const ns1=nextEx.sets[1];
+      const setsHtml=[ns0,ns1].filter(Boolean).map((ns,ni)=>`<div class="minimal-next-ex-set"><span class="minimal-set-num" style="font-size:11px;width:14px;">${ni+1}</span><span>${dispW(ns.weight)} × ${ns.reps}</span></div>`).join('');
+      h+=`<div class="minimal-next-exercise"><div class="minimal-next-ex-label">${tt({pl:'Następne ćwiczenie',en:'Next exercise',de:'Nächste Übung',es:'Siguiente ejercicio'})}</div><div class="minimal-next-ex-name">${exName(nextEx)}</div>${setsHtml?`<div class="minimal-next-ex-sets">${setsHtml}</div>`:''}</div>`;
+    }
+    h+=`</div>`;
+  }
+
+  h+=`<div style="height:80px;"></div>`;
+  h+=`<div class="workout-actions-bar"><button class="workout-action-btn danger" onclick="cancelWorkout()">${t('cancelWorkout')}</button><button class="workout-action-btn primary" onclick="${w.isQuick?'finishQuickWorkout()':'confirmFinishWorkout()'}">${t('finish')}</button></div>`;
+  el.innerHTML=h;
 }
 
 function upd(ei,si,f,v){S.activeWorkout.exercises[ei].sets[si][f]=f==='weight'?inputToKg(v):+v;}
@@ -1138,8 +1238,8 @@ function startTimer(s){
     if(S.timerSecs<=0){
       timerAlert('done');
       stopTimer();
-      const tb=document.getElementById('workoutTimerBar');
-      if(tb)tb.remove();
+      if(getWorkoutViewMode()==='minimal')renderWorkout();
+      else{const tb=document.getElementById('workoutTimerBar');if(tb)tb.remove();}
     } else {
       if(S.timerSecs<=5)timerAlert('warning');
       _renderTimerBar();
@@ -1155,6 +1255,16 @@ function stopTimer(){
 }
 
 function _renderTimerBar(){
+  const _minEl=document.getElementById('minimalTimerDisplay');
+  if(_minEl){
+    const min=Math.floor(S.timerSecs/60);
+    const sec=String(S.timerSecs%60).padStart(2,'0');
+    _minEl.textContent=`${min}:${sec}`;
+    const isWarning=S.timerSecs>0&&S.timerSecs<=5;
+    _minEl.style.color=isWarning?'var(--red)':S.timerSecs>0?'var(--accent)':'var(--text2)';
+    _minEl.className='minimal-timer'+(isWarning?' timer-warning':'');
+    return;
+  }
   const min=Math.floor(S.timerSecs/60);
   const sec=String(S.timerSecs%60).padStart(2,'0');
   let tb=document.getElementById('workoutTimerBar');
