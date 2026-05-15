@@ -611,6 +611,9 @@ function renderPrograms(){
       ${expanded?`<div onclick="event.stopPropagation();" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
         <div style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.55;">${localizedField(p,'description')}</div>
         ${exercisesHtml}
+        <div style="margin-top:14px;">
+          <button class="btn btn-primary" onclick='openAssignProgramToCalendar("${safeId}")' style="font-size:13px;padding:10px 14px;display:flex;align-items:center;justify-content:center;gap:6px;width:100%;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${tt({pl:'Przypisz do kalendarza',en:'Assign to calendar',de:'Zum Kalender hinzufügen',es:'Asignar al calendario'})}</button>
+        </div>
         ${coachActions}
       </div>`:''}
     </div>`;
@@ -879,12 +882,15 @@ function renderWeekPlan(){
     const isToday=date===today_;
     const isPast=date<today_;
     const isSelected=date===_selectedPlanDate;
+    const doneWorkout=Object.values(S.workouts||{}).find(w=>(w.date||'')===date);
     let content='';
     const coachMark=plan?.fromCoach?' 👤':'';
     if(plan?.type==='custom'){
-      content=`<div class="week-plan-pill custom">${plan.name}</div>`;
+      content=`<div class="week-plan-pill custom">${plan.name}${doneWorkout?` <span style="color:#4caf50;font-size:9px;">✓</span>`:''}</div>`;
     }else if(plan?.type==='template'){
-      content=`<div class="week-plan-pill template">${plan.name}${coachMark}</div>`;
+      content=`<div class="week-plan-pill template">${plan.name}${coachMark}${doneWorkout?` <span style="color:#4caf50;font-size:9px;">✓</span>`:''}</div>`;
+    }else if(doneWorkout){
+      content=`<div class="week-plan-pill" style="background:rgba(76,175,80,0.15);color:#4caf50;border:1px solid rgba(76,175,80,0.3);">✓ ${escHtml(doneWorkout.name||tt({pl:'Trening',en:'Workout',de:'Training',es:'Entrenamiento'}))}</div>`;
     }else{
       content=`<div class="week-plan-rest">Rest</div>`;
     }
@@ -1233,6 +1239,120 @@ function startPlannedWorkout(date){
 }
 window.startPlannedWorkout=startPlannedWorkout;
 window.switchCalTab=switchCalTab;
+
+// ── Helper: weekday number 1=Mon…7=Sun ──
+function _wdNum(dateStr){const js=new Date(dateStr+'T00:00:00').getDay();return js===0?7:js;}
+function _isoDate(d){return d.toISOString().slice(0,10);}
+
+// ── Next Monday from today ──
+function _nextMonday(){
+  const d=new Date();const wd=d.getDay();const diff=wd===1?7:(8-wd)%7||7;
+  d.setDate(d.getDate()+diff);return _isoDate(d);
+}
+
+// ── Default weekdays based on daysPerWeek ──
+function _defaultWeekdays(n){
+  return([1,3,5,2,4,6,7]).slice(0,Math.min(n||3,7));
+}
+
+window.openAssignProgramToCalendar=function(pid){
+  const userPrograms=Array.isArray(S.programs)?S.programs:[];
+  const allPrograms=[...BUILTIN_PROGRAMS,...userPrograms];
+  const p=allPrograms.find(x=>String(x.id)===String(pid));
+  if(!p)return;
+  closeModal();
+
+  const state={
+    startDate:_nextMonday(),
+    weekdays:_defaultWeekdays(p.daysPerWeek||3),
+  };
+
+  const ov=document.createElement('div');ov.className='modal-overlay';
+
+  function syncState(){
+    const sd=ov.querySelector('#userAssignStartDate');
+    if(sd)state.startDate=sd.value||state.startDate;
+    state.weekdays=[...ov.querySelectorAll('[data-uaw].is-selected')].map(x=>+x.dataset.uaw);
+  }
+
+  function buildSchedule(){
+    const templates=p.templates||[];
+    const duration=Math.max(1,+(p.duration||8));
+    const days=[...state.weekdays].sort((a,b)=>a-b);
+    const start=new Date(state.startDate+'T00:00:00');
+    const items=[];let ti=0;
+    for(let i=0;i<duration*7;i++){
+      const d=new Date(start);d.setDate(start.getDate()+i);
+      const iso=_isoDate(d);
+      if(!days.includes(_wdNum(iso)))continue;
+      const tpl=templates[ti%Math.max(templates.length,1)];
+      if(!tpl)continue;
+      items.push({date:iso,type:'template',name:tpl.name,template:tpl,exercises:tpl.exercises||[]});
+      ti++;
+    }
+    const end=new Date(start);end.setDate(start.getDate()+duration*7-1);
+    return{items,endDate:_isoDate(end)};
+  }
+
+  function dayLabels(){
+    const labels=T[lang]?.days||T.en.days;
+    return labels.map((d,i)=>{
+      const val=i+1,sel=state.weekdays.includes(val);
+      return `<button type="button" data-uaw="${val}" class="${sel?'is-selected':''}" onclick="window._userAssignToggleDay(${val})" style="display:flex;align-items:center;justify-content:center;min-height:36px;border-radius:10px;border:1px solid ${sel?'var(--accent)':'var(--border)'};background:${sel?'var(--accent-dim)':'var(--bg3)'};font-size:11px;font-weight:700;color:${sel?'var(--accent)':'var(--text2)'};">${d}</button>`;
+    }).join('');
+  }
+
+  function render(){
+    const sched=buildSchedule();
+    const progName=localizedField(p,'name')||p.name?.en||p.name?.pl||tt({pl:'Program',en:'Program',de:'Programm',es:'Programa'});
+    const conflicts=sched.items.filter(it=>S.weekPlan?.[it.date]&&!S.weekPlan[it.date].fromProgram).length;
+    ov.innerHTML=`<div class="modal" style="max-height:90dvh;overflow-y:auto;">
+      <div class="modal-handle"></div>
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;">
+        <div>
+          <div style="font-size:18px;font-weight:700;">📅 ${tt({pl:'Przypisz do kalendarza',en:'Assign to calendar',de:'Zum Kalender hinzufügen',es:'Asignar al calendario'})}</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:3px;">${escHtml(progName)} · ${p.daysPerWeek||3}×/tyg. · ${p.duration||8} ${tt({pl:'tyg.',en:'wks',de:'Wo.',es:'sem.'})}</div>
+        </div>
+        <button onclick="closeModal()" style="background:none;border:none;color:var(--text3);font-size:24px;cursor:pointer;padding:0 4px;line-height:1;">×</button>
+      </div>
+      <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:6px;">${tt({pl:'Data startu',en:'Start date',de:'Startdatum',es:'Fecha de inicio'})}</label>
+      <input id="userAssignStartDate" type="date" value="${state.startDate}" oninput="window._userAssignSync()" style="margin-bottom:14px;width:100%;padding:10px;border-radius:10px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:14px;font-family:inherit;">
+      <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:6px;">${tt({pl:'Dni treningowe',en:'Training days',de:'Trainingstage',es:'Días de entrenamiento'})}</label>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:14px;">${dayLabels()}</div>
+      <div style="background:var(--bg3);border-radius:10px;padding:10px 12px;margin-bottom:16px;font-size:12px;color:var(--text2);">
+        <div style="display:flex;justify-content:space-between;"><span>${tt({pl:'Treningi:',en:'Workouts:',de:'Einheiten:',es:'Entrenamientos:'})}</span><strong style="color:var(--text);">${sched.items.length}</strong></div>
+        <div style="display:flex;justify-content:space-between;margin-top:4px;"><span>${tt({pl:'Koniec:',en:'End:',de:'Ende:',es:'Fin:'})}</span><strong style="color:var(--text);">${sched.endDate||'—'}</strong></div>
+        ${conflicts?`<div style="margin-top:6px;color:#ff9800;">⚠ ${conflicts} ${tt({pl:'dni zostanie nadpisanych',en:'days will be overwritten',de:'Tage werden überschrieben',es:'días se sobreescribirán'})}</div>`:''}
+      </div>
+      <button onclick="window._userAssignConfirm()" class="btn btn-primary" style="font-size:15px;" ${sched.items.length===0?'disabled':''}>✓ ${tt({pl:'Przypisz program',en:'Assign program',de:'Programm zuweisen',es:'Asignar programa'})}</button>
+    </div>`;
+  }
+
+  window._userAssignToggleDay=function(val){
+    syncState();
+    const idx=state.weekdays.indexOf(val);
+    if(idx>=0)state.weekdays.splice(idx,1);else state.weekdays.push(val);
+    render();
+  };
+  window._userAssignSync=function(){syncState();render();};
+  window._userAssignConfirm=function(){
+    syncState();
+    const sched=buildSchedule();
+    if(!sched.items.length)return;
+    if(!S.weekPlan)S.weekPlan={};
+    sched.items.forEach(it=>{
+      S.weekPlan[it.date]={type:'template',name:it.name,template:it.template,exercises:it.exercises,fromProgram:true,programName:localizedField(p,'name')||p.name?.en||''};
+    });
+    saveAll();
+    closeModal();
+    showSyncToast(tt({pl:`Program przypisany! ${sched.items.length} treningów w kalendarzu.`,en:`Program assigned! ${sched.items.length} workouts added to calendar.`,de:`Programm zugewiesen! ${sched.items.length} Einheiten im Kalender.`,es:`¡Programa asignado! ${sched.items.length} entrenamientos en el calendario.`}),'success');
+    switchCalTab('week');showScreen('calendar');
+  };
+
+  render();
+  document.body.appendChild(ov);
+  ov.addEventListener('click',e=>{if(e.target===ov)closeModal();});
+};
 
 // ===== PROFILE =====
 let _profileSectionView=null;

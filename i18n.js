@@ -189,6 +189,8 @@ function applyLang(){
   const tl=document.getElementById('themeLabel');if(tl)tl.textContent=isDark?t('lightMode'):t('darkMode');
 }
 
+const _storedTheme=localStorage.getItem('bs-theme');
+if(_storedTheme===null)localStorage.setItem('bs-theme','light');
 let isDark=localStorage.getItem('bs-theme')!=='light';
 function applyTheme(){
   document.body.classList.toggle('light',!isDark);

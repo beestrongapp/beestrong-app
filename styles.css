@@ -259,9 +259,11 @@ input:focus,textarea:focus{outline:none;border-color:var(--accent);}
 .week-plan-day.is-selected{border:2px solid var(--accent);background:var(--accent-dim2);}
 .week-plan-day.is-planning{border:2px dashed var(--accent);}
 .week-plan-day.is-past{opacity:0.65;}
+.week-plan-day.is-today{background:var(--bg4);border-color:var(--accent);}
 .week-plan-day-label{font-size:9px;color:var(--text3);font-weight:700;text-transform:uppercase;line-height:1;}
 .week-plan-day-num{font-size:16px;font-weight:800;margin-top:4px;line-height:1;}
 .week-plan-day.is-today .week-plan-day-num,.week-plan-day.is-selected .week-plan-day-num{color:var(--accent);}
+.week-plan-day.is-today.is-selected{background:var(--accent-dim2);border-color:var(--accent);}
 .week-plan-pill{border-radius:7px;padding:4px 3px;font-size:9px;font-weight:800;margin-top:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.05;max-width:100%;}
 .week-plan-pill.custom{background:rgba(100,200,255,0.12);color:#64c8ff;}
 .week-plan-pill.template{background:var(--accent-dim);color:var(--accent);}

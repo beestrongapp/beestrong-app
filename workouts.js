@@ -1069,8 +1069,9 @@ function renderWorkout(){
   const done=w.exercises.reduce((a,ex)=>a+ex.sets.filter(s=>s.done).length,0);
   const total=w.exercises.reduce((a,ex)=>a+ex.sets.length,0);
   const pct=total?Math.round(done/total*100):0;
+  const pctColor=pct<=50?'#ff5c5c':pct<=89?'#ff9800':'#4caf50';
   const finishFn=w.isQuick?'finishQuickWorkout()':'finishWorkout()';
-  let h=`<div class="workout-header"><div style="flex:1;"><div style="font-size:19px;font-weight:700;">${escHtml(displayWorkoutName(w))}${w.isQuick?` <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:var(--accent-dim);color:var(--accent);vertical-align:middle;">${t('quickWorkout')}</span>`:''}</div><div style="font-size:12px;color:var(--text2);margin-top:3px;">${elapsed} min · ${done}/${total} ${t('exSets')}</div><div style="margin-top:8px;height:4px;background:var(--bg4);border-radius:2px;width:100%;max-width:220px;"><div style="height:4px;background:var(--accent);border-radius:2px;width:${pct}%;transition:width 0.3s;"></div></div></div></div>`;
+  let h=`<div class="workout-header"><div style="flex:1;"><div style="font-size:19px;font-weight:700;">${escHtml(displayWorkoutName(w))}${w.isQuick?` <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:var(--accent-dim);color:var(--accent);vertical-align:middle;">${t('quickWorkout')}</span>`:''}</div><div style="font-size:12px;color:var(--text2);margin-top:3px;">${elapsed} min · ${done}/${total} ${t('exSets')} · <span style="color:${pctColor};font-weight:700;">${pct}%</span></div><div style="margin-top:8px;height:4px;background:var(--bg4);border-radius:2px;width:100%;max-width:220px;"><div style="height:4px;background:${pctColor};border-radius:2px;width:${pct}%;transition:width 0.3s;"></div></div></div></div>`;
   const _supLabels=computeSupLabels(w.exercises);
   w.exercises.forEach((ex,ei)=>{
     const _slbl=_supLabels[ei];
