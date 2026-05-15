@@ -609,18 +609,57 @@ function renderPrograms(){
         <div style="font-size:22px;color:var(--text3);flex-shrink:0;transform:rotate(${expanded?'90':'0'}deg);transition:transform 0.2s;">›</div>
       </div>
       ${expanded?`<div onclick="event.stopPropagation();" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
-        <div style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.55;">${localizedField(p,'description')}</div>
-        ${exercisesHtml}
-        <div style="margin-top:14px;">
+        <div style="margin-bottom:12px;">
           <button class="btn btn-primary" onclick='openAssignProgramToCalendar("${safeId}")' style="font-size:13px;padding:10px 14px;display:flex;align-items:center;justify-content:center;gap:6px;width:100%;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${tt({pl:'Przypisz do kalendarza',en:'Assign to calendar',de:'Zum Kalender hinzufügen',es:'Asignar al calendario'})}</button>
         </div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.55;">${localizedField(p,'description')}</div>
+        ${exercisesHtml}
         ${coachActions}
       </div>`:''}
     </div>`;
   }).join('');
 
-  el.innerHTML=introHtml+coachHeader+cards;
+  // ── Assigned programs section ──
+  const assignedEntries=Object.entries(S.weekPlan||{}).filter(([,v])=>v.fromProgram);
+  let assignedHtml='';
+  if(assignedEntries.length){
+    const grouped={};
+    assignedEntries.forEach(([date,v])=>{
+      const key=v.programName||v.name||'?';
+      if(!grouped[key])grouped[key]={name:key,dates:[]};
+      grouped[key].dates.push(date);
+    });
+    const groupRows=Object.values(grouped).map(g=>{
+      const sorted=g.dates.sort();
+      const start=sorted[0],end=sorted[sorted.length-1];
+      const safeKey=encodeURIComponent(g.name);
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
+        <div>
+          <div style="font-size:14px;font-weight:700;">${escHtml(g.name)}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px;">${g.dates.length} ${tt({pl:'treningów',en:'workouts',de:'Einheiten',es:'entrenamientos'})} · ${start} → ${end}</div>
+        </div>
+        <button class="btn btn-sm btn-danger" onclick='cancelAssignedProgram("${safeKey}")' style="font-size:12px;padding:7px 12px;flex-shrink:0;margin-left:10px;">✕ ${tt({pl:'Anuluj',en:'Cancel',de:'Abbrechen',es:'Cancelar'})}</button>
+      </div>`;
+    }).join('');
+    assignedHtml=`<div style="margin-top:28px;">
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:12px;">📅 ${tt({pl:'Przypisane programy',en:'Assigned programs',de:'Zugewiesene Programme',es:'Programas asignados'})}</div>
+      <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:4px 14px;">${groupRows}</div>
+    </div>`;
+  }
+
+  el.innerHTML=introHtml+coachHeader+cards+assignedHtml;
 }
+
+window.cancelAssignedProgram=function(encodedName){
+  const name=decodeURIComponent(encodedName);
+  if(!S.weekPlan)return;
+  Object.keys(S.weekPlan).forEach(date=>{
+    const v=S.weekPlan[date];
+    if(v.fromProgram&&(v.programName===name||v.name===name))delete S.weekPlan[date];
+  });
+  saveAll();renderPrograms();
+  showSyncToast(tt({pl:'Program usunięty z kalendarza.',en:'Program removed from calendar.',de:'Programm aus Kalender entfernt.',es:'Programa eliminado del calendario.'}),'success');
+};
 
 window.toggleProgramExpand=function(pid){
   _expandedProgramId=(_expandedProgramId===pid)?null:pid;
@@ -914,8 +953,39 @@ function renderWeekPlan(){
         <button data-wp="deselect" style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:2px 6px;line-height:1;">✕</button>
       </div>`;
 
-    if(plan&&!_planEditMode){
-      // ── Info view: day already has a workout ──
+    // ── Check for completed workouts on this date ──
+    const doneWos=Object.entries(S.workouts||{}).filter(([wk,w])=>(w.date||wk.split('_')[0])===sd);
+
+    if(doneWos.length>0){
+      // ── Completed workout view ──
+      doneWos.forEach(([,wo])=>{
+        const exRows=(wo.exercises||[]).map(ex=>{
+          const doneS=ex.sets.filter(s=>s.done).length;
+          const totS=ex.sets.length;
+          return`<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--border);">
+            <span style="color:var(--text2);">• ${escHtml(exName(ex)||ex.name||'?')}</span>
+            <span style="color:${doneS===totS?'#4caf50':'var(--text3)'};flex-shrink:0;">${doneS}/${totS} ${t('exSets')}</span>
+          </div>`;
+        }).join('');
+        html+=`<div style="margin-bottom:12px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <span style="font-size:18px;">✅</span>
+            <div style="flex:1;">
+              <div style="font-size:15px;font-weight:700;">${escHtml(wo.name||tt({pl:'Trening',en:'Workout',de:'Training',es:'Entrenamiento'}))}</div>
+              <div style="font-size:11px;color:var(--text3);">${wo.duration||0} min · ${fmtVol(wo.volume||0)} ${unitVol()}</div>
+            </div>
+          </div>
+          ${exRows?`<div style="max-height:150px;overflow-y:auto;">${exRows}</div>`:''}
+        </div>`;
+      });
+      if(plan){
+        html+=`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);display:flex;gap:8px;">
+          <button data-wp="change-plan" class="btn btn-ghost" style="flex:1;font-size:12px;">🔄 ${tt({pl:'Zmień plan',en:'Change plan',de:'Plan ändern',es:'Cambiar plan'})}</button>
+          <button data-wp="remove" data-date="${sd}" class="btn btn-danger" style="flex:1;font-size:12px;">🗑 ${tt({pl:'Usuń plan',en:'Remove plan',de:'Plan entfernen',es:'Eliminar plan'})}</button>
+        </div>`;
+      }
+    }else if(plan&&!_planEditMode){
+      // ── Info view: plan exists, no workout done ──
       const icon=plan.type==='template'?'📋':'✏️';
       const typeLbl=plan.type==='template'
         ?tt({pl:'Szablon',en:'Template',de:'Vorlage',es:'Plantilla'})
@@ -1350,7 +1420,7 @@ window.openAssignProgramToCalendar=function(pid){
   };
 
   render();
-  document.body.appendChild(ov);
+  document.body.appendChild(ov);S.modal=ov;
   ov.addEventListener('click',e=>{if(e.target===ov)closeModal();});
 };
 
