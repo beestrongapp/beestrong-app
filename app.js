@@ -588,7 +588,6 @@ function renderPrograms(){
 
     // Coach actions for custom (non-builtin) programs when expanded
     const coachActions=(expanded&&!p.builtin)?`<div style="display:flex;gap:6px;margin-top:14px;flex-wrap:wrap;">
-      <button class="btn btn-sm btn-ghost" onclick='shareProgram("${safeId}")' style="flex:1;min-width:0;font-size:12px;padding:8px 12px;">↗ ${tt({pl:'Udostępnij',en:'Share',de:'Teilen',es:'Compartir'})}</button>
       <button class="btn btn-sm btn-ghost" onclick='openProgramEditor("${safeId}")' style="flex:1;min-width:0;font-size:12px;padding:8px 12px;">✎ ${tt({pl:'Edytuj',en:'Edit',de:'Bearbeiten',es:'Editar'})}</button>
       <button class="btn btn-sm btn-danger" onclick='deleteProgram("${safeId}")' style="flex:1;min-width:0;font-size:12px;padding:8px 12px;">🗑 ${tt({pl:'Usuń',en:'Delete',de:'Löschen',es:'Eliminar'})}</button>
     </div>`:'';
@@ -1416,7 +1415,7 @@ window.openAssignProgramToCalendar=function(pid){
     saveAll();
     closeModal();
     showSyncToast(tt({pl:`Program przypisany! ${sched.items.length} treningów w kalendarzu.`,en:`Program assigned! ${sched.items.length} workouts added to calendar.`,de:`Programm zugewiesen! ${sched.items.length} Einheiten im Kalender.`,es:`¡Programa asignado! ${sched.items.length} entrenamientos en el calendario.`}),'success');
-    switchCalTab('week');showScreen('calendar');
+    showScreen('programs');
   };
 
   render();

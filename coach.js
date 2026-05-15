@@ -77,11 +77,6 @@ function openProgramEditor(programId){
           <button class="btn btn-sm btn-ghost" onclick="window.peAddTpl()" style="font-size:12px;padding:7px 12px;">+ ${tt({pl:'Dodaj trening',en:'Add workout',de:'Training hinzufügen',es:'Añadir entrenamiento'})}</button>
         </div>
         ${tplsHtml||`<div style="font-size:12px;color:var(--text3);text-align:center;padding:18px;background:var(--bg3);border-radius:10px;">${tt({pl:'Brak treningów. Kliknij "Dodaj trening".',en:'No workouts yet. Click "Add workout".',de:'Noch keine Workouts. Klicke auf "Training hinzufügen".',es:'Sin entrenamientos. Haz clic en "Añadir entrenamiento".'})}</div>`}
-        ${draft.shareCode?`<div style="margin-top:18px;font-size:11px;color:var(--text3);background:var(--bg3);border:1px dashed var(--border2);border-radius:8px;padding:10px 12px;">
-          <div style="font-weight:600;margin-bottom:4px;">${tt({pl:'Kod udostępnienia',en:'Share code',de:'Teilen-Code',es:'Código para compartir'})}</div>
-          <code style="color:var(--accent);font-size:13px;">${draft.shareCode}</code>
-          <div style="margin-top:4px;color:var(--text3);">${tt({pl:'Po zapisaniu możesz wysłać klientom link.',en:'After save you can send the link to clients.',de:'Nach dem Speichern kannst du Kunden den Link senden.',es:'Después de guardar puedes enviar el enlace a los clientes.'})}</div>
-        </div>`:''}
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px;">
         <button class="btn btn-ghost" onclick="closeModal()">${t('cancelTemplate')}</button>
@@ -569,8 +564,8 @@ async function renderUserCoaches(){
 }
 
 function userCoachCardHtml(inv){
-  const name=chatEsc(inv.coach_name||inv.coach_email||'Coach');
-  const meta=chatEsc(inv.coach_name&&inv.coach_email?inv.coach_email:tt({pl:'Twój coach',en:'Your coach',de:'Dein Coach',es:'Tu coach'}));
+  const name=chatEsc(inv.coach_name||'Coach');
+  const meta=chatEsc(tt({pl:'Twój coach',en:'Your coach',de:'Dein Coach',es:'Tu coach'}));
   return `<div class="client-card" onclick="openUserCoachDetail('${inv.id}')">
     <div style="width:38px;height:38px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--btn-text);flex-shrink:0;">${(name||'?')[0].toUpperCase()}</div>
     <div class="client-card-info">
@@ -582,13 +577,13 @@ function userCoachCardHtml(inv){
 }
 
 function availableCoachCardHtml(profile,relation){
-  const name=profile.display_name||profile.email||'Coach';
+  const name=profile.display_name||'Coach';
   const pending=relation?.status==='pending';
   return `<div class="client-card" style="cursor:default;">
     <div style="width:38px;height:38px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--btn-text);flex-shrink:0;">${(name||'?')[0].toUpperCase()}</div>
     <div class="client-card-info">
       <div class="client-card-name">${chatEsc(name)}</div>
-      <div class="client-card-meta">${chatEsc(profile.email||tt({pl:'Coach',en:'Coach',de:'Coach',es:'Coach'}))}</div>
+      <div class="client-card-meta">${tt({pl:'Trener personalny',en:'Personal trainer',de:'Personal Trainer',es:'Entrenador personal'})}</div>
     </div>
     ${pending
       ?`<span class="client-status-badge client-status-pending">${tt({pl:'Oczekuje',en:'Pending',de:'Ausstehend',es:'Pendiente'})}</span>`
@@ -597,12 +592,12 @@ function availableCoachCardHtml(profile,relation){
 }
 
 function pendingCoachCardHtml(inv){
-  const name=chatEsc(inv.coach_name||inv.coach_email||'Coach');
+  const name=chatEsc(inv.coach_name||'Coach');
   return `<div class="client-card" style="cursor:default;">
     <div style="width:38px;height:38px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--btn-text);flex-shrink:0;">${name[0]?.toUpperCase()||'C'}</div>
     <div class="client-card-info">
       <div class="client-card-name">${name}</div>
-      <div class="client-card-meta">${chatEsc(inv.coach_email||'')}</div>
+      <div class="client-card-meta">${tt({pl:'Trener personalny',en:'Personal trainer',de:'Personal Trainer',es:'Entrenador personal'})}</div>
     </div>
     <span class="client-status-badge client-status-pending">${tt({pl:'Oczekuje',en:'Pending',de:'Ausstehend',es:'Pendiente'})}</span>
   </div>`;

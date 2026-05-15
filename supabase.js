@@ -31,12 +31,23 @@ function initSupabase(){
         storageKey:'bs-auth-v1',
       }
     });
-    // Restore session on page load
+    // Restore session on page load — try network first, fall back to cached token when offline
     sb.auth.getSession().then(({data})=>{
       if(data?.session?.user){
         S.user={id:data.session.user.id,email:data.session.user.email,name:(data.session.user.user_metadata?.display_name||'').trim()};
         if(S.coachMode&&!isCoachAllowed()){S.coachMode=false;saveAll();}
         if(typeof renderSettings==='function')renderSettings();
+      } else if(!navigator.onLine){
+        // Offline and token couldn't be refreshed — restore user from cached auth storage
+        try{
+          const cached=JSON.parse(localStorage.getItem('bs-auth-v1')||'null');
+          const cu=cached?.user;
+          if(cu){
+            S.user={id:cu.id,email:cu.email,name:(cu.user_metadata?.display_name||'').trim()};
+            if(typeof renderSettings==='function')renderSettings();
+            updateCoachNav();updateProCoachNav();updateAdminNav();
+          }
+        }catch(e){}
       }
     }).catch(e=>console.warn('getSession failed',e));
     // Check URL for ?p=<code> shared program — works whether logged in or not
@@ -53,9 +64,13 @@ function initSupabase(){
           setTimeout(()=>{if(typeof refreshPushSubscription==='function')refreshPushSubscription();},1200);
         }
       } else {
-        S.user=null;
-        S.pendingInvites=[];
-        S.pendingClientRequests=[];
+        // Only clear session if this is an explicit sign-out or we are online.
+        // Offline token-refresh failures must not log the user out of the UI.
+        if(event==='SIGNED_OUT'||navigator.onLine){
+          S.user=null;
+          S.pendingInvites=[];
+          S.pendingClientRequests=[];
+        }
         // Keep local data on sign-out — data belongs to the device, not the session.
       }
       if(typeof renderSettings==='function')renderSettings();
