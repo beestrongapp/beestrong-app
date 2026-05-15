@@ -540,6 +540,7 @@ async function renderUserCoaches(){
     const allRelations=dedupeByCoach([...(allById.data||[]),...(allByEmail.data||[])]);
     const relationByCoach=new Map(allRelations.map(inv=>[inv.coach_id,inv]));
     const pendingRelations=allRelations.filter(inv=>inv.status==='pending');
+    const declinedRelations=allRelations.filter(inv=>inv.status==='declined');
     const available=(availableRes.data||[])
       .filter(p=>p.id!==S.user.id)
       .filter(p=>p.coach_visible!==false)
@@ -552,6 +553,22 @@ async function renderUserCoaches(){
     if(pendingRelations.length){
       parts.push(`<div class="section-label" style="margin-top:20px;">${tt({pl:'Oczekujące zaproszenia',en:'Pending invitations',de:'Ausstehende Einladungen',es:'Invitaciones pendientes'})}</div>`);
       parts.push(pendingRelations.map(inv=>pendingCoachCardHtml(inv)).join(''));
+    }
+    if(declinedRelations.length){
+      parts.push(`<div class="section-label" style="margin-top:20px;">${tt({pl:'Odmowione zaproszenia',en:'Declined invitations',de:'Abgelehnte Einladungen',es:'Invitaciones rechazadas'})}</div>`);
+      parts.push(declinedRelations.map(inv=>{
+        const cname=chatEsc(inv.coach_name||'Coach');
+        const reason=inv.decline_reason?chatEsc(inv.decline_reason):'';
+        return`<div class="client-card" style="cursor:default;border-left:3px solid var(--red);">
+          <div style="width:38px;height:38px;border-radius:50%;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--text3);flex-shrink:0;">${(cname||'?')[0].toUpperCase()}</div>
+          <div class="client-card-info" style="flex:1;">
+            <div class="client-card-name">${cname}</div>
+            <div class="client-card-meta" style="color:var(--red);">${tt({pl:'Odmówiono',en:'Declined',de:'Abgelehnt',es:'Rechazado'})}</div>
+            ${reason?`<div style="font-size:11px;color:var(--text2);margin-top:3px;">"${reason}"</div>`:''}
+          </div>
+          <button class="btn btn-sm btn-ghost" style="font-size:11px;padding:5px 10px;flex-shrink:0;" onclick="dismissDeclinedCoach('${inv.id}')">✕</button>
+        </div>`;
+      }).join(''));
     }
     parts.push(`<div class="section-label" style="margin-top:20px;">${tt({pl:'Dostępni coachowie',en:'Available coaches',de:'Verfügbare Coaches',es:'Coaches disponibles'})}</div>`);
     parts.push(available.length
@@ -587,7 +604,7 @@ function availableCoachCardHtml(profile,relation){
     </div>
     ${pending
       ?`<span class="client-status-badge client-status-pending">${tt({pl:'Oczekuje',en:'Pending',de:'Ausstehend',es:'Pendiente'})}</span>`
-      :`<button class="btn btn-primary" style="width:auto;min-width:92px;padding:8px 12px;font-size:12px;" onclick="requestCoach('${profile.id}')">${tt({pl:'Wybierz',en:'Choose',de:'Wählen',es:'Elegir'})}</button>`}
+      :`<button class="btn btn-primary" style="width:auto;min-width:92px;padding:8px 12px;font-size:12px;" onclick="openCoachApplicationForm('${profile.id}','${chatEsc(profile.display_name||'Coach')}')">${tt({pl:'Wybierz',en:'Choose',de:'Wählen',es:'Elegir'})}</button>`}
   </div>`;
 }
 
@@ -603,7 +620,59 @@ function pendingCoachCardHtml(inv){
   </div>`;
 }
 
-async function requestCoach(coachId){
+window.openCoachApplicationForm=function(coachId,coachName){
+  closeModal();
+  const goalOpts=[
+    tt({pl:'Wzrost masy mięśniowej',en:'Muscle gain',de:'Muskelaufbau',es:'Ganancia muscular'}),
+    tt({pl:'Redukcja tkanki tłuszczowej',en:'Fat loss',de:'Fettabbau',es:'Pérdida de grasa'}),
+    tt({pl:'Poprawa siły',en:'Strength improvement',de:'Kraftverbesserung',es:'Mejora de fuerza'}),
+    tt({pl:'Poprawa kondycji',en:'Cardio / Endurance',de:'Ausdauer',es:'Resistencia'}),
+    tt({pl:'Ogólna sprawność',en:'General fitness',de:'Allgemeine Fitness',es:'Forma física general'}),
+  ];
+  const expOpts=[
+    tt({pl:'Brak doświadczenia',en:'No experience',de:'Keine Erfahrung',es:'Sin experiencia'}),
+    tt({pl:'Mniej niż rok',en:'Less than 1 year',de:'Weniger als 1 Jahr',es:'Menos de 1 año'}),
+    tt({pl:'1–3 lata',en:'1–3 years',de:'1–3 Jahre',es:'1–3 años'}),
+    tt({pl:'3–5 lat',en:'3–5 years',de:'3–5 Jahre',es:'3–5 años'}),
+    tt({pl:'Ponad 5 lat',en:'Over 5 years',de:'Über 5 Jahre',es:'Más de 5 años'}),
+  ];
+  const ov=document.createElement('div');ov.className='modal-overlay';
+  ov.innerHTML=`<div class="modal" style="max-height:90dvh;overflow-y:auto;">
+    <div class="modal-handle"></div>
+    <div style="font-size:18px;font-weight:700;margin-bottom:3px;">${tt({pl:'Wyślij zgłoszenie',en:'Send application',de:'Bewerbung senden',es:'Enviar solicitud'})}</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:18px;">${tt({pl:'do',en:'to',de:'an',es:'a'})} ${chatEsc(coachName||'Coach')}</div>
+    <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;">${tt({pl:'Imię',en:'Name',de:'Name',es:'Nombre'})} *</label>
+    <input id="appFormName" type="text" maxlength="60" placeholder="${tt({pl:'Twoje imię',en:'Your name',de:'Dein Name',es:'Tu nombre'})}" style="margin-bottom:12px;">
+    <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;">${tt({pl:'Wiek',en:'Age',de:'Alter',es:'Edad'})} *</label>
+    <input id="appFormAge" type="number" min="10" max="100" placeholder="25" style="margin-bottom:12px;">
+    <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;">${tt({pl:'Cel treningowy',en:'Training goal',de:'Trainingsziel',es:'Objetivo'})} *</label>
+    <select id="appFormGoal" style="margin-bottom:12px;">${goalOpts.map(g=>`<option value="${g}">${g}</option>`).join('')}</select>
+    <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;">${tt({pl:'Treningi / tydzień',en:'Workouts / week',de:'Trainings / Woche',es:'Entrenamientos / semana'})} *</label>
+    <input id="appFormFreq" type="number" min="1" max="14" placeholder="3" style="margin-bottom:12px;">
+    <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;">${tt({pl:'Staż treningowy',en:'Training experience',de:'Trainingserfahrung',es:'Experiencia'})}</label>
+    <select id="appFormExp" style="margin-bottom:20px;">${expOpts.map(e=>`<option value="${e}">${e}</option>`).join('')}</select>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <button class="btn btn-ghost" onclick="closeModal()">${t('cancelTemplate')}</button>
+      <button class="btn btn-primary" onclick="window._submitCoachApp('${coachId}')">${tt({pl:'Wyślij',en:'Send',de:'Senden',es:'Enviar'})}</button>
+    </div>
+  </div>`;
+  document.body.appendChild(ov);S.modal=ov;
+  ov.addEventListener('click',e=>{if(e.target===ov)closeModal();});
+  setTimeout(()=>document.getElementById('appFormName')?.focus(),150);
+  window._submitCoachApp=async function(cid){
+    const name=(document.getElementById('appFormName')?.value||'').trim();
+    const age=+(document.getElementById('appFormAge')?.value||0);
+    const goal=document.getElementById('appFormGoal')?.value||'';
+    const freq=+(document.getElementById('appFormFreq')?.value||0);
+    const exp=document.getElementById('appFormExp')?.value||'';
+    if(!name)return showSyncToast(tt({pl:'Podaj imię.',en:'Enter your name.',de:'Name eingeben.',es:'Introduce tu nombre.'}),'error');
+    if(!age||age<10||age>100)return showSyncToast(tt({pl:'Podaj poprawny wiek.',en:'Enter a valid age.',de:'Gültiges Alter eingeben.',es:'Introduce una edad válida.'}),'error');
+    if(!freq||freq<1)return showSyncToast(tt({pl:'Podaj ilość treningów.',en:'Enter workout frequency.',de:'Trainingsfrequenz eingeben.',es:'Indica la frecuencia.'}),'error');
+    await requestCoach(cid,{name,age,goal,trainingsPerWeek:freq,experience:exp});
+  };
+};
+
+async function requestCoach(coachId,applicationData){
   if(!sb||!S.user||!coachId)return;
   try{
     const{data:coach,error:coachErr}=await sb.from('profiles').select('id,email,display_name').eq('id',coachId).single();
@@ -628,6 +697,7 @@ async function requestCoach(coachId){
       client_email:email,
       client_user_id:S.user.id,
       status:'pending',
+      application_data:applicationData||null,
     });
     if(error)throw error;
     if(typeof sendPushToUser==='function')sendPushToUser(coach.id,{
@@ -646,6 +716,14 @@ async function requestCoach(coachId){
   }
 }
 window.requestCoach=requestCoach;
+
+window.dismissDeclinedCoach=async function(invId){
+  if(!sb||!S.user)return;
+  try{
+    await sb.from('coach_invitations').delete().eq('id',invId).eq('client_user_id',S.user.id);
+  }catch(e){}
+  renderUserCoaches();
+};
 
 async function openUserCoachDetail(invId){
   closeModal();
@@ -740,8 +818,7 @@ function clientCardHtml(inv){
     : `${tt({pl:'Zaproszenie',en:'Invitation',de:'Einladung',es:'Invitación'})}: ${inv.created_at?new Date(inv.created_at).toLocaleDateString():''}`);
   const pendingActions=inv.status==='pending'
     ?`<div style="display:flex;gap:6px;margin-left:4px;flex-shrink:0;">
-        <button class="btn btn-sm btn-primary" style="font-size:11px;padding:6px 9px;" onclick="event.stopPropagation();acceptClientRequest('${inv.id}')">${tt({pl:'OK',en:'Accept',de:'OK',es:'OK'})}</button>
-        <button class="btn btn-sm btn-ghost" style="font-size:11px;padding:6px 9px;" onclick="event.stopPropagation();openDeclineClientRequest('${inv.id}')">✕</button>
+        <button class="btn btn-sm btn-primary" style="font-size:11px;padding:6px 10px;white-space:nowrap;" onclick="event.stopPropagation();viewClientApplication('${inv.id}')">${tt({pl:'Aplikacja',en:'View form',de:'Formular',es:'Ver'})}</button>
       </div>`:'';
   return `<div class="client-card" onclick="${clickable?`openClientDetail('${inv.id}')`:''}" style="${clickable?'':'cursor:default;'}">
     <div style="width:38px;height:38px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--btn-text);flex-shrink:0;">${(name||'?')[0].toUpperCase()}</div>
@@ -793,6 +870,43 @@ async function declineClientRequest(invId){
   renderClients();
 }
 window.declineClientRequest=declineClientRequest;
+
+async function viewClientApplication(invId){
+  closeModal();
+  const ov=document.createElement('div');ov.className='modal-overlay';
+  ov.innerHTML=`<div class="modal"><div style="text-align:center;padding:30px;"><div class="spinner"></div></div></div>`;
+  document.body.appendChild(ov);S.modal=ov;
+  ov.addEventListener('click',e=>{if(e.target===ov)closeModal();});
+  try{
+    const{data:inv,error}=await sb.from('coach_invitations').select('*').eq('id',invId).eq('coach_id',S.user.id).single();
+    if(error||!inv)throw error||new Error('not found');
+    const app=inv.application_data||{};
+    const clientName=chatEsc(inv.client_display_name||tt({pl:'Klient',en:'Client',de:'Klient',es:'Cliente'}));
+    const fRow=(label,val)=>val!=null&&val!==''?`<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:12px;color:var(--text2);">${label}</span>
+      <span style="font-size:13px;font-weight:600;">${chatEsc(String(val))}</span>
+    </div>`:'';
+    const appRows=Object.keys(app).length?`
+      ${fRow(tt({pl:'Imię',en:'Name',de:'Name',es:'Nombre'}),app.name)}
+      ${fRow(tt({pl:'Wiek',en:'Age',de:'Alter',es:'Edad'}),app.age)}
+      ${fRow(tt({pl:'Cel',en:'Goal',de:'Ziel',es:'Objetivo'}),app.goal)}
+      ${fRow(tt({pl:'Treningi/tydzień',en:'Workouts/week',de:'Trainings/Woche',es:'Entrenos/sem.'}),app.trainingsPerWeek)}
+      ${fRow(tt({pl:'Staż',en:'Experience',de:'Erfahrung',es:'Experiencia'}),app.experience)}
+    `:`<div style="color:var(--text3);font-size:13px;text-align:center;padding:16px;">${tt({pl:'Brak danych z formularza.',en:'No application data provided.',de:'Keine Bewerbungsdaten.',es:'Sin datos de solicitud.'})}</div>`;
+    ov.querySelector('.modal').innerHTML=`
+      <div class="modal-handle"></div>
+      <div style="font-size:18px;font-weight:700;margin-bottom:3px;">${tt({pl:'Aplikacja klienta',en:'Client application',de:'Kundenbewerbung',es:'Solicitud del cliente'})}</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:16px;">${clientName}</div>
+      <div style="margin-bottom:20px;">${appRows}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <button class="btn btn-ghost" style="color:var(--red);" onclick="closeModal();openDeclineClientRequest('${invId}')">${tt({pl:'Odrzuć',en:'Decline',de:'Ablehnen',es:'Rechazar'})}</button>
+        <button class="btn btn-primary" onclick="closeModal();acceptClientRequest('${invId}')">${tt({pl:'Akceptuj',en:'Accept',de:'Akzeptieren',es:'Aceptar'})}</button>
+      </div>`;
+  }catch(e){
+    ov.querySelector('.modal').innerHTML=`<div style="padding:20px;color:var(--red);">${chatEsc(e.message||'Error')}<br><br><button class="btn btn-ghost" onclick="closeModal()">OK</button></div>`;
+  }
+}
+window.viewClientApplication=viewClientApplication;
 
 async function loadClientsFromCloud(){
   if(!sb||!S.user)return null;
@@ -1032,7 +1146,18 @@ function renderClientHub(){
   el.style.padding='0';
   const name=clientDetailName(ctx);
   const lastWeight=ctx.measurements.find(m=>m.weight_kg!=null);
-  el.innerHTML=clientDetailHeader(name,ctx.inv.client_email||'',false)+`
+  const app=ctx.inv.application_data||{};
+  const appTile=Object.keys(app).length?`<div style="background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:12px 16px;margin-bottom:14px;">
+    <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px;">${tt({pl:'Dane klienta',en:'Client details',de:'Kundendaten',es:'Datos del cliente'})}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;font-size:12px;">
+      ${app.name?`<div><span style="color:var(--text3);">${tt({pl:'Imię',en:'Name',de:'Name',es:'Nombre'})}</span><br><strong>${chatEsc(String(app.name))}</strong></div>`:''}
+      ${app.age?`<div><span style="color:var(--text3);">${tt({pl:'Wiek',en:'Age',de:'Alter',es:'Edad'})}</span><br><strong>${app.age}</strong></div>`:''}
+      ${app.trainingsPerWeek?`<div><span style="color:var(--text3);">${tt({pl:'Treningi/tyg.',en:'Workouts/wk',de:'Training/Wo.',es:'Entrenos/sem.'})}</span><br><strong>${app.trainingsPerWeek}×</strong></div>`:''}
+      ${app.experience?`<div><span style="color:var(--text3);">${tt({pl:'Staż',en:'Experience',de:'Erfahrung',es:'Experiencia'})}</span><br><strong>${chatEsc(String(app.experience))}</strong></div>`:''}
+    </div>
+    ${app.goal?`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:12px;"><span style="color:var(--text3);">${tt({pl:'Cel',en:'Goal',de:'Ziel',es:'Objetivo'})}: </span><strong>${chatEsc(String(app.goal))}</strong></div>`:''}
+  </div>`:'';
+  el.innerHTML=clientDetailHeader(name,ctx.inv.client_email||'',false)+appTile+`
     <div class="stats-grid" style="grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:18px;">
       <div class="stat-card"><div class="stat-top"><span class="stat-label">${tt({pl:'Treningi',en:'Workouts',de:'Trainings',es:'Entrenos'})}</span></div><div class="stat-value">${ctx.workouts.length}</div><div class="stat-unit">${tt({pl:'łącznie',en:'total',de:'gesamt',es:'total'})}</div></div>
       <div class="stat-card"><div class="stat-top"><span class="stat-label">${t('objetosc')}</span></div><div class="stat-value">${fmtVol(ctx.workouts.reduce((a,w)=>a+(+(w.volume_kg||0)),0))}</div><div class="stat-unit">${unitVol()}</div></div>
