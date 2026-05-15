@@ -391,11 +391,9 @@ body.workout-active .mobile-fab-overlay{display:none!important;}
 /* ===== MINIMAL WORKOUT VIEW ===== */
 .minimal-view-toggle{background:none;border:none;color:var(--text2);cursor:pointer;padding:4px 6px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:color 0.15s,background 0.15s;}
 .minimal-view-toggle:hover{background:var(--bg3);color:var(--accent);}
-.minimal-header{display:flex;align-items:flex-start;gap:10px;padding:12px 16px 10px;opacity:0.65;border-bottom:1px solid var(--border);margin-bottom:4px;}
-.minimal-header-info{flex:1;min-width:0;}
-.minimal-workout-name{font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.minimal-workout-meta{font-size:11px;color:var(--text3);margin-top:2px;}
-.minimal-exercise-name{font-size:28px;font-weight:800;text-align:center;padding:22px 20px 4px;color:var(--text);line-height:1.15;}
+.minimal-float-toggle{position:fixed;top:14px;right:14px;z-index:200;background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:7px 8px;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:color 0.15s,background 0.15s;box-shadow:0 2px 8px rgba(0,0,0,0.12);}
+.minimal-float-toggle:hover{background:var(--bg3);color:var(--accent);}
+.minimal-exercise-name{font-size:28px;font-weight:800;text-align:center;padding:44px 20px 4px;color:var(--text);line-height:1.15;}
 .minimal-set-label{text-align:center;font-size:13px;color:var(--text3);margin-bottom:2px;}
 .minimal-action-row{display:flex;align-items:center;justify-content:center;gap:14px;padding:14px 16px 10px;}
 .minimal-btn{width:68px;height:68px;border-radius:50%;border:none;font-size:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;transition:transform 0.1s,opacity 0.1s;font-family:inherit;}
@@ -416,6 +414,7 @@ body.workout-active .mobile-fab-overlay{display:none!important;}
 .minimal-input-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.3px;}
 .minimal-input{width:100%;font-size:22px;font-weight:700;text-align:center;padding:6px 2px;}
 .minimal-input-next{font-size:18px;font-weight:500;}
+.minimal-input-rest{font-size:16px;font-weight:500;color:var(--text2);}
 .minimal-next-exercise{margin-top:6px;padding:12px 14px;border-radius:13px;background:var(--bg3);border:1px solid var(--border);opacity:0.7;}
 .minimal-next-ex-label{font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3);margin-bottom:4px;}
 .minimal-next-ex-name{font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px;}

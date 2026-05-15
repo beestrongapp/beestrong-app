@@ -1141,9 +1141,11 @@ function renderWorkoutMinimal(){
   const gridIcon=`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>`;
 
   let h='';
-  h+=`<div class="minimal-header"><div class="minimal-header-info"><div class="minimal-workout-name">${escHtml(displayWorkoutName(w))}</div><div class="minimal-workout-meta">${elapsed} min · <span style="color:${pctColor};font-weight:700;">${pct}%</span></div><div style="height:3px;background:var(--bg4);border-radius:2px;width:100%;margin-top:5px;"><div style="height:3px;background:${pctColor};border-radius:2px;width:${pct}%;transition:width 0.3s;"></div></div></div><button class="minimal-view-toggle" onclick="toggleWorkoutViewMode()" title="${tt({pl:'Widok standardowy',en:'Standard view',de:'Standardansicht',es:'Vista estándar'})}">${gridIcon}</button></div>`;
+  h+=`<button class="minimal-float-toggle" onclick="toggleWorkoutViewMode()" title="${tt({pl:'Widok standardowy',en:'Standard view',de:'Standardansicht',es:'Vista estándar'})}">${gridIcon}</button>`;
 
-  if(allDone){
+  if(allDone&&w.exercises.length===0){
+    h+=`<div class="minimal-all-done"><div style="font-size:48px;margin-bottom:12px;">💪</div><div style="font-size:18px;font-weight:700;margin-bottom:8px;">${tt({pl:'Dodaj ćwiczenia',en:'Add exercises',de:'Übungen hinzufügen',es:'Añade ejercicios'})}</div><div style="font-size:13px;color:var(--text2);margin-bottom:20px;">${tt({pl:'Trening nie ma jeszcze ćwiczeń.',en:'No exercises added yet.',de:'Noch keine Übungen.',es:'Aún sin ejercicios.'})}</div><button class="btn btn-primary" style="width:180px;" onclick="addExToActiveWorkout()">${t('addExerciseToWorkout')}</button></div>`;
+  } else if(allDone){
     h+=`<div class="minimal-all-done"><div style="font-size:56px;margin-bottom:12px;">🏆</div><div style="font-size:22px;font-weight:800;margin-bottom:8px;">${tt({pl:'Wszystkie serie!',en:'All sets done!',de:'Alle Sätze fertig!',es:'¡Todo completado!'})}</div><button class="btn btn-primary" style="margin-top:16px;width:180px;" onclick="${w.isQuick?'finishQuickWorkout()':'confirmFinishWorkout()'}">${t('finish')}</button></div>`;
   } else {
     const curEx=w.exercises[curEi];
@@ -1176,7 +1178,7 @@ function renderWorkoutMinimal(){
     h+=`</div>`;
 
     h+=`<div class="minimal-sets-area">`;
-    h+=`<div class="minimal-set-row minimal-set-current"><div class="minimal-set-num">${curSi+1}</div><div class="minimal-set-inputs"><div class="minimal-input-group"><label class="minimal-input-label">${unitW()}</label><input class="si minimal-input" type="number" value="${dispW(curSet.weight)}" onfocus="clearZeroInput(this)" onchange="upd(${curEi},${curSi},'weight',this.value)"/></div><div class="minimal-input-group"><label class="minimal-input-label">${t('reps')}</label><input class="si minimal-input" type="number" value="${curSet.reps}" onfocus="clearZeroInput(this)" onchange="upd(${curEi},${curSi},'reps',this.value)"/></div></div></div>`;
+    h+=`<div class="minimal-set-row minimal-set-current"><div class="minimal-set-num">${curSi+1}</div><div class="minimal-set-inputs"><div class="minimal-input-group"><label class="minimal-input-label">${unitW()}</label><input class="si minimal-input" type="number" value="${dispW(curSet.weight)}" onfocus="clearZeroInput(this)" onchange="upd(${curEi},${curSi},'weight',this.value)"/></div><div class="minimal-input-group"><label class="minimal-input-label">${t('reps')}</label><input class="si minimal-input" type="number" value="${curSet.reps}" onfocus="clearZeroInput(this)" onchange="upd(${curEi},${curSi},'reps',this.value)"/></div><div class="minimal-input-group"><label class="minimal-input-label">${t('exRest')}s</label><input class="si minimal-input minimal-input-rest" type="number" value="${curSet.rest||S.activeWorkout.restDefault||90}" onfocus="clearZeroInput(this)" onchange="upd(${curEi},${curSi},'rest',this.value)"/></div></div></div>`;
 
     if(hasNextInEx){
       const nextSet=curEx.sets[nextSi];
@@ -1191,7 +1193,6 @@ function renderWorkoutMinimal(){
     h+=`</div>`;
   }
 
-  h+=`<div style="height:80px;"></div>`;
   h+=`<div class="workout-actions-bar"><button class="workout-action-btn danger" onclick="cancelWorkout()">${t('cancelWorkout')}</button><button class="workout-action-btn primary" onclick="${w.isQuick?'finishQuickWorkout()':'confirmFinishWorkout()'}">${t('finish')}</button></div>`;
   el.innerHTML=h;
 }
@@ -1401,7 +1402,7 @@ function getPrev(key,tid){
   if(!tid)return null;
   const dateOfKey=key.split('_')[0];
   const s=Object.entries(S.workouts)
-    .filter(([k,w])=>w.templateId===tid&&k.split('_')[0]<dateOfKey)
+    .filter(([k,w])=>w.templateId!=null&&String(w.templateId)===String(tid)&&k.split('_')[0]<dateOfKey)
     .sort((a,b)=>a[0]>b[0]?1:-1);
   return s.length?s[s.length-1][1]:null;
 }
@@ -1409,7 +1410,7 @@ function getProgress(tid,upTo){
   if(!tid)return[];
   const upToDate=upTo.split('_')[0];
   return Object.entries(S.workouts)
-    .filter(([k,w])=>w.templateId===tid&&k.split('_')[0]<=upToDate)
+    .filter(([k,w])=>w.templateId!=null&&String(w.templateId)===String(tid)&&k.split('_')[0]<=upToDate)
     .sort((a,b)=>a[0]>b[0]?1:-1)
     .slice(-8)
     .map(([k,w])=>{const d=(w.date||k.split('_')[0]);const[,m,dd]=d.split('-');return{l:`${dd}.${m}`,v:w.volume};});

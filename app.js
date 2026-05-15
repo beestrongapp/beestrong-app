@@ -1280,7 +1280,7 @@ function plannedWorkoutTemplate(plan){
     const tp=plan.template||S.templates.find(t=>String(t.id)===String(plan.templateId));
     if(!tp&&!plan.exercises?.length)return null;
     return{
-      id:null,
+      id:plan.templateId||tp?.id||null,
       name:plan.name||tp?.name||t('workout'),
       types:tp?.types||[],
       restDefault:tp?.restDefault||S.defaultRest||90,
@@ -1461,6 +1461,7 @@ function renderSettings(){
       const isLayout=row.key==='layout';
       const isPush=row.key==='push';
       const isCoachVisible=row.key==='coachVisible';
+      const isWorkoutView=row.key==='workoutView';
       if(isLayout){
         const isOn=S.layoutMode==='minimal';
         return`<div style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--bg2);transition:background 0.12s;${i>0?'border-top:1px solid var(--border);':''}">
@@ -1515,6 +1516,17 @@ function renderSettings(){
             <div style="font-size:12px;color:var(--text2);margin-top:2px;">${row.value}</div>
           </div>
           <div class="toggle-switch ${isOn?'on':''}" onclick="event.stopPropagation();toggleCoachVisibility()"><div class="toggle-knob"></div></div>
+        </div>`;
+      }
+      if(isWorkoutView){
+        const isOn=(localStorage.getItem('bs-workout-view')||'standard')==='minimal';
+        return`<div style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--bg2);transition:background 0.12s;${i>0?'border-top:1px solid var(--border);':''}">
+          <div style="width:36px;height:36px;border-radius:10px;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;color:var(--accent);flex-shrink:0;">${row.icon}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:14px;font-weight:600;">${row.label}</div>
+            <div style="font-size:12px;color:var(--text2);margin-top:2px;">${isOn?tt({pl:'Minimalny',en:'Minimal',de:'Minimal',es:'Mínimo'}):tt({pl:'Standardowy',en:'Standard',de:'Standard',es:'Estándar'})}</div>
+          </div>
+          <div class="toggle-switch ${isOn?'on':''}" onclick="event.stopPropagation();localStorage.setItem('bs-workout-view','${isOn?'standard':'minimal'}');renderSettings()"><div class="toggle-knob"></div></div>
         </div>`;
       }
       return`<div onclick="${row.action}()" style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--bg2);cursor:pointer;transition:background 0.12s;${i>0?'border-top:1px solid var(--border);':''}"
@@ -1582,7 +1594,7 @@ function renderSettings(){
     {key:'language',label:t('language'),value:({en:t('langEnglish'),pl:t('langPolish'),de:t('langGerman'),es:t('langSpanish')}[lang]||t('langEnglish')),icon:svg(icon.language),action:'openSettingsLanguage'},
     {key:'units',label:tt({pl:'Jednostki',en:'Units',de:'Einheiten',es:'Unidades'}),value:S.units==='imperial'?'Imperial (lbs / in)':'Metric (kg / cm)',icon:svg(icon.units),action:'openSettingsUnits'},
     {key:'restTimer',label:tt({pl:'Czas odpoczynku',en:'Rest timer',de:'Pausenzeit',es:'Tiempo de descanso'}),value:`${S.defaultRest||90} s`,icon:svg(icon.timer),action:'openSettingsRestTimer'},
-    {key:'workoutView',label:tt({pl:'Widok treningu',en:'Workout view',de:'Trainingsansicht',es:'Vista de entrenamiento'}),value:(localStorage.getItem('bs-workout-view')||'standard')==='minimal'?tt({pl:'Minimalny',en:'Minimal',de:'Minimal',es:'Mínimo'}):tt({pl:'Standardowy',en:'Standard',de:'Standard',es:'Estándar'}),icon:svg(icon.layout),action:'openSettingsWorkoutView'},
+    {key:'workoutView',label:tt({pl:'Widok treningu',en:'Workout view',de:'Trainingsansicht',es:'Vista de entrenamiento'}),value:'',icon:svg(icon.layout),action:''},
     {key:'push',label:tt({pl:'Powiadomienia telefonu',en:'Phone notifications',de:'Telefon-Benachrichtigungen',es:'Notificaciones del teléfono'}),value:typeof pushStatusLabel==='function'?pushStatusLabel():tt({pl:'Niedostępne',en:'Unavailable',de:'Nicht verfügbar',es:'No disponible'}),icon:svg(icon.bell),action:'togglePushNotifications'},
   ];
   if(S.user&&S.coachMode){
