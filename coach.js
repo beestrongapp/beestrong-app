@@ -744,13 +744,14 @@ async function openUserCoachDetail(invId){
 }
 
 function userCoachHeader(inv,title,sub,backAction){
-  const coachName=inv?.coach_name||inv?.coach_email||'Coach';
+  const coachName=inv?.coach_name||'Coach';
   const back=backAction||'renderUserCoaches()';
+  const safeSub=(sub&&!sub.includes('@'))?sub:'';
   return `<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:16px;">
     <div>
       <button class="modal-back" onclick="${back}" style="margin-bottom:8px;">${t('backBtn')}</button>
       <div class="modal-title" style="margin-bottom:4px;">${title||coachName}</div>
-      <div style="font-size:12px;color:var(--text2);">${sub||inv?.coach_email||''}</div>
+      ${safeSub?`<div style="font-size:12px;color:var(--text2);">${safeSub}</div>`:''}
     </div>
   </div>`;
 }
@@ -764,7 +765,7 @@ function renderUserCoachHub(inv){
   content.style.display='block';
   content.style.padding='0';
   content.innerHTML=`
-    ${userCoachHeader(inv,coachName,inv.coach_email||'','renderUserCoaches()')}
+    ${userCoachHeader(inv,coachName,tt({pl:'Trener personalny',en:'Personal trainer',de:'Personal Trainer',es:'Entrenador personal'}),'renderUserCoaches()')}
     <div class="quick-access-grid" style="grid-template-columns:repeat(2,minmax(0,1fr));margin-bottom:10px;">
       ${clientHubTile(`renderUserCoachChat('${inv.id}')`,'Chat','<path d="M21 15a4 4 0 0 1-4 4H7l-4 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/>')}
       ${clientHubTile(`renderUserCoachPayments('${inv.id}')`,tt({pl:'Płatności',en:'Payments',de:'Zahlungen',es:'Pagos'}),'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/><path d="M7 15h4"/>')}
@@ -812,10 +813,10 @@ function clientCardHtml(inv){
     accepted:tt({pl:'Aktywny',en:'Active',de:'Aktiv',es:'Activo'}),
   }[inv.status]||inv.status;
   const clickable=inv.status==='accepted';
-  const name=chatEsc(inv.client_display_name||inv.client_email||'—');
-  const meta=chatEsc(inv.client_display_name&&inv.client_email
-    ? inv.client_email
-    : `${tt({pl:'Zaproszenie',en:'Invitation',de:'Einladung',es:'Invitación'})}: ${inv.created_at?new Date(inv.created_at).toLocaleDateString():''}`);
+  const name=chatEsc(inv.client_display_name||tt({pl:'Klient',en:'Client',de:'Klient',es:'Cliente'}));
+  const meta=chatEsc(inv.status==='accepted'
+    ?tt({pl:'Klient',en:'Client',de:'Klient',es:'Cliente'})
+    :`${tt({pl:'Zaproszenie',en:'Invitation',de:'Einladung',es:'Invitación'})}: ${inv.created_at?new Date(inv.created_at).toLocaleDateString():''}`);
   const pendingActions=inv.status==='pending'
     ?`<div style="display:flex;gap:6px;margin-left:4px;flex-shrink:0;">
         <button class="btn btn-sm btn-primary" style="font-size:11px;padding:6px 10px;white-space:nowrap;" onclick="event.stopPropagation();viewClientApplication('${inv.id}')">${tt({pl:'Aplikacja',en:'View form',de:'Formular',es:'Ver'})}</button>
@@ -1157,7 +1158,7 @@ function renderClientHub(){
     </div>
     ${app.goal?`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:12px;"><span style="color:var(--text3);">${tt({pl:'Cel',en:'Goal',de:'Ziel',es:'Objetivo'})}: </span><strong>${chatEsc(String(app.goal))}</strong></div>`:''}
   </div>`:'';
-  el.innerHTML=clientDetailHeader(name,ctx.inv.client_email||'',false)+appTile+`
+  el.innerHTML=clientDetailHeader(name,'',false)+appTile+`
     <div class="stats-grid" style="grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:18px;">
       <div class="stat-card"><div class="stat-top"><span class="stat-label">${tt({pl:'Treningi',en:'Workouts',de:'Trainings',es:'Entrenos'})}</span></div><div class="stat-value">${ctx.workouts.length}</div><div class="stat-unit">${tt({pl:'łącznie',en:'total',de:'gesamt',es:'total'})}</div></div>
       <div class="stat-card"><div class="stat-top"><span class="stat-label">${t('objetosc')}</span></div><div class="stat-value">${fmtVol(ctx.workouts.reduce((a,w)=>a+(+(w.volume_kg||0)),0))}</div><div class="stat-unit">${unitVol()}</div></div>
@@ -1745,11 +1746,11 @@ async function renderUserCoachPayments(invId){
   const{data,error}=await sb.from('coach_payments').select('*').eq('invitation_id',invId).order('due_date',{ascending:true});
   const title=tt({pl:'Płatności',en:'Payments',de:'Zahlungen',es:'Pagos'});
   if(error){
-    content.innerHTML=userCoachHeader(inv,title,inv.coach_name||inv.coach_email||'',`openUserCoachDetail('${inv.id}')`)+`<div style="color:var(--red);padding:14px;">${error.message}</div>`;
+    content.innerHTML=userCoachHeader(inv,title,tt({pl:'Trener personalny',en:'Personal trainer',de:'Personal Trainer',es:'Entrenador personal'}),`openUserCoachDetail('${inv.id}')`)+`<div style="color:var(--red);padding:14px;">${error.message}</div>`;
     return;
   }
   const rows=data||[];
-  content.innerHTML=userCoachHeader(inv,title,inv.coach_name||inv.coach_email||'',`openUserCoachDetail('${inv.id}')`)+
+  content.innerHTML=userCoachHeader(inv,title,tt({pl:'Trener personalny',en:'Personal trainer',de:'Personal Trainer',es:'Entrenador personal'}),`openUserCoachDetail('${inv.id}')`)+
     (rows.length?rows.map(p=>`<div class="workout-row" style="cursor:default;">
       <div class="workout-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg></div>
       <div class="workout-row-info"><div class="workout-row-name">${formatIsoDate(p.due_date)}</div><div class="workout-row-meta">${p.paid_at?tt({pl:'Zapłacono',en:'Paid',de:'Bezahlt',es:'Pagado'})+': '+formatIsoDate((p.paid_at||'').slice(0,10)):tt({pl:'Oczekuje',en:'Pending',de:'Ausstehend',es:'Pendiente'})}</div></div>
@@ -1769,11 +1770,11 @@ async function renderUserCoachNotes(invId){
   const{data,error}=await sb.from('coach_client_notes').select('*').eq('invitation_id',invId).order('created_at',{ascending:false});
   const title=tt({pl:'Notatki',en:'Notes',de:'Notizen',es:'Notas'});
   if(error){
-    content.innerHTML=userCoachHeader(inv,title,inv.coach_name||inv.coach_email||'',`openUserCoachDetail('${inv.id}')`)+`<div style="color:var(--red);padding:14px;">${error.message}</div>`;
+    content.innerHTML=userCoachHeader(inv,title,tt({pl:'Trener personalny',en:'Personal trainer',de:'Personal Trainer',es:'Entrenador personal'}),`openUserCoachDetail('${inv.id}')`)+`<div style="color:var(--red);padding:14px;">${error.message}</div>`;
     return;
   }
   const notes=data||[];
-  content.innerHTML=userCoachHeader(inv,title,inv.coach_name||inv.coach_email||'',`openUserCoachDetail('${inv.id}')`)+
+  content.innerHTML=userCoachHeader(inv,title,tt({pl:'Trener personalny',en:'Personal trainer',de:'Personal Trainer',es:'Entrenador personal'}),`openUserCoachDetail('${inv.id}')`)+
     (notes.length?notes.map(n=>`<div class="ex-card">
       <div style="font-size:12px;color:var(--text3);margin-bottom:8px;">${n.created_at?new Date(n.created_at).toLocaleDateString():''}</div>
       <div style="font-size:14px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere;">${chatEsc(n.note)}</div>
@@ -1794,7 +1795,7 @@ function renderUserCoachCheckin(invId){
     const types=(typeof MEASURE_TYPES!=='undefined'?MEASURE_TYPES:[
       {key:'weight_k'},{key:'chest_m'},{key:'waist'},{key:'hips'},{key:'arm'},{key:'thigh'}
     ]);
-    content.innerHTML=userCoachHeader(inv,title,inv.coach_name||inv.coach_email||'',`openUserCoachDetail('${inv.id}')`)+
+    content.innerHTML=userCoachHeader(inv,title,tt({pl:'Trener personalny',en:'Personal trainer',de:'Personal Trainer',es:'Entrenador personal'}),`openUserCoachDetail('${inv.id}')`)+
       (measurements.length?measurements.map(([date,m])=>{
         const parts=types.filter(mt=>m[mt.key]!=null).map(mt=>`${t(mt.key)}: ${dispMeas(mt.key,+m[mt.key])}${unitMeas(mt.key)}`);
         return `<div class="workout-row" onclick="sendCoachCheckin('${inv.id}','${date}')">
