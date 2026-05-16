@@ -1235,7 +1235,7 @@ function getLastSet(currentEx,setIndex){
   return null;
 }
 function toggleSet(ei,si){const s=S.activeWorkout.exercises[ei].sets[si];s.done=!s.done;if(s.done)startTimer(s.rest||S.activeWorkout.restDefault);else stopTimer();renderWorkout();}
-function addSet(ei){const ex=S.activeWorkout.exercises[ei];const last=ex.sets[ex.sets.length-1]||{reps:ex.reps,weight:ex.weight};ex.sets.push({reps:last.reps,weight:last.weight,done:false,rest:S.activeWorkout.restDefault});renderWorkout();}
+function addSet(ei){const ex=S.activeWorkout.exercises[ei];const last=ex.sets[ex.sets.length-1]||{reps:ex.reps,weight:ex.weight};ex.sets.push({reps:last.reps,weight:last.weight,done:false,rest:last.rest||S.activeWorkout.restDefault});renderWorkout();}
 function removeSet(ei,si){const ex=S.activeWorkout.exercises[ei];if(ex.sets.length<=1)return;ex.sets.splice(si,1);renderWorkout();}
 function adjustTimer(delta){
   if(!S.timerSecs){if(delta>0&&getWorkoutViewMode()==='minimal')startTimer(delta);return;}
@@ -1350,20 +1350,22 @@ function showWorkoutSummary(key,prs=[]){
   if(w.exercises&&w.exercises.length){
     const rows=w.exercises.map(ex=>{
       const sets=Array.isArray(ex.sets)?ex.sets:[];
-      // Count only done sets (consistent with stored w.volume)
-      let vol=0,bestE1=0,bestSetTxt='';
+      let vol=0;
+      const doneSets=[];
       for(const s of sets){
         const done=s.done===true||s.done===undefined;
         const wt=+(s.weight||0),r=+(s.reps||0);
         if(!done||wt<=0)continue;
         vol+=wt*r;
-        const e=epleyEst1RM(wt,r);
-        if(e>bestE1){bestE1=e;bestSetTxt=`${wt}×${r}`;}
+        doneSets.push({wt,r,e1:epleyEst1RM(wt,r)});
       }
       if(!vol)return'';
       const nm=ex[lang]||ex.pl||ex.name||'';
-      const e1Html=bestE1?`<div style="font-size:11px;color:var(--text3);margin-top:2px;">${bestSetTxt} · e1RM ${dispW(bestE1)}${unitW()}</div>`:'';
-      return`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);align-items:flex-start;"><div style="font-size:13px;color:var(--text2);flex:1;padding-right:8px;min-width:0;"><div>${nm}</div>${e1Html}</div><div style="font-size:13px;font-weight:600;flex-shrink:0;">${dispW(vol).toLocaleString()} ${unitW()}</div></div>`;
+      const setsHtml=doneSets.map((s,i)=>{
+        const e1Txt=s.e1?` · e1RM ${dispW(s.e1)}${unitW()}`:'';
+        return`<div style="font-size:11px;color:var(--text3);padding:2px 0;">${i+1}. ${dispW(s.wt)}${unitW()} × ${s.r}${e1Txt}</div>`;
+      }).join('');
+      return`<div style="padding:8px 0;border-bottom:1px solid var(--border);"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;"><div style="font-size:13px;color:var(--text2);">${nm}</div><div style="font-size:13px;font-weight:600;flex-shrink:0;">${dispW(vol).toLocaleString()} ${unitW()}</div></div>${setsHtml}</div>`;
     }).filter(Boolean).join('');
     if(rows)exBreakdown=`<div style="font-size:13px;font-weight:600;margin:16px 0 8px;">${t('volPerEx')}</div><div style="background:var(--bg3);border-radius:10px;padding:0 12px;">${rows}</div>`;
   }

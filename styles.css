@@ -158,7 +158,8 @@ input.si{width:100%;padding:9px 4px;text-align:center;font-size:14px;border-radi
 input.si:focus{outline:none;border-color:var(--accent);}
 .rm-btn{background:none;border:none;color:var(--text3);font-size:16px;cursor:pointer;padding:0;width:30px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:6px;transition:color 0.15s;font-family:inherit;}
 .rm-btn:active{color:var(--red);}
-.timer-bar{background:var(--accent-dim);border:1px solid var(--accent-dim2);border-radius:var(--radius-lg);padding:20px;margin:10px 0;text-align:center;transition:background 0.3s,border-color 0.3s;}
+.timer-bar{background:var(--accent-dim);border:1px solid var(--accent-dim2);border-radius:var(--radius-lg);padding:20px;margin:10px 0;text-align:center;transition:background 0.3s,border-color 0.3s;position:sticky;top:0;z-index:50;}
+.minimal-action-wrapper #workoutTimerBar{position:relative;top:auto;z-index:auto;}
 .timer-bar.timer-warning{background:rgba(255,92,92,0.1);border-color:rgba(255,92,92,0.4);animation:timerPulse 0.6s ease-in-out infinite;}
 @keyframes timerPulse{0%,100%{opacity:1;}50%{opacity:0.7;}}
 .timer-display{font-size:52px;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums;letter-spacing:-3px;line-height:1;}
