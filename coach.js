@@ -479,8 +479,9 @@ function renderClients(){
       return;
     }
     window._clientInvitations=invitations;
-    el.innerHTML=`<div style="margin-bottom:14px;"><input type="text" id="clientSearch" placeholder="${tt({pl:'Szukaj po imieniu lub mailu...',en:'Search by name or email...',de:'Nach Name oder E-Mail suchen...',es:'Buscar por nombre o email...'})}" oninput="filterClients()" style="font-size:14px;"/></div><div id="clientList"></div>${bottomBack}`;
+    el.innerHTML=`<div style="margin-bottom:14px;"><input type="text" id="clientSearch" placeholder="${tt({pl:'Szukaj po imieniu lub mailu...',en:'Search by name or email...',de:'Nach Name oder E-Mail suchen...',es:'Buscar por nombre o email...'})}" oninput="filterClients()" style="font-size:14px;"/></div><div id="clientList"></div><div id="ratingsReceivedSection"></div>${bottomBack}`;
     renderClientList(window._clientInvitations);
+    _loadCoachRatingsReceived();
   });
 }
 
@@ -505,14 +506,21 @@ async function renderUserCoaches(){
   el.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;padding:40px 0;"><div class="spinner"></div></div>`;
   try{
     const email=(S.user.email||'').toLowerCase();
-    let[byId,byEmail,availableRes]=await Promise.all([
+    let[byId,byEmail,availableRes,ratingsRes]=await Promise.all([
       sb.from('coach_invitations').select('*').eq('client_user_id',S.user.id).eq('status','accepted').order('responded_at',{ascending:false}),
       sb.from('coach_invitations').select('*').eq('client_email',email).eq('status','accepted').order('responded_at',{ascending:false}),
       sb.from('profiles').select('id,email,display_name,is_coach,coach_visible').eq('is_coach',true).order('display_name',{ascending:true}),
+      sb.from('coach_ratings').select('coach_id,stars'),
     ]);
     if(availableRes.error&&String(availableRes.error.message||'').includes('coach_visible')){
       availableRes=await sb.from('profiles').select('id,email,display_name,is_coach').eq('is_coach',true).order('display_name',{ascending:true});
     }
+    const ratingMap={};
+    (ratingsRes.data||[]).forEach(r=>{
+      if(!ratingMap[r.coach_id])ratingMap[r.coach_id]={sum:0,count:0};
+      ratingMap[r.coach_id].sum+=r.stars;
+      ratingMap[r.coach_id].count++;
+    });
     if(byId.error)throw byId.error;
     if(byEmail.error)throw byEmail.error;
     if(availableRes.error)throw availableRes.error;
@@ -549,7 +557,7 @@ async function renderUserCoaches(){
     const parts=[];
     parts.push(`<div class="section-label">${tt({pl:'Twoi coachowie',en:'Your coaches',de:'Deine Coaches',es:'Tus coaches'})}</div>`);
     parts.push(coaches.length
-      ?coaches.map(inv=>userCoachCardHtml(inv)).join('')
+      ?coaches.map(inv=>userCoachCardHtml(inv,ratingMap[inv.coach_id])).join('')
       :`<div class="empty-state" style="padding:22px 12px;">${tt({pl:'Nie masz jeszcze przypisanego coacha.',en:'You do not have an assigned coach yet.',de:'Du hast noch keinen zugewiesenen Coach.',es:'Aún no tienes coach asignado.'})}</div>`);
     if(pendingRelations.length){
       parts.push(`<div class="section-label" style="margin-top:20px;">${tt({pl:'Oczekujące zaproszenia',en:'Pending invitations',de:'Ausstehende Einladungen',es:'Invitaciones pendientes'})}</div>`);
@@ -573,7 +581,7 @@ async function renderUserCoaches(){
     }
     parts.push(`<div class="section-label" style="margin-top:20px;">${tt({pl:'Dostępni coachowie',en:'Available coaches',de:'Verfügbare Coaches',es:'Coaches disponibles'})}</div>`);
     parts.push(available.length
-      ?available.map(p=>availableCoachCardHtml(p,relationByCoach.get(p.id))).join('')
+      ?available.map(p=>availableCoachCardHtml(p,relationByCoach.get(p.id),ratingMap[p.id])).join('')
       :`<div class="empty-state" style="padding:22px 12px;">${tt({pl:'Brak dostępnych coachów.',en:'No available coaches yet.',de:'Noch keine verfügbaren Coaches.',es:'Aún no hay coaches disponibles.'})}</div>`);
     el.innerHTML=parts.join('');
   }catch(e){
@@ -581,27 +589,27 @@ async function renderUserCoaches(){
   }
 }
 
-function userCoachCardHtml(inv){
+function userCoachCardHtml(inv,rating){
   const name=chatEsc(inv.coach_name||'Coach');
   const meta=chatEsc(tt({pl:'Twój coach',en:'Your coach',de:'Dein Coach',es:'Tu coach'}));
   return `<div class="client-card" onclick="openUserCoachDetail('${inv.id}')">
     <div style="width:38px;height:38px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--btn-text);flex-shrink:0;">${(name||'?')[0].toUpperCase()}</div>
     <div class="client-card-info">
       <div class="client-card-name">${name}</div>
-      <div class="client-card-meta">${meta}</div>
+      <div class="client-card-meta">${meta}${_coachRatingBadge(rating)}</div>
     </div>
     <span style="color:var(--text3);font-size:22px;">›</span>
   </div>`;
 }
 
-function availableCoachCardHtml(profile,relation){
+function availableCoachCardHtml(profile,relation,rating){
   const name=profile.display_name||'Coach';
   const pending=relation?.status==='pending';
   return `<div class="client-card" style="cursor:default;">
     <div style="width:38px;height:38px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--btn-text);flex-shrink:0;">${(name||'?')[0].toUpperCase()}</div>
     <div class="client-card-info">
       <div class="client-card-name">${chatEsc(name)}</div>
-      <div class="client-card-meta">${tt({pl:'Trener personalny',en:'Personal trainer',de:'Personal Trainer',es:'Entrenador personal'})}</div>
+      <div class="client-card-meta">${tt({pl:'Trener personalny',en:'Personal trainer',de:'Personal Trainer',es:'Entrenador personal'})}${_coachRatingBadge(rating)}</div>
     </div>
     ${pending
       ?`<span class="client-status-badge client-status-pending">${tt({pl:'Oczekuje',en:'Pending',de:'Ausstehend',es:'Pendiente'})}</span>`
@@ -772,7 +780,9 @@ function renderUserCoachHub(inv){
       ${clientHubTile(`renderUserCoachCheckin('${inv.id}')`,'Check-in','<polyline points="20 6 9 17 4 12"/>')}
       ${clientHubTile(`renderUserCoachNotes('${inv.id}')`,tt({pl:'Notatki',en:'Notes',de:'Notizen',es:'Notas'}),'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="14" y2="17"/>')}
     </div>
+    <div id="coachRatingSection" style="margin-bottom:10px;"></div>
     <button class="btn btn-danger" style="width:100%;margin-top:12px;" onclick="resignFromCoach('${inv.id}')">${tt({pl:'Zrezygnuj z coacha',en:'Leave coach',de:'Coach verlassen',es:'Dejar coach'})}</button>`;
+  _loadCoachRatingSection(inv.id,inv.coach_id,inv.responded_at);
 }
 
 function filterClients(){
@@ -2291,6 +2301,103 @@ function openAssignProgramModal(invId, clientUserId, assignmentId){
   document.body.appendChild(ov);S.modal=ov;render();
 }
 window.openAssignProgramModal=openAssignProgramModal;
+
+// ===== COACH RATINGS =====
+
+function _coachRatingBadge(rating){
+  if(!rating||rating.count===0)return'';
+  const avg=(rating.sum/rating.count).toFixed(1);
+  return` <span class="coach-rating-badge">★ ${avg} (${rating.count})</span>`;
+}
+
+async function _loadCoachRatingSection(invId,coachId,respondedAt){
+  const section=document.getElementById('coachRatingSection');
+  if(!section||!sb||!S.user)return;
+  try{
+    const startDate=respondedAt?respondedAt.split('T')[0]:'1970-01-01';
+    const[existingRes,paidRes,workoutRes]=await Promise.all([
+      sb.from('coach_ratings').select('id,stars,review').eq('invitation_id',invId).eq('client_user_id',S.user.id).maybeSingle(),
+      sb.from('coach_payments').select('id',{count:'exact',head:true}).eq('invitation_id',invId).eq('client_user_id',S.user.id).eq('status','paid'),
+      sb.from('workouts').select('id',{count:'exact',head:true}).eq('user_id',S.user.id).gte('date',startDate),
+    ]);
+    if(existingRes.data){
+      const r=existingRes.data;
+      const filled='★'.repeat(r.stars)+'☆'.repeat(5-r.stars);
+      section.innerHTML=`<div class="coach-rating-mine"><span class="coach-rating-mine-stars">${filled}</span>${r.review?`<div class="coach-rating-mine-review">"${chatEsc(r.review)}"</div>`:''}</div>`;
+      return;
+    }
+    const paid=paidRes.count||0;
+    const workouts=workoutRes.count||0;
+    if(paid>=2&&workouts>=20){
+      section.innerHTML=`<button class="btn btn-ghost" style="width:100%;" onclick="renderUserCoachRating('${invId}','${coachId}')">★ ${tt({pl:'Oceń coacha',en:'Rate coach',de:'Coach bewerten',es:'Calificar coach'})}</button>`;
+    }
+  }catch(e){}
+}
+
+async function renderUserCoachRating(invId,coachId){
+  const content=document.getElementById('userCoachDetailContent');
+  if(!content)return;
+  window._ratingStarsVal=0;
+  const backFn=`openUserCoachDetail('${invId}')`;
+  content.innerHTML=`
+    <button class="modal-back" onclick="${backFn}" style="margin-bottom:16px;">${t('backBtn')}</button>
+    <div class="modal-title" style="margin-bottom:16px;">${tt({pl:'Oceń coacha',en:'Rate your coach',de:'Coach bewerten',es:'Calificar coach'})}</div>
+    <div id="ratingStarRow" class="rating-star-row">
+      ${[1,2,3,4,5].map(n=>`<span class="rating-star" onclick="setRatingStar(${n})">★</span>`).join('')}
+    </div>
+    <textarea id="ratingReview" maxlength="100" placeholder="${tt({pl:'Krótka opinia (opcjonalnie, max 100 znaków)',en:'Short review (optional, max 100 chars)',de:'Kurze Meinung (optional, max. 100 Zeichen)',es:'Opinión breve (opcional, máx 100 caracteres)'})}" style="margin-top:14px;font-size:13px;min-height:64px;"></textarea>
+    <div id="ratingCharCount" style="font-size:11px;color:var(--text3);text-align:right;margin-top:2px;">0/100</div>
+    <button id="ratingSubmitBtn" class="btn btn-primary" style="margin-top:14px;width:100%;opacity:0.4;pointer-events:none;" onclick="submitCoachRating('${invId}','${coachId}')">${tt({pl:'Wyślij ocenę',en:'Submit rating',de:'Bewertung senden',es:'Enviar valoración'})}</button>`;
+  document.getElementById('ratingReview')?.addEventListener('input',function(){
+    document.getElementById('ratingCharCount').textContent=this.value.length+'/100';
+  });
+}
+window.renderUserCoachRating=renderUserCoachRating;
+
+window.setRatingStar=function(n){
+  window._ratingStarsVal=n;
+  document.querySelectorAll('.rating-star').forEach((s,i)=>s.classList.toggle('active',i<n));
+  const btn=document.getElementById('ratingSubmitBtn');
+  if(btn){btn.style.opacity='1';btn.style.pointerEvents='auto';}
+};
+
+window.submitCoachRating=async function(invId,coachId){
+  const stars=window._ratingStarsVal;
+  if(!stars||!sb||!S.user)return;
+  const review=document.getElementById('ratingReview')?.value.trim()||null;
+  const btn=document.getElementById('ratingSubmitBtn');
+  if(btn){btn.textContent='...';btn.style.pointerEvents='none';}
+  const{error}=await sb.from('coach_ratings').insert({
+    invitation_id:invId,coach_id:coachId,client_user_id:S.user.id,stars,review:review||null,
+  });
+  if(error){
+    if(btn){btn.textContent=tt({pl:'Wyślij ocenę',en:'Submit rating',de:'Bewertung senden',es:'Enviar valoración'});btn.style.pointerEvents='auto';}
+    showSyncToast(error.message,'error');
+    return;
+  }
+  openUserCoachDetail(invId);
+};
+
+async function _loadCoachRatingsReceived(){
+  const section=document.getElementById('ratingsReceivedSection');
+  if(!section||!sb||!S.user)return;
+  try{
+    const{data:ratings,error}=await sb.from('coach_ratings').select('client_user_id,created_at').eq('coach_id',S.user.id).order('created_at',{ascending:false});
+    if(error||!ratings||!ratings.length)return;
+    const clientIds=[...new Set(ratings.map(r=>r.client_user_id))];
+    const{data:profiles}=await sb.from('profiles').select('id,display_name').in('id',clientIds);
+    const nameMap=Object.fromEntries((profiles||[]).map(p=>[p.id,p.display_name||tt({pl:'Klient',en:'Client',de:'Klient',es:'Cliente'})]));
+    section.innerHTML=`
+      <div class="section-label" style="margin-top:20px;">${tt({pl:'Otrzymane oceny',en:'Ratings received',de:'Erhaltene Bewertungen',es:'Valoraciones recibidas'})} <span style="color:var(--text3);font-size:12px;">(${ratings.length})</span></div>
+      ${ratings.map(r=>`<div class="client-card" style="cursor:default;">
+        <div style="width:38px;height:38px;border-radius:50%;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:var(--text2);flex-shrink:0;">${(nameMap[r.client_user_id]||'?')[0].toUpperCase()}</div>
+        <div class="client-card-info">
+          <div class="client-card-name">${chatEsc(nameMap[r.client_user_id]||'')}</div>
+          <div class="client-card-meta">${new Date(r.created_at).toLocaleDateString()}</div>
+        </div>
+      </div>`).join('')}`;
+  }catch(e){}
+}
 
 async function insertClientAssignment(invId,clientUserId,row,successMsg){
   if(!sb||!S.user)return;

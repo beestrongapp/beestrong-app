@@ -444,3 +444,11 @@ body.workout-active .mobile-fab-overlay{display:none!important;}
 .minimal-tmr-btn:active{opacity:0.7;}
 .minimal-tmr-undo{background:rgba(255,92,92,0.16);color:#ff5c5c;}
 .minimal-tmr-done{background:rgba(76,175,80,0.18);color:#4caf50;}
+/* Coach ratings */
+.coach-rating-badge{color:var(--yellow);font-weight:700;font-size:11px;margin-left:5px;white-space:nowrap;}
+.rating-star-row{display:flex;justify-content:center;gap:10px;margin:8px 0 4px;}
+.rating-star{font-size:36px;cursor:pointer;color:var(--border2);transition:color 0.12s;line-height:1;}
+.rating-star.active{color:var(--yellow);}
+.coach-rating-mine{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;text-align:center;}
+.coach-rating-mine-stars{font-size:22px;color:var(--yellow);letter-spacing:2px;}
+.coach-rating-mine-review{font-size:12px;color:var(--text2);margin-top:6px;font-style:italic;}
