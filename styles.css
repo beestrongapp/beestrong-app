@@ -436,7 +436,7 @@ body.workout-active .mobile-fab-overlay{display:none!important;}
 .workout-minimal-active .minimal-action-wrapper{opacity:1!important;pointer-events:auto!important;}
 .workout-minimal-active .rm-btn{visibility:hidden;}
 .workout-minimal-active .set-done{visibility:hidden;}
-.timer-bar.timer-idle{opacity:0.6;}
+.timer-bar.timer-idle{opacity:0.8;}
 .timer-bar.timer-idle .timer-display{color:var(--text3);}
 .minimal-action-wrapper{display:flex;align-items:stretch;gap:8px;padding:8px 0;}
 .minimal-action-wrapper #workoutTimerBar{flex:1;margin:0;}
