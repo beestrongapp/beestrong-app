@@ -287,6 +287,8 @@ body.light #screen-dashboard::before{background:url('./light_logo.png') center/c
 .toggle-track.on .toggle-thumb{transform:translateX(16px);}
 .dash-header-btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
 /* Dashboard bottom action bar — mobile only */
+#workoutReturnBtn{position:fixed;bottom:calc(82px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:95;background:var(--accent);color:var(--btn-text);border-radius:20px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,0.45);white-space:nowrap;user-select:none;}
+@media(min-width:601px){#workoutReturnBtn{bottom:16px;left:calc(220px + 16px);transform:none;}}
 .dash-action-bar{display:none;position:fixed;bottom:calc(72px + env(safe-area-inset-bottom));left:0;right:0;padding:10px 14px;background:linear-gradient(to top, var(--bg) 70%, transparent);z-index:90;gap:10px;}
 .dash-action-bar.visible{display:flex;}
 .workout-actions-bar{position:fixed;bottom:0;left:0;right:0;padding:10px 14px;padding-bottom:calc(10px + env(safe-area-inset-bottom));background:var(--bg2);border-top:1px solid var(--border);z-index:101;gap:8px;display:flex;}

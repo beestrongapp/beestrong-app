@@ -35,6 +35,10 @@ function fmtVolTick(kg){if(S.units==='imperial'){const l=kg*2.20462;return l>=10
 function inputToKg(v){return S.units==='imperial'?+(+v/2.20462).toFixed(3):+v;}
 function inputToCm(v){return S.units==='imperial'?+(+v/0.3937).toFixed(1):+v;}
 
+function saveActiveWorkout(){
+  if(S.activeWorkout)sv('bs-active-wo-v1',S.activeWorkout);
+  else try{localStorage.removeItem('bs-active-wo-v1');}catch(e){}
+}
 function loadData(){
   S.templates=ld('bs-tpl-v4',DEFAULT_TEMPLATES);
   migrateDefaultTemplates();
@@ -49,6 +53,7 @@ function loadData(){
   S.units=ld('bs-units-v1','metric');
   S.layoutMode=localStorage.getItem('bs-layout-mode-v1')||'standard';
   S.weekPlan=ld('bs-week-plan-v1',{});
+  S.activeWorkout=ld('bs-active-wo-v1',null);
   resetCloudSyncSnapshot();
   S.loaded=true;
   applyLang();applyTheme();updateCoachNav();updateProCoachNav();updateAdminNav();
@@ -206,6 +211,7 @@ function showScreen(name){
   if(name==='progress')renderProgress();
   if(name==='templates')renderTemplates();
   if(name==='workouts')renderWorkout();
+  if(typeof updateWorkoutReturnBtn==='function')updateWorkoutReturnBtn();
   // Profile screen removed — its content lives in Settings now (renderSettings handles measurements + Pro card)
   if(name==='profile')renderSettings();
   if(name==='notifications')renderNotifications();

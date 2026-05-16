@@ -736,16 +736,30 @@ window.restorePurchase=function(){
 try{localStorage.removeItem('bs-plate-cfg-v1');}catch(e){}
 
 // ===== TIMER ALERTS =====
+let _audioCtx=null;
+function _getAudioCtx(){
+  if(!_audioCtx){
+    _audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    // iOS: routing through MediaStream→<audio> activates media playback session
+    // so beeps go to headphones instead of the built-in speaker
+    try{
+      const dest=_audioCtx.createMediaStreamDestination();
+      const el=new Audio();el.srcObject=dest.stream;el.play().catch(()=>{});
+      _audioCtx._bsDest=dest;
+    }catch(e){}
+  }
+  if(_audioCtx.state==='suspended')_audioCtx.resume();
+  return _audioCtx;
+}
 function beepSound(freq,dur,vol){
   try{
-    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    const ctx=_getAudioCtx();
     const osc=ctx.createOscillator();const gain=ctx.createGain();
-    osc.connect(gain);gain.connect(ctx.destination);
+    osc.connect(gain);gain.connect(ctx._bsDest||ctx.destination);
     osc.type='sine';osc.frequency.value=freq||880;
     gain.gain.setValueAtTime(vol||0.25,ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+(dur||0.15));
     osc.start(ctx.currentTime);osc.stop(ctx.currentTime+(dur||0.15)+0.05);
-    setTimeout(()=>{try{ctx.close();}catch(e){}},((dur||0.15)+0.2)*1000);
   }catch(e){}
 }
 function timerAlert(type){
@@ -1006,9 +1020,26 @@ function startWorkout(tidOrTpl){
   showScreen('workouts');
 }
 
+function updateWorkoutReturnBtn(){
+  const btn=document.getElementById('workoutReturnBtn');
+  if(!btn)return;
+  const onWorkout=document.getElementById('screen-workouts')?.classList.contains('active');
+  if(S.activeWorkout&&!onWorkout){
+    const elapsed=Math.round((Date.now()-S.activeWorkout.startTime)/60000);
+    const nm=S.activeWorkout.name||tt({pl:'Trening',en:'Workout',de:'Training',es:'Entrenamiento'});
+    btn.textContent=`▶ ${nm} · ${elapsed} min`;
+    btn.style.display='block';
+  } else {
+    btn.style.display='none';
+  }
+}
+window.updateWorkoutReturnBtn=updateWorkoutReturnBtn;
+
 function renderWorkout(){
   const el=document.getElementById('workoutContent');
   document.body.classList.toggle('workout-active',!!S.activeWorkout);
+  saveActiveWorkout();
+  updateWorkoutReturnBtn();
   if(S.activeWorkout&&typeof closeMobileFabMenu==='function')closeMobileFabMenu();
   if(!S.activeWorkout){
     // No active workout — show CHRONOLOGICAL history of all completed workouts.
@@ -1210,7 +1241,7 @@ function renderWorkoutMinimal(){
   el.innerHTML=h;
 }
 
-function upd(ei,si,f,v){S.activeWorkout.exercises[ei].sets[si][f]=f==='weight'?inputToKg(v):+v;}
+function upd(ei,si,f,v){S.activeWorkout.exercises[ei].sets[si][f]=f==='weight'?inputToKg(v):+v;saveActiveWorkout();}
 function clearZeroInput(input){if(input)input.value='';}
 window.clearZeroInput=clearZeroInput;
 function toggleWorkoutSup(ei){S.activeWorkout.exercises[ei].sup=!S.activeWorkout.exercises[ei].sup;renderWorkout();}
