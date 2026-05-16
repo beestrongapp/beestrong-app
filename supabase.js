@@ -241,7 +241,7 @@ async function pullAllFromCloud(){
       const ts=w.created_at?new Date(w.created_at).getTime():Date.now();
       const key=w.local_key||`${w.date}_${ts}`;
       S.workouts[key]={
-        templateId:w.template_id||null,
+        templateId:w.template_local_key??w.template_id??null,
         name:w.name||'',
         nameKey:w.name_key||null,
         types:w.types||[],
@@ -440,7 +440,7 @@ function syncQueueRow(entity,key,payload){
     local_key:String(key),
     name:payload?.name||'',
     name_key:payload?.nameKey||null,
-    template_id:payload?.templateId??null,
+    template_local_key:payload?.templateId!=null?String(payload.templateId):null,
     types:Array.isArray(payload?.types)?payload.types:[],
     date:payload?.date||String(key).split('_')[0]||today(),
     duration_min:payload?.duration||0,
