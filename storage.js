@@ -109,20 +109,31 @@ function stableJson(v){
 
 function migrateDefaultTemplates(){
   const versionKey='bs-default-templates-version-v1';
-  if(localStorage.getItem(versionKey)==='upper-lower-v3')return;
-  const legacyNames=new Set(['Upper A','Lower A','Upper B','Lower B']);
+  if(localStorage.getItem(versionKey)==='upper-lower-v4')return;
+  const legacyNames=new Set(['Upper A','Lower A','Upper B','Lower B','Arms Dumbbells']);
   const next=[...(S.templates||[])];
+  // Load workouts early (S.workouts not yet set when this runs) to remap templateIds
+  const workouts=ld('bs-wo-v4',{});
+  let workoutsChanged=false;
   DEFAULT_TEMPLATES.forEach(dt=>{
     const clone=JSON.parse(JSON.stringify(dt));
-    const idx=next.findIndex(tp=>String(tp.id)===String(dt.id)||legacyNames.has(tp.name)&&tp.name===dt.name);
+    const idx=next.findIndex(tp=>String(tp.id)===String(dt.id)||(legacyNames.has(tp.name)&&tp.name===dt.name));
     if(idx>=0){
+      const oldId=next[idx].id;
       next[idx]=clone;
+      // If the template ID changed, remap all saved workouts to the new ID
+      if(String(oldId)!==String(dt.id)){
+        Object.values(workouts).forEach(w=>{
+          if(String(w.templateId)===String(oldId)){w.templateId=dt.id;workoutsChanged=true;}
+        });
+      }
     }else{
       next.push(clone);
     }
   });
   S.templates=next;
-  localStorage.setItem(versionKey,'upper-lower-v3');
+  if(workoutsChanged)sv('bs-wo-v4',workouts);
+  localStorage.setItem(versionKey,'upper-lower-v4');
   sv('bs-tpl-v4',S.templates);
 }
 
