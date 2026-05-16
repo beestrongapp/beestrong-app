@@ -1485,7 +1485,7 @@ function renderSettings(){
         </div>`;
       }
       if(isTheme){
-        const isOn=!isDark;
+        const isOn=isDark;
         return`<div style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--bg2);transition:background 0.12s;${i>0?'border-top:1px solid var(--border);':''}">
           <div style="width:36px;height:36px;border-radius:10px;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;color:var(--accent);flex-shrink:0;">${row.icon}</div>
           <div style="flex:1;min-width:0;">

@@ -192,10 +192,12 @@ function applyLang(){
 const _storedTheme=localStorage.getItem('bs-theme');
 if(_storedTheme===null)localStorage.setItem('bs-theme','light');
 let isDark=localStorage.getItem('bs-theme')!=='light';
+// Apply theme class immediately — prevents dark flash when light theme is saved
+if(!isDark)document.body.classList.add('light');
 function applyTheme(){
   document.body.classList.toggle('light',!isDark);
   const tr=document.getElementById('toggleTrack');const lb=document.getElementById('themeLabel');
-  if(tr)tr.classList.toggle('on',!isDark);
+  if(tr)tr.classList.toggle('on',isDark);
   if(lb)lb.textContent=isDark?t('lightMode'):t('darkMode');
   // Switch logo
   const logoImg=document.getElementById('logoImg');
