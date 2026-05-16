@@ -1100,14 +1100,13 @@ function renderWorkout(){
   el.classList.toggle('workout-minimal-active',_isMinimal);
   initExerciseReorder(el,(from,to)=>{moveArrayItem(S.activeWorkout.exercises,from,to);renderWorkout();});
   if(_isMinimal){
+    const _wc=document.getElementById('workoutContent');
+    const _hdr=_wc?.querySelector('.workout-header');
+    const _wrap=document.createElement('div');
+    _wrap.className='minimal-action-wrapper';
+    _wrap.innerHTML=`${_curEi!==-1?`<button class="minimal-tmr-btn minimal-tmr-undo" onclick="minimalUndoSet()" title="${tt({pl:'Cofnij ostatnią serię',en:'Undo last set',de:'Letzten Satz rückgängig',es:'Deshacer último set'})}">✕</button>`:'<div class="minimal-tmr-spacer"></div>'}<div id="workoutTimerBar"></div>${_curEi!==-1?`<button class="minimal-tmr-btn minimal-tmr-done" onclick="minimalDoneSet(${_curEi},${_curSi})" title="${tt({pl:'Zatwierdź serię',en:'Done set',de:'Satz fertig',es:'Serie lista'})}">✓</button>`:'<div class="minimal-tmr-spacer"></div>'}`;
+    if(_hdr)_hdr.after(_wrap);else _wc?.prepend(_wrap);
     _renderTimerBar();
-    const _tb=document.getElementById('workoutTimerBar');
-    if(_tb&&_curEi!==-1){
-      const _ad=document.createElement('div');
-      _ad.className='minimal-timer-actions';
-      _ad.innerHTML=`<button class="minimal-tmr-btn minimal-tmr-undo" onclick="minimalUndoSet()" title="${tt({pl:'Cofnij ostatnią serię',en:'Undo last set',de:'Letzten Satz rückgängig',es:'Deshacer último set'})}">✕</button><button class="minimal-tmr-btn minimal-tmr-done" onclick="minimalDoneSet(${_curEi},${_curSi})" title="${tt({pl:'Zatwierdź serię',en:'Done set',de:'Satz fertig',es:'Serie lista'})}">✓</button>`;
-      _tb.after(_ad);
-    }
   } else if(S.timerSecs>0)_renderTimerBar();
 }
 
