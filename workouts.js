@@ -1099,7 +1099,16 @@ function renderWorkout(){
   el.innerHTML=h;
   el.classList.toggle('workout-minimal-active',_isMinimal);
   initExerciseReorder(el,(from,to)=>{moveArrayItem(S.activeWorkout.exercises,from,to);renderWorkout();});
-  if(_isMinimal)_renderTimerBar(); else if(S.timerSecs>0)_renderTimerBar();
+  if(_isMinimal){
+    _renderTimerBar();
+    const _tb=document.getElementById('workoutTimerBar');
+    if(_tb&&_curEi!==-1){
+      const _ad=document.createElement('div');
+      _ad.className='minimal-timer-actions';
+      _ad.innerHTML=`<button class="minimal-tmr-btn minimal-tmr-undo" onclick="minimalUndoSet()" title="${tt({pl:'Cofnij ostatnią serię',en:'Undo last set',de:'Letzten Satz rückgängig',es:'Deshacer último set'})}">✕</button><button class="minimal-tmr-btn minimal-tmr-done" onclick="minimalDoneSet(${_curEi},${_curSi})" title="${tt({pl:'Zatwierdź serię',en:'Done set',de:'Satz fertig',es:'Serie lista'})}">✓</button>`;
+      _tb.after(_ad);
+    }
+  } else if(S.timerSecs>0)_renderTimerBar();
 }
 
 // ===== MINIMAL WORKOUT VIEW =====
@@ -1273,7 +1282,8 @@ function _renderTimerBar(){
   const isWarning=S.timerSecs>0&&S.timerSecs<=5;
   const isIdle=S.timerSecs===0;
   tb.className='timer-bar'+(isWarning?' timer-warning':'')+(isIdle?' timer-idle':'');
-  tb.innerHTML=`<div class="timer-display" style="${isWarning?'color:var(--red);':''}">${min}:${sec}</div>${isIdle?'':`<div class="timer-label">${t('restBreak')}</div>`}<div class="timer-controls"><button class="timer-adjust timer-minus" onclick="adjustTimer(-10)">- 10 sec</button>${isIdle?'':`<button class="timer-skip" onclick="stopTimer()">SKIP</button>`}<button class="timer-adjust timer-plus" onclick="adjustTimer(10)">+ 10 sec</button></div>`;
+  const _skipOnclick=isIdle?'void(0)':"stopTimer();if(getWorkoutViewMode()==='minimal')renderWorkout();";
+  tb.innerHTML=`<div class="timer-display" style="${isWarning?'color:var(--red);':''}">${min}:${sec}</div>${isIdle?'':`<div class="timer-label">${t('restBreak')}</div>`}<div class="timer-controls"><button class="timer-adjust timer-minus" onclick="adjustTimer(-10)">- 10 sec</button><button class="timer-skip${isIdle?' timer-skip-idle':''}" onclick="${_skipOnclick}"${isIdle?' disabled':''}>SKIP</button><button class="timer-adjust timer-plus" onclick="adjustTimer(10)">+ 10 sec</button></div>`;
 }
 
 function confirmFinishWorkout(){

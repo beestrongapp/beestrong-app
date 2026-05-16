@@ -166,6 +166,7 @@ input.si:focus{outline:none;border-color:var(--accent);}
 .timer-controls{display:grid;grid-template-columns:74px 58px 74px;gap:8px;align-items:center;justify-content:center;margin:10px auto 0;max-width:230px;}
 .timer-adjust{border:1px solid var(--border);border-radius:9px;background:var(--bg2);color:var(--text);font-family:inherit;font-size:11px;font-weight:800;line-height:1;padding:9px 8px;cursor:pointer;min-height:34px;}
 .timer-skip{border:1px solid var(--border);border-radius:9px;background:var(--bg3);color:var(--text);font-family:inherit;font-size:11px;font-weight:500;line-height:1;padding:9px 8px;cursor:pointer;min-height:34px;}
+.timer-skip-idle{opacity:0.3;cursor:default;}
 .timer-minus{background:rgba(217,45,32,0.10);border-color:rgba(217,45,32,0.22);color:#c94a3f;}
 .timer-plus{background:rgba(35,134,84,0.11);border-color:rgba(35,134,84,0.24);color:#2d8659;}
 input[type=text],input[type=number],input[type=date],input[type=email],input[type=password],textarea{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:11px 13px;font-size:15px;color:var(--text);width:100%;font-family:inherit;-webkit-appearance:none;transition:border-color 0.15s;}
@@ -433,3 +434,8 @@ body.workout-active .mobile-fab-overlay{display:none!important;}
 .workout-minimal-active .workout-actions-bar{opacity:1!important;pointer-events:auto!important;}
 .timer-bar.timer-idle{opacity:0.6;}
 .timer-bar.timer-idle .timer-display{color:var(--text3);}
+.minimal-timer-actions{display:flex;justify-content:space-between;align-items:center;padding:4px 0 8px;margin:0 2px;}
+.minimal-tmr-btn{width:56px;height:56px;border-radius:50%;border:none;font-size:24px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;transition:transform 0.1s,opacity 0.1s;}
+.minimal-tmr-btn:active{transform:scale(0.88);}
+.minimal-tmr-undo{background:rgba(255,92,92,0.16);color:#ff5c5c;}
+.minimal-tmr-done{background:rgba(76,175,80,0.18);color:#4caf50;}
