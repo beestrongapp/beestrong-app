@@ -440,6 +440,7 @@ function syncQueueRow(entity,key,payload){
     local_key:String(key),
     name:payload?.name||'',
     name_key:payload?.nameKey||null,
+    template_id:payload?.templateId??null,
     types:Array.isArray(payload?.types)?payload.types:[],
     date:payload?.date||String(key).split('_')[0]||today(),
     duration_min:payload?.duration||0,
