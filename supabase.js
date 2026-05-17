@@ -799,6 +799,16 @@ function setupRealtimeSubscriptions(){
       payload=>{ if(typeof rememberFriendNotification==='function')rememberFriendNotification(payload); })
     .subscribe();
   _realtimeChannels.push(friendMsgCh);
+
+  const sharedTplCh=sb.channel('bs-shared-tpl-'+S.user.id)
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'shared_templates',filter:`receiver_id=eq.${S.user.id}`},
+      payload=>{
+        const r=payload.new;if(!r)return;
+        if(typeof loadPendingSharedTemplates==='function')loadPendingSharedTemplates();
+        if(typeof showSyncToast==='function')showSyncToast(tt({pl:`Nowy szablon od znajomego`,en:`New template from a friend`,de:`Neue Vorlage von einem Freund`,es:`Nueva plantilla de un amigo`}),'info');
+      })
+    .subscribe();
+  _realtimeChannels.push(sharedTplCh);
 }
 
 // Auto-sync when tab becomes visible

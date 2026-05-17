@@ -766,16 +766,28 @@ window.showShareTemplateModal=function(tplId){
   });
 };
 
+let _sharingTemplate=false;
 window.doShareTemplate=async function(tplId,receiverId,receiverName,rowEl){
+  if(_sharingTemplate)return;
   const tp=S.templates.find(x=>x.id===tplId);
   if(!tp||!sb||!S.user)return;
+  _sharingTemplate=true;
   if(rowEl){rowEl.style.opacity='0.5';rowEl.style.pointerEvents='none';}
+  // Check for existing pending to prevent duplicates
+  const{data:existing}=await sb.from('shared_templates').select('id').eq('sender_id',S.user.id).eq('receiver_id',receiverId).eq('template_name',tp.name).eq('status','pending').maybeSingle();
+  if(existing){
+    _sharingTemplate=false;
+    if(rowEl){rowEl.style.opacity='';rowEl.style.pointerEvents='';}
+    showSyncToast(tt({pl:'Szablon już wysłany — czeka na odbiór',en:'Template already sent — waiting to be accepted',de:'Vorlage bereits gesendet',es:'Plantilla ya enviada'}),'error');
+    return;
+  }
   const{error}=await sb.from('shared_templates').insert({
     sender_id:S.user.id,
     receiver_id:receiverId,
     template_name:tp.name,
     template_data:JSON.parse(JSON.stringify(tp)),
   });
+  _sharingTemplate=false;
   if(error){showSyncToast(error.message,'error');if(rowEl){rowEl.style.opacity='';rowEl.style.pointerEvents='';}return;}
   closeModal();
   showSyncToast(tt({pl:`Szablon wysłany do ${receiverName} ✓`,en:`Template sent to ${receiverName} ✓`,de:`Vorlage an ${receiverName} gesendet ✓`,es:`Plantilla enviada a ${receiverName} ✓`}),'success');
