@@ -424,19 +424,26 @@ async function upsertProfile(){
     localStorage.setItem('bs-username',name);
     const unEl=document.getElementById('sidebarUserName');if(unEl)unEl.textContent=name;
   }
-  const payload={id:S.user.id,email:S.user.email,display_name:name};
+  const payload={id:S.user.id,email:S.user.email,display_name:name,exercise_notes:S.exerciseNotes||{}};
   if(S.coachMode)payload.coach_visible=S.coachVisible!==false;
   const{error}=await sb.from('profiles').upsert(payload,{onConflict:'id'});
-  if(error&&String(error.message||'').includes('coach_visible')){
-    delete payload.coach_visible;
+  if(error&&(String(error.message||'').includes('coach_visible')||String(error.message||'').includes('exercise_notes'))){
+    delete payload.coach_visible;delete payload.exercise_notes;
     await sb.from('profiles').upsert(payload,{onConflict:'id'});
   }
 }
 
+async function syncExerciseNotes(){
+  if(!sb||!S.user)return;
+  const{error}=await sb.from('profiles').update({exercise_notes:S.exerciseNotes||{}}).eq('id',S.user.id);
+  if(error)console.warn('syncExerciseNotes error:',error);
+}
+window.syncExerciseNotes=syncExerciseNotes;
+
 async function syncProfileFlags(){
   if(!sb||!S.user)return;
-  let {data,error}=await sb.from('profiles').select('is_pro,is_coach,display_name,coach_visible').eq('id',S.user.id).single();
-  if(error&&String(error.message||'').includes('coach_visible')){
+  let {data,error}=await sb.from('profiles').select('is_pro,is_coach,display_name,coach_visible,exercise_notes').eq('id',S.user.id).single();
+  if(error&&(String(error.message||'').includes('coach_visible')||String(error.message||'').includes('exercise_notes'))){
     ({data,error}=await sb.from('profiles').select('is_pro,is_coach,display_name').eq('id',S.user.id).single());
   }
   if(error||!data)return;
@@ -448,6 +455,10 @@ async function syncProfileFlags(){
     const email=(S.user.email||'').toLowerCase().trim();
     if(!COACH_WHITELIST.map(e=>e.toLowerCase()).includes(email)){COACH_WHITELIST.push(S.user.email);}
     if(!S.coachMode){S.coachMode=true;changed=true;}
+  }
+  if(data.exercise_notes&&typeof data.exercise_notes==='object'&&Object.keys(data.exercise_notes).length){
+    S.exerciseNotes={...data.exercise_notes,...(S.exerciseNotes||{})};
+    sv('bs-ex-notes-v1',S.exerciseNotes);
   }
   if(data.display_name&&!localStorage.getItem('bs-username')){
     localStorage.setItem('bs-username',data.display_name);

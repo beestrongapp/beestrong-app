@@ -4,10 +4,10 @@
 // so future syncs can attach data to their account.
 
 function clearLocalUserData(){
-  S.workouts={};S.templates=[];S.measurements={};
+  S.workouts={};S.templates=[];S.measurements={};S.exerciseNotes={};
   S.isPro=false;S.coachMode=false;S.clients=[];
   S.programs=(S.programs||[]).filter(p=>p.builtin);
-  ['bs-wo-v4','bs-tpl-v4','bs-meas-v1','bs-ispro-v1','bs-coach-v1','bs-clients-v1','bs-username'].forEach(k=>localStorage.removeItem(k));
+  ['bs-wo-v4','bs-tpl-v4','bs-meas-v1','bs-ispro-v1','bs-coach-v1','bs-clients-v1','bs-username','bs-ex-notes-v1'].forEach(k=>localStorage.removeItem(k));
   const unEl=document.getElementById('sidebarUserName');if(unEl)unEl.textContent='';
   updateCoachNav();updateProCoachNav();updateAdminNav();
   if(typeof renderDashboard==='function')renderDashboard();

@@ -14,7 +14,7 @@ const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 const PUSH_VAPID_PUBLIC_KEY='BK6QlCz2qCc0fPybDGzYJNIjIWC0ln_O37cuNVpEyld7KANqK-oTQLBWICApvbuzsgWq-PeH5kaXY670C9mxNGc';
 let sb=null; // Supabase client, initialized after DOM ready (see initSupabase)
 
-let S={month:new Date().getMonth(),year:new Date().getFullYear(),selectedDate:null,templates:[],workouts:{},measurements:{},activeWorkout:null,timerSecs:0,timerInterval:null,modal:null,loaded:false,isPro:false,coachMode:false,coachVisible:ld('bs-coach-visible-v1',true),programs:[],clients:[],pendingInvites:[],pendingClientRequests:[],user:null,defaultRest:90,units:'metric',layoutMode:localStorage.getItem('bs-layout-mode-v1')||'standard',goal:localStorage.getItem('bs-goal-v1')||'strength',level:localStorage.getItem('bs-level-v1')||'beginner',weekPlan:{}};
+let S={month:new Date().getMonth(),year:new Date().getFullYear(),selectedDate:null,templates:[],workouts:{},measurements:{},activeWorkout:null,timerSecs:0,timerInterval:null,modal:null,loaded:false,isPro:false,coachMode:false,coachVisible:ld('bs-coach-visible-v1',true),programs:[],clients:[],pendingInvites:[],pendingClientRequests:[],user:null,defaultRest:90,units:'metric',layoutMode:localStorage.getItem('bs-layout-mode-v1')||'standard',goal:localStorage.getItem('bs-goal-v1')||'strength',level:localStorage.getItem('bs-level-v1')||'beginner',weekPlan:{},exerciseNotes:ld('bs-ex-notes-v1',{})};
 let progressChart=null;
 
 function exName(e){return e[lang]||e.pl||e.name||'';}
@@ -53,6 +53,7 @@ function loadData(){
   S.units=ld('bs-units-v1','metric');
   S.layoutMode=localStorage.getItem('bs-layout-mode-v1')||'standard';
   S.weekPlan=ld('bs-week-plan-v1',{});
+  S.exerciseNotes=ld('bs-ex-notes-v1',{});
   S.activeWorkout=ld('bs-active-wo-v1',null);
   resetCloudSyncSnapshot();
   S.loaded=true;
@@ -183,7 +184,7 @@ function queueAllCloudData(){
   resetCloudSyncSnapshot();
 }
 function saveAll(){
-  sv('bs-tpl-v4',S.templates);sv('bs-wo-v4',S.workouts);sv('bs-meas-v1',S.measurements);sv('bs-ispro-v1',S.isPro);sv('bs-coach-v1',S.coachMode);sv('bs-coach-visible-v1',S.coachVisible!==false);sv('bs-programs-v1',S.programs);sv('bs-clients-v1',S.clients);sv('bs-default-rest-v1',S.defaultRest);sv('bs-units-v1',S.units);sv('bs-week-plan-v1',S.weekPlan||{});if(S.layoutMode)localStorage.setItem('bs-layout-mode-v1',S.layoutMode);if(S.goal)localStorage.setItem('bs-goal-v1',S.goal);if(S.level)localStorage.setItem('bs-level-v1',S.level);
+  sv('bs-tpl-v4',S.templates);sv('bs-wo-v4',S.workouts);sv('bs-meas-v1',S.measurements);sv('bs-ispro-v1',S.isPro);sv('bs-coach-v1',S.coachMode);sv('bs-coach-visible-v1',S.coachVisible!==false);sv('bs-programs-v1',S.programs);sv('bs-clients-v1',S.clients);sv('bs-default-rest-v1',S.defaultRest);sv('bs-units-v1',S.units);sv('bs-week-plan-v1',S.weekPlan||{});sv('bs-ex-notes-v1',S.exerciseNotes||{});if(S.layoutMode)localStorage.setItem('bs-layout-mode-v1',S.layoutMode);if(S.goal)localStorage.setItem('bs-goal-v1',S.goal);if(S.level)localStorage.setItem('bs-level-v1',S.level);
   localStorage.setItem('bs-local-modified-at',Date.now().toString());
   enqueueChangedCloudData();
 }

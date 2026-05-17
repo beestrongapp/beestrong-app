@@ -1096,27 +1096,24 @@ function renderWorkout(){
     return;
   }
   const w=S.activeWorkout;
-  const _isMinimal=getWorkoutViewMode()==='minimal';
-  let _curEi=-1,_curSi=-1,_nextSameEx=false;
-  if(_isMinimal){for(let _ei=0;_ei<w.exercises.length;_ei++){const _si=w.exercises[_ei].sets.findIndex(s=>!s.done);if(_si!==-1){_curEi=_ei;_curSi=_si;break;}}if(_curEi!==-1&&_curSi+1<w.exercises[_curEi].sets.length)_nextSameEx=true;}
+  if(getWorkoutViewMode()==='minimal'){renderWorkoutMinimal();return;}
   const elapsed=Math.max(0,Math.floor((Date.now()-w.startTime)/60000));
   const done=w.exercises.reduce((a,ex)=>a+ex.sets.filter(s=>s.done).length,0);
   const total=w.exercises.reduce((a,ex)=>a+ex.sets.length,0);
   const pct=total?Math.round(done/total*100):0;
   const pctColor=pct<=50?'#ff5c5c':pct<=89?'#ff9800':'#4caf50';
   const finishFn=w.isQuick?'finishQuickWorkout()':'finishWorkout()';
-  const _gridIcon=`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>`;
-  let h=_isMinimal?`<button class="minimal-float-toggle" onclick="toggleWorkoutViewMode()" title="${tt({pl:'Widok standardowy',en:'Standard view',de:'Standardansicht',es:'Vista estándar'})}">${_gridIcon}</button>`:'' ;
-  h+=`<div class="workout-header"><div style="flex:1;"><div style="font-size:19px;font-weight:700;">${escHtml(displayWorkoutName(w))}${w.isQuick?` <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:var(--accent-dim);color:var(--accent);vertical-align:middle;">${t('quickWorkout')}</span>`:''}</div><div style="font-size:12px;color:var(--text2);margin-top:3px;">${elapsed} min · ${done}/${total} ${t('exSets')} · <span style="color:${pctColor};font-weight:700;">${pct}%</span></div><div style="margin-top:8px;height:4px;background:var(--bg4);border-radius:2px;width:100%;max-width:220px;"><div style="height:4px;background:${pctColor};border-radius:2px;width:${pct}%;transition:width 0.3s;"></div></div></div><button class="minimal-view-toggle" onclick="toggleWorkoutViewMode()" title="${tt({pl:'Widok minimalny',en:'Minimal view',de:'Minimalansicht',es:'Vista mínima'})}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button></div>`;
+  const _eyeIcon=`<svg width="26" height="14" viewBox="0 0 28 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M0 8s2-5 5-5 5 5 5 5-2 5-5 5-5-5-5-5z"/><circle cx="5" cy="8" r="1.5"/><path d="M13 8s3-7 8-7 8 7 8 7-3 7-8 7-8-7-8-7z"/><circle cx="21" cy="8" r="2.5"/></svg>`;
+  let h='';
+  h+=`<div class="workout-header"><div style="flex:1;"><div style="font-size:19px;font-weight:700;">${escHtml(displayWorkoutName(w))}${w.isQuick?` <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:var(--accent-dim);color:var(--accent);vertical-align:middle;">${t('quickWorkout')}</span>`:''}</div><div style="font-size:12px;color:var(--text2);margin-top:3px;">${elapsed} min · ${done}/${total} ${t('exSets')} · <span style="color:${pctColor};font-weight:700;">${pct}%</span></div><div style="margin-top:8px;height:4px;background:var(--bg4);border-radius:2px;width:100%;max-width:220px;"><div style="height:4px;background:${pctColor};border-radius:2px;width:${pct}%;transition:width 0.3s;"></div></div></div><button class="minimal-view-toggle" onclick="toggleWorkoutViewMode()" title="${tt({pl:'Widok minimalny',en:'Minimal view',de:'Minimalansicht',es:'Vista mínima'})}">${_eyeIcon}</button></div>`;
   const _supLabels=computeSupLabels(w.exercises);
   w.exercises.forEach((ex,ei)=>{
     const _slbl=_supLabels[ei];
-    h+=`<div class="ex-card${ex.sup?' super':''}${_isMinimal?(ei===_curEi?' ex-cur':' ex-dim'):''}" data-reorder-item data-reorder-index="${ei}"><div class="ex-card-header"><div class="exercise-title-drag">${reorderHandle(lang==='pl'?'Zmień kolejność':'Reorder')}<button class="workout-ex-name-btn" onclick="event.stopPropagation();showWorkoutExerciseDetail(${ei})" title="${lang==='pl'?'Podgląd ćwiczenia':'Exercise preview'}">${_slbl?`<span class="super-tag">${_slbl}</span>`:''}<span>${exName(ex)}</span></button></div><div style="display:flex;align-items:center;gap:6px;flex-shrink:0;"><button class="ex-info-btn workout-ex-info-btn" onclick="event.stopPropagation();showWorkoutExerciseDetail(${ei})" aria-label="${lang==='pl'?'Podgląd ćwiczenia':'Exercise preview'}" title="${lang==='pl'?'Podgląd ćwiczenia':'Exercise preview'}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button><button onclick="toggleWorkoutSup(${ei})" style="padding:3px 8px;border-radius:6px;border:1px solid ${ex.sup?'var(--accent)':'var(--border2)'};background:${ex.sup?'var(--accent-dim)':'var(--bg3)'};color:${ex.sup?'var(--accent)':'var(--text3)'};font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;transition:all 0.15s;">SS</button></div></div><div class="set-grid-labels"><div></div><div></div><div class="set-lbl" style="font-size:9px;">LAST</div><div class="set-lbl">${unitW()}</div><div class="set-lbl">${t('reps')}</div><div class="set-lbl">${t('exRest')}</div><div></div></div>`;
+    h+=`<div class="ex-card${ex.sup?' super':''}" data-reorder-item data-reorder-index="${ei}"><div class="ex-card-header"><div class="exercise-title-drag">${reorderHandle(lang==='pl'?'Zmień kolejność':'Reorder')}<button class="workout-ex-name-btn" onclick="event.stopPropagation();showWorkoutExerciseDetail(${ei})" title="${lang==='pl'?'Podgląd ćwiczenia':'Exercise preview'}">${_slbl?`<span class="super-tag">${_slbl}</span>`:''}<span>${exName(ex)}</span></button></div><div style="display:flex;align-items:center;gap:6px;flex-shrink:0;"><button class="ex-info-btn workout-ex-info-btn" onclick="event.stopPropagation();showWorkoutExerciseDetail(${ei})" aria-label="${lang==='pl'?'Podgląd ćwiczenia':'Exercise preview'}" title="${lang==='pl'?'Podgląd ćwiczenia':'Exercise preview'}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button><button class="ex-info-btn workout-ex-note-btn${(S.exerciseNotes||{})[exName(ex)]?' has-note':''}" onclick="event.stopPropagation();showExNoteModal(decodeURIComponent('${encodeURIComponent(exName(ex))}'))" title="${tt({pl:'Notatka',en:'Note',de:'Notiz',es:'Nota'})}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></button><button class="ex-info-btn workout-ex-remove-btn" onclick="event.stopPropagation();removeWorkoutExercise(${ei})" title="${tt({pl:'Usuń ćwiczenie',en:'Remove exercise',de:'Übung entfernen',es:'Eliminar ejercicio'})}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button><button onclick="toggleWorkoutSup(${ei})" style="padding:3px 8px;border-radius:6px;border:1px solid ${ex.sup?'var(--accent)':'var(--border2)'};background:${ex.sup?'var(--accent-dim)':'var(--bg3)'};color:${ex.sup?'var(--accent)':'var(--text3)'};font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;transition:all 0.15s;">SS</button></div></div><div class="set-grid-labels"><div></div><div></div><div class="set-lbl" style="font-size:9px;">LAST</div><div class="set-lbl">${unitW()}</div><div class="set-lbl">${t('reps')}</div><div class="set-lbl">${t('exRest')}</div><div></div></div>`;
     ex.sets.forEach((s,si)=>{
       const last=getLastSet(ex,si);
       const lastHtml=last?`<div class="set-last">${dispW(last.weight)}<br><span style="color:var(--text3);font-size:10px;">×${last.reps}</span></div>`:`<div class="set-last" style="opacity:0.4;">—</div>`;
-      const _setClass=_isMinimal&&ei===_curEi?(si===_curSi?' set-cur':(_nextSameEx&&si===_curSi+1?' set-next':' set-dim')):'';
-      h+=`<div class="set-grid${_setClass}"><button class="rm-btn" onclick="removeSet(${ei},${si})">✕</button><div class="set-num">${si+1}</div>${lastHtml}<input class="si" type="number" value="${dispW(s.weight)}" onfocus="clearZeroInput(this)" onchange="upd(${ei},${si},'weight',this.value)"/><input class="si" type="number" value="${s.reps}" onfocus="clearZeroInput(this)" onchange="upd(${ei},${si},'reps',this.value)"/><input class="si" type="number" value="${s.rest}" onfocus="clearZeroInput(this)" onchange="upd(${ei},${si},'rest',this.value)"/><button class="set-done ${s.done?'completed':''}" onclick="toggleSet(${ei},${si})">${s.done?'✓':'○'}</button></div>`;
+      h+=`<div class="set-grid"><button class="rm-btn" onclick="removeSet(${ei},${si})">✕</button><div class="set-num">${si+1}</div>${lastHtml}<input class="si" type="number" value="${dispW(s.weight)}" onfocus="clearZeroInput(this)" onchange="upd(${ei},${si},'weight',this.value)"/><input class="si" type="number" value="${s.reps}" onfocus="clearZeroInput(this)" onchange="upd(${ei},${si},'reps',this.value)"/><input class="si" type="number" value="${s.rest}" onfocus="clearZeroInput(this)" onchange="upd(${ei},${si},'rest',this.value)"/><button class="set-done ${s.done?'completed':''}" onclick="toggleSet(${ei},${si})">${s.done?'✓':'○'}</button></div>`;
     });
     h+=`<button class="btn btn-sm btn-ghost" style="font-size:12px;padding:6px 12px;margin-top:6px;width:100%;justify-content:center;" onclick="addSet(${ei})">+ ${t('addSet')}</button>`;
     h+=`</div>`;
@@ -1128,17 +1125,9 @@ function renderWorkout(){
   h+=`<button class="workout-action-btn primary" onclick="${w.isQuick?finishFn:'confirmFinishWorkout()'}">${t('finish')}</button>`;
   h+=`</div>`;
   el.innerHTML=h;
-  el.classList.toggle('workout-minimal-active',_isMinimal);
+  el.classList.remove('workout-minimal-active');
   initExerciseReorder(el,(from,to)=>{moveArrayItem(S.activeWorkout.exercises,from,to);renderWorkout();});
-  if(_isMinimal){
-    const _wc=document.getElementById('workoutContent');
-    const _hdr=_wc?.querySelector('.workout-header');
-    const _wrap=document.createElement('div');
-    _wrap.className='minimal-action-wrapper';
-    _wrap.innerHTML=`${_curEi!==-1?`<button class="minimal-tmr-btn minimal-tmr-undo" onclick="minimalUndoSet()" title="${tt({pl:'Cofnij ostatnią serię',en:'Undo last set',de:'Letzten Satz rückgängig',es:'Deshacer último set'})}">✕</button>`:'<div class="minimal-tmr-spacer"></div>'}<div id="workoutTimerBar"></div>${_curEi!==-1?`<button class="minimal-tmr-btn minimal-tmr-done" onclick="minimalDoneSet(${_curEi},${_curSi})" title="${tt({pl:'Zatwierdź serię',en:'Done set',de:'Satz fertig',es:'Serie lista'})}">✓</button>`:'<div class="minimal-tmr-spacer"></div>'}`;
-    if(_hdr)_hdr.after(_wrap);else _wc?.prepend(_wrap);
-    _renderTimerBar();
-  } else if(S.timerSecs>0)_renderTimerBar();
+  if(S.timerSecs>0)_renderTimerBar();
 }
 
 // ===== MINIMAL WORKOUT VIEW =====
@@ -1169,10 +1158,13 @@ function renderWorkoutMinimal(){
   const el=document.getElementById('workoutContent');
   if(!el)return;
   const w=S.activeWorkout;
-  const elapsed=Math.max(0,Math.floor((Date.now()-w.startTime)/60000));
+  if(!w)return;
+  el.classList.remove('workout-minimal-active');
+
   const done=w.exercises.reduce((a,ex)=>a+ex.sets.filter(s=>s.done).length,0);
   const total=w.exercises.reduce((a,ex)=>a+ex.sets.length,0);
   const pct=total?Math.round(done/total*100):0;
+  const elapsed=Math.max(0,Math.floor((Date.now()-w.startTime)/60000));
   const pctColor=pct<=50?'#ff5c5c':pct<=89?'#ff9800':'#4caf50';
 
   let curEi=-1,curSi=-1;
@@ -1182,10 +1174,11 @@ function renderWorkoutMinimal(){
   }
   const allDone=curEi===-1;
 
-  const gridIcon=`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>`;
+  const eyeIcon=`<svg width="26" height="14" viewBox="0 0 28 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M0 8s2-5 5-5 5 5 5 5-2 5-5 5-5-5-5-5z"/><circle cx="5" cy="8" r="1.5"/><path d="M13 8s3-7 8-7 8 7 8 7-3 7-8 7-8-7-8-7z"/><circle cx="21" cy="8" r="2.5"/></svg>`;
 
   let h='';
-  h+=`<button class="minimal-float-toggle" onclick="toggleWorkoutViewMode()" title="${tt({pl:'Widok standardowy',en:'Standard view',de:'Standardansicht',es:'Vista estándar'})}">${gridIcon}</button>`;
+  h+=`<button class="minimal-float-toggle" onclick="toggleWorkoutViewMode()" title="${tt({pl:'Widok standardowy',en:'Standard view',de:'Standardansicht',es:'Vista estándar'})}">${eyeIcon}</button>`;
+  h+=`<div class="minimal-header-bar"><span style="font-weight:700;font-size:15px;">${escHtml(displayWorkoutName(w))}</span><span class="minimal-header-stats">${elapsed}min · <span style="color:${pctColor};font-weight:700;">${pct}%</span> (${done}/${total})</span></div>`;
 
   if(allDone&&w.exercises.length===0){
     h+=`<div class="minimal-all-done"><div style="font-size:48px;margin-bottom:12px;">💪</div><div style="font-size:18px;font-weight:700;margin-bottom:8px;">${tt({pl:'Dodaj ćwiczenia',en:'Add exercises',de:'Übungen hinzufügen',es:'Añade ejercicios'})}</div><div style="font-size:13px;color:var(--text2);margin-bottom:20px;">${tt({pl:'Trening nie ma jeszcze ćwiczeń.',en:'No exercises added yet.',de:'Noch keine Übungen.',es:'Aún sin ejercicios.'})}</div><button class="btn btn-primary" style="width:180px;" onclick="addExToActiveWorkout()">${t('addExerciseToWorkout')}</button></div>`;
@@ -1196,29 +1189,18 @@ function renderWorkoutMinimal(){
     const curSet=curEx.sets[curSi];
     const nextSi=curSi+1;
     const hasNextInEx=nextSi<curEx.sets.length;
-
     let nextExIdx=-1;
     for(let ei=curEi+1;ei<w.exercises.length;ei++){
       if(w.exercises[ei].sets.some(s=>!s.done)){nextExIdx=ei;break;}
     }
 
-    const tMin=Math.floor(S.timerSecs/60);
-    const tSec=String(S.timerSecs%60).padStart(2,'0');
-    const tActive=S.timerSecs>0;
-    const tWarn=tActive&&S.timerSecs<=5;
-    const tColor=tWarn?'var(--red)':tActive?'var(--accent)':'var(--text2)';
-
     h+=`<div class="minimal-exercise-name">${exName(curEx)}</div>`;
     h+=`<div class="minimal-set-label">${tt({pl:'Seria',en:'Set',de:'Satz',es:'Serie'})} ${curSi+1} / ${curEx.sets.length}</div>`;
 
-    h+=`<div class="minimal-action-row">`;
-    h+=`<button class="minimal-btn minimal-btn-left" onclick="minimalUndoSet()" title="${tt({pl:'Cofnij ostatnią serię',en:'Undo last set',de:'Letzten Satz rückgängig',es:'Deshacer último set'})}">✕</button>`;
-    h+=`<div class="minimal-timer-block"><div id="minimalTimerDisplay" class="minimal-timer${tWarn?' timer-warning':''}" style="color:${tColor};">${tMin}:${tSec}</div>`;
-    if(tActive){
-      h+=`<div class="minimal-rest-label">${t('restBreak')}</div><div class="minimal-timer-controls"><button class="timer-adjust timer-minus" onclick="adjustTimer(-10)">-10s</button><button class="timer-skip" onclick="stopTimer();renderWorkout()">SKIP</button><button class="timer-adjust timer-plus" onclick="adjustTimer(10)">+10s</button></div>`;
-    }
-    h+=`</div>`;
-    h+=`<button class="minimal-btn minimal-btn-right" onclick="minimalDoneSet(${curEi},${curSi})" title="${tt({pl:'Gotowe',en:'Done',de:'Fertig',es:'Listo'})}">✓</button>`;
+    h+=`<div class="minimal-action-wrapper">`;
+    h+=`<button class="minimal-tmr-btn minimal-tmr-undo" onclick="minimalDeleteCurrentSet()" title="${tt({pl:'Usuń serię',en:'Delete set',de:'Satz löschen',es:'Eliminar serie'})}">✕</button>`;
+    h+=`<div id="workoutTimerBar" style="flex:1;min-width:0;"></div>`;
+    h+=`<button class="minimal-tmr-btn minimal-tmr-done" onclick="minimalDoneSet(${curEi},${curSi})" title="${tt({pl:'Gotowe',en:'Done',de:'Fertig',es:'Listo'})}">✓</button>`;
     h+=`</div>`;
 
     h+=`<div class="minimal-sets-area">`;
@@ -1237,8 +1219,9 @@ function renderWorkoutMinimal(){
     h+=`</div>`;
   }
 
-  h+=`<div class="workout-actions-bar"><button class="workout-action-btn danger" onclick="cancelWorkout()">${t('cancelWorkout')}</button><button class="workout-action-btn primary" onclick="${w.isQuick?'finishQuickWorkout()':'confirmFinishWorkout()'}">${t('finish')}</button></div>`;
+  h+=`<div class="workout-actions-bar"><button class="workout-action-btn danger" onclick="cancelWorkout()">${t('cancelWorkout')}</button><button class="workout-action-btn" onclick="addExToActiveWorkout()">${t('addExerciseToWorkout')}</button><button class="workout-action-btn primary" onclick="${w.isQuick?'finishQuickWorkout()':'confirmFinishWorkout()'}">${t('finish')}</button></div>`;
   el.innerHTML=h;
+  _renderTimerBar();
 }
 
 function upd(ei,si,f,v){S.activeWorkout.exercises[ei].sets[si][f]=f==='weight'?inputToKg(v):+v;saveActiveWorkout();}
@@ -1246,6 +1229,90 @@ function clearZeroInput(input){if(input)input.value='';}
 window.clearZeroInput=clearZeroInput;
 function toggleWorkoutSup(ei){S.activeWorkout.exercises[ei].sup=!S.activeWorkout.exercises[ei].sup;renderWorkout();}
 window.toggleWorkoutSup=toggleWorkoutSup;
+
+window.removeWorkoutExercise=function(ei){
+  const ex=S.activeWorkout.exercises[ei];
+  const name=exName(ex);
+  closeModal();
+  const ov=document.createElement('div');ov.className='modal-overlay';
+  ov.innerHTML=`<div class="modal" style="text-align:center;padding:24px 20px;">
+    <div class="modal-handle"></div>
+    <div style="font-size:17px;font-weight:700;margin-bottom:8px;">${tt({pl:'Usunąć ćwiczenie?',en:'Remove exercise?',de:'Übung entfernen?',es:'¿Eliminar ejercicio?'})}</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:20px;">${escHtml(name)}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <button class="btn btn-ghost" onclick="closeModal()">${tt({pl:'Anuluj',en:'Cancel',de:'Abbrechen',es:'Cancelar'})}</button>
+      <button class="btn btn-danger" onclick="closeModal();doRemoveWorkoutExercise(${ei})">${tt({pl:'Usuń',en:'Remove',de:'Entfernen',es:'Eliminar'})}</button>
+    </div>
+  </div>`;
+  document.body.appendChild(ov);S.modal=ov;
+};
+window.doRemoveWorkoutExercise=function(ei){
+  S.activeWorkout.exercises.splice(ei,1);
+  saveActiveWorkout();
+  renderWorkout();
+};
+
+window.minimalDeleteCurrentSet=function(){
+  const w=S.activeWorkout;
+  let curEi=-1,curSi=-1;
+  for(let ei=0;ei<w.exercises.length;ei++){
+    const si=w.exercises[ei].sets.findIndex(s=>!s.done);
+    if(si!==-1){curEi=ei;curSi=si;break;}
+  }
+  if(curEi===-1)return;
+  const ex=w.exercises[curEi];
+  if(ex.sets.length<=1){
+    closeModal();
+    const ov=document.createElement('div');ov.className='modal-overlay';
+    ov.innerHTML=`<div class="modal" style="text-align:center;padding:24px 20px;">
+      <div class="modal-handle"></div>
+      <div style="font-size:17px;font-weight:700;margin-bottom:8px;">${tt({pl:'To ostatnia seria – usunąć ćwiczenie?',en:'Last set — remove exercise?',de:'Letzter Satz — Übung entfernen?',es:'Último set — ¿eliminar ejercicio?'})}</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:20px;">${escHtml(exName(ex))}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <button class="btn btn-ghost" onclick="closeModal()">${tt({pl:'Anuluj',en:'Cancel',de:'Abbrechen',es:'Cancelar'})}</button>
+        <button class="btn btn-danger" onclick="closeModal();doRemoveWorkoutExercise(${curEi})">${tt({pl:'Usuń',en:'Remove',de:'Entfernen',es:'Eliminar'})}</button>
+      </div>
+    </div>`;
+    document.body.appendChild(ov);S.modal=ov;
+  } else {
+    ex.sets.splice(curSi,1);
+    saveActiveWorkout();
+    renderWorkout();
+  }
+};
+
+let _noteTargetExName='';
+window.showExNoteModal=function(exNameVal){
+  _noteTargetExName=exNameVal;
+  const current=(S.exerciseNotes||{})[exNameVal]||'';
+  closeModal();
+  const ov=document.createElement('div');ov.className='modal-overlay';
+  ov.innerHTML=`<div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" style="font-size:16px;margin-bottom:4px;">${tt({pl:'Notatka',en:'Note',de:'Notiz',es:'Nota'})}</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:12px;">${escHtml(exNameVal)}</div>
+    <textarea id="exNoteTA" style="width:100%;min-height:110px;padding:10px;border-radius:10px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-family:inherit;font-size:14px;resize:vertical;box-sizing:border-box;" placeholder="${tt({pl:'Np. technika, ciężar roboczy, uwagi...',en:'E.g. technique, working weight, notes...',de:'Technik, Arbeitsgewicht, Hinweise...',es:'Técnica, peso de trabajo, notas...'})}"></textarea>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;">
+      <button class="btn btn-ghost" onclick="closeModal()">${tt({pl:'Anuluj',en:'Cancel',de:'Abbrechen',es:'Cancelar'})}</button>
+      <button class="btn btn-primary" onclick="saveExerciseNote()">${tt({pl:'Zapisz',en:'Save',de:'Speichern',es:'Guardar'})}</button>
+    </div>
+  </div>`;
+  document.body.appendChild(ov);S.modal=ov;
+  requestAnimationFrame(()=>{
+    const ta=document.getElementById('exNoteTA');
+    if(ta){ta.value=current;ta.focus();}
+  });
+};
+window.saveExerciseNote=function(){
+  const val=(document.getElementById('exNoteTA')?.value||'').trim();
+  if(!S.exerciseNotes)S.exerciseNotes={};
+  if(val)S.exerciseNotes[_noteTargetExName]=val;
+  else delete S.exerciseNotes[_noteTargetExName];
+  saveAll();
+  if(S.user&&sb&&typeof syncExerciseNotes==='function')syncExerciseNotes();
+  closeModal();
+  renderWorkout();
+};
 
 function getLastSet(currentEx,setIndex){
   const name=exName(currentEx);
