@@ -2365,8 +2365,8 @@ async function generateWorkoutShareCanvas(w,prs){
 
   // Logo image + BeeStrong text
   const logoImg=await _loadImg('./logo.jpg');
-  const logoSize=105;
-  const logoY=105;
+  const logoSize=72;
+  const logoY=72;
   if(logoImg){
     // Rounded square clip for logo
     c.save();
