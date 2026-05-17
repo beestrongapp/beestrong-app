@@ -2328,7 +2328,7 @@ async function _loadCoachRatingSection(invId,coachId,respondedAt){
     }
     const paid=paidRes.count||0;
     const workouts=workoutRes.count||0;
-    if(true){
+    if(paid>=2&&workouts>=20){
       section.innerHTML=`<button class="btn btn-ghost" style="width:100%;" onclick="renderUserCoachRating('${invId}','${coachId}')">★ ${tt({pl:'Oceń coacha',en:'Rate coach',de:'Coach bewerten',es:'Calificar coach'})}</button>`;
     }
   }catch(e){}
