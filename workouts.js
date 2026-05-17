@@ -2340,7 +2340,16 @@ function getExerciseProgress(key){
 // ===== WORKOUT SHARE CARD =====
 let _lastSummaryPrs=[];
 
-function generateWorkoutShareCanvas(w,prs){
+function _loadImg(src){
+  return new Promise(resolve=>{
+    const img=new Image();
+    img.onload=()=>resolve(img);
+    img.onerror=()=>resolve(null);
+    img.src=src;
+  });
+}
+
+async function generateWorkoutShareCanvas(w,prs){
   const SZ=1080;
   const canvas=document.createElement('canvas');
   canvas.width=SZ;canvas.height=SZ;
@@ -2354,10 +2363,30 @@ function generateWorkoutShareCanvas(w,prs){
   // Top gold accent bar
   c.fillStyle='#c9a96e';c.fillRect(0,0,SZ,8);
 
-  // Logo
+  // Logo image + BeeStrong text
+  const logoImg=await _loadImg('./logo.jpg');
+  const logoSize=72;
+  const logoY=72;
+  if(logoImg){
+    // Rounded square clip for logo
+    c.save();
+    const lx=80,ly=logoY,lr=14;
+    c.beginPath();
+    c.moveTo(lx+lr,ly);c.lineTo(lx+logoSize-lr,ly);
+    c.quadraticCurveTo(lx+logoSize,ly,lx+logoSize,ly+lr);
+    c.lineTo(lx+logoSize,ly+logoSize-lr);
+    c.quadraticCurveTo(lx+logoSize,ly+logoSize,lx+logoSize-lr,ly+logoSize);
+    c.lineTo(lx+lr,ly+logoSize);
+    c.quadraticCurveTo(lx,ly+logoSize,lx,ly+logoSize-lr);
+    c.lineTo(lx,ly+lr);
+    c.quadraticCurveTo(lx,ly,lx+lr,ly);
+    c.closePath();c.clip();
+    c.drawImage(logoImg,lx,ly,logoSize,logoSize);
+    c.restore();
+  }
   c.font='bold 48px -apple-system,BlinkMacSystemFont,sans-serif';
   c.fillStyle='#c9a96e';c.textAlign='left';
-  c.fillText('🐝 BeeStrong',80,118);
+  c.fillText('BeeStrong',80+(logoImg?logoSize+16:0),logoY+logoSize*0.68);
 
   // Workout name
   c.font='bold 72px -apple-system,BlinkMacSystemFont,sans-serif';
@@ -2434,7 +2463,7 @@ function generateWorkoutShareCanvas(w,prs){
   // Bottom branding
   c.font='400 24px -apple-system,BlinkMacSystemFont,sans-serif';
   c.fillStyle='#333333';c.textAlign='right';
-  c.fillText('beestrong.app',SZ-80,SZ-52);
+  c.fillText('BeeStrong App',SZ-80,SZ-52);
 
   return canvas;
 }
@@ -2443,7 +2472,7 @@ async function shareWorkout(key){
   const w=S.workouts[key];if(!w)return;
   const btn=document.getElementById('shareWorkoutBtn');
   if(btn){btn.disabled=true;btn.textContent=tt({pl:'Generuję…',en:'Generating…',de:'Generiere…',es:'Generando…'});}
-  const canvas=generateWorkoutShareCanvas(w,_lastSummaryPrs);
+  const canvas=await generateWorkoutShareCanvas(w,_lastSummaryPrs);
   canvas.toBlob(async blob=>{
     if(btn){btn.disabled=false;btn.innerHTML='📤 '+tt({pl:'Udostępnij',en:'Share',de:'Teilen',es:'Compartir'});}
     const file=new File([blob],'beestrong-workout.png',{type:'image/png'});
