@@ -367,6 +367,12 @@ body.workout-active .mobile-fab-overlay{display:none!important;}
 .streak-info{flex:1;}
 .streak-count{font-size:18px;font-weight:800;color:var(--accent);line-height:1;}
 .streak-label{font-size:11px;color:var(--text2);margin-top:2px;}
+/* ── Friend Challenges ── */
+.challenge-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:10px;}
+.ch-result-msg{font-size:12px;font-weight:700;margin-top:8px;padding:6px 10px;border-radius:8px;display:inline-block;}
+.ch-winning{background:rgba(76,175,80,0.12);color:#4caf50;}
+.ch-losing{background:rgba(232,138,138,0.12);color:#e88a8a;}
+.ch-tied{background:rgba(201,169,110,0.12);color:var(--accent);}
 /* ── Progressive Overload Hint ── */
 .progression-hint{display:block;width:100%;text-align:left;font-size:12px;color:var(--text3);background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 12px;margin:6px 0 8px;cursor:pointer;font-family:inherit;line-height:1.45;transition:background 0.15s,color 0.15s,border-color 0.15s;}
 .progression-hint:hover,.progression-hint:active{background:var(--accent-dim);color:var(--accent);border-color:var(--accent);}

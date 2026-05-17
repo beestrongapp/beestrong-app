@@ -800,6 +800,16 @@ function setupRealtimeSubscriptions(){
     .subscribe();
   _realtimeChannels.push(friendMsgCh);
 
+  const challengeCh=sb.channel('bs-challenges-'+S.user.id)
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'challenges',filter:`opponent_id=eq.${S.user.id}`},
+      payload=>{
+        const r=payload.new;if(!r)return;
+        addAppNotification({type:'challenge_received',title:'⚔️ '+tt({pl:'Nowe Wyzwanie!',en:'New Challenge!',de:'Neue Herausforderung!',es:'¡Nuevo Desafío!'}),body:escHtml(r.title||'Challenge')});
+        if(typeof showSyncToast==='function')showSyncToast('⚔️ '+tt({pl:'Masz nowe wyzwanie!',en:'You have a new challenge!',de:'Neue Herausforderung!',es:'¡Nuevo desafío!'}),'info');
+      })
+    .subscribe();
+  _realtimeChannels.push(challengeCh);
+
   const sharedTplCh=sb.channel('bs-shared-tpl-'+S.user.id)
     .on('postgres_changes',{event:'INSERT',schema:'public',table:'shared_templates',filter:`receiver_id=eq.${S.user.id}`},
       payload=>{

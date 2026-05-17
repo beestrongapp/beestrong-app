@@ -1473,7 +1473,7 @@ function finishWorkout(){
   let volume=0;w.exercises.forEach(ex=>ex.sets.forEach(s=>{if(s.done&&s.weight>0)volume+=s.weight*s.reps;}));
   const k=today()+'_'+Date.now();
   S.workouts[k]={templateId:w.templateId,name:w.name,nameKey:w.nameKey||null,types:w.types,volume,duration,date:today(),exercises:w.exercises.map(ex=>({id:ex.id,pl:ex.pl,en:ex.en,name:ex.name,sup:ex.sup,gk:ex.gk,equipment:ex.equipment,sets:ex.sets}))};
-  S.activeWorkout=null;document.body.classList.remove('workout-active');saveAll();if(typeof syncQueuedCloudChanges==='function')syncQueuedCloudChanges();showWorkoutSummary(k,prs);showScreen('dashboard');
+  S.activeWorkout=null;document.body.classList.remove('workout-active');saveAll();if(typeof syncQueuedCloudChanges==='function')syncQueuedCloudChanges();if(typeof syncAllChallengesProgress==='function')syncAllChallengesProgress();showWorkoutSummary(k,prs);showScreen('dashboard');
 }
 function cancelWorkout(){stopTimer();S.activeWorkout=null;document.body.classList.remove('workout-active');renderWorkout();}
 

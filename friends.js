@@ -1,6 +1,7 @@
 ﻿// ===== FRIENDS =====
 let _friendInvitations=[];
 let _friendDetail=null;
+let _friendsTab='friends'; // 'friends' | 'challenges'
 let _friendChatChannel=null;
 let _friendDetailView=null;
 let _friendRecordsList=[];
@@ -34,16 +35,44 @@ async function renderFriends(){
     el.innerHTML=`<div class="empty-state">${tt({pl:'Supabase nie jest dostępny.',en:'Supabase is not available.',de:'Supabase ist nicht verfügbar.',es:'Supabase no está disponible.'})}</div>${bottomBack}`;
     return;
   }
-  el.innerHTML=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
-    <input type="email" id="friendSearchEmail" placeholder="${tt({pl:'Znajdź usera po emailu...',en:'Find user by email...',de:'Nutzer per E-Mail finden...',es:'Buscar usuario por email...'})}" style="font-size:14px;"/>
-    <button class="btn btn-primary" onclick="searchFriendByEmail()" style="width:auto;padding:12px 16px;">${tt({pl:'Szukaj',en:'Search',de:'Suchen',es:'Buscar'})}</button>
-  </div>
-  <div id="friendSearchResult"></div>
-  <div id="friendsList"><div style="display:flex;justify-content:center;padding:34px 0;"><div class="spinner"></div></div></div>
-  ${bottomBack}`;
-  await loadFriends();
+  el.innerHTML=`
+    <div class="progress-tabs" style="margin-bottom:14px;">
+      <button class="progress-tab-btn ${_friendsTab==='friends'?'active':''}" onclick="setFriendsTab('friends')">${tt({pl:'Friends',en:'Friends',de:'Friends',es:'Friends'})}</button>
+      <button class="progress-tab-btn ${_friendsTab==='challenges'?'active':''}" onclick="setFriendsTab('challenges')">⚔️ ${tt({pl:'Wyzwania',en:'Challenges',de:'Herausforderungen',es:'Desafíos'})}</button>
+    </div>
+    <div id="friendSearchWrapper" style="${_friendsTab==='friends'?'':'display:none;'}">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <input type="email" id="friendSearchEmail" placeholder="${tt({pl:'Znajdź usera po emailu...',en:'Find user by email...',de:'Nutzer per E-Mail finden...',es:'Buscar usuario por email...'})}" style="font-size:14px;"/>
+        <button class="btn btn-primary" onclick="searchFriendByEmail()" style="width:auto;padding:12px 16px;">${tt({pl:'Szukaj',en:'Search',de:'Suchen',es:'Buscar'})}</button>
+      </div>
+      <div id="friendSearchResult"></div>
+    </div>
+    <div id="friendsList" style="${_friendsTab==='friends'?'':'display:none;'}"><div style="display:flex;justify-content:center;padding:34px 0;"><div class="spinner"></div></div></div>
+    <div id="challengesList" style="${_friendsTab==='challenges'?'':'display:none;'}"></div>
+    ${bottomBack}`;
+
+  if(_friendsTab==='friends') await loadFriends();
+  else if(typeof renderChallenges==='function') renderChallenges();
 }
 window.renderFriends=renderFriends;
+
+window.setFriendsTab=function(tab){
+  _friendsTab=tab;
+  document.querySelectorAll('#friendsContent .progress-tab-btn').forEach((btn,i)=>{
+    btn.classList.toggle('active',['friends','challenges'][i]===tab);
+  });
+  const sw=document.getElementById('friendSearchWrapper');
+  const fl=document.getElementById('friendsList');
+  const cl=document.getElementById('challengesList');
+  if(sw)sw.style.display=tab==='friends'?'':'none';
+  if(fl)fl.style.display=tab==='friends'?'':'none';
+  if(cl)cl.style.display=tab==='challenges'?'':'none';
+  if(tab==='friends')loadFriends();
+  else if(typeof renderChallenges==='function')renderChallenges();
+};
+
+// Expose accepted friends list for challenges.js
+window.getAcceptedFriends=function(){return _friendInvitations.filter(i=>i.status==='accepted');};
 
 async function loadFriends(){
   const list=document.getElementById('friendsList');
