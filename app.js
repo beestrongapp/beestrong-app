@@ -1626,7 +1626,7 @@ function renderSettings(){
   window._profileSections.deleteAccount={title:deleteTitle,rows:null};
 
   const adminChangelog=isAdmin()?adminChangelogHtml():'';
-  const versionLbl=`<div style="margin:24px 0 40px;padding:12px;text-align:center;font-size:11px;color:var(--text3);">BeeStrong Gym Tracker · v1.0<br><span style="font-size:10px;opacity:0.7;">© Copyright BeeStrong 2026</span></div>`;
+  const versionLbl=`<div style="margin:24px 0 40px;padding:12px;text-align:center;font-size:11px;color:var(--text3);">BeeStrong Gym Tracker · v1.0<br><span style="font-size:11px;opacity:0.8;">© Copyright BeeStrong 2026</span></div>`;
 
   if(_profileSectionView){
     const section=window._profileSections?.[_profileSectionView];
