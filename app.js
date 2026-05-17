@@ -700,24 +700,27 @@ function renderTemplates(){
   }
   html+=S.templates.map(tp=>`<div class="tpl-card"><div class="tpl-card-header"><div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><div class="tpl-name">${escHtml(tp.name)}</div>${typeTagHtml(tp.types||[])}</div><div class="tpl-meta">${tp.exercises.length} ${t('exExercises')} · ${t('exRest')} ${tp.restDefault}s</div></div><div style="display:flex;gap:6px;flex-shrink:0;">${S.user?`<button class="btn btn-sm btn-ghost" onclick="showShareTemplateModal(${tp.id})" title="${tt({pl:'Wyślij znajomemu',en:'Share with friend',de:'Mit Freund teilen',es:'Compartir con amigo'})}" style="padding:7px 10px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>`:''}<button class="btn btn-sm btn-primary" onclick="startWorkout(${tp.id})">${t('startTemplate')}</button><button class="btn btn-sm btn-ghost" onclick="editTemplate(${tp.id})">${t('editTemplate')}</button></div></div><div class="tpl-exercises">${tp.exercises.map(e=>`<div class="tpl-ex-row">${e.sup?'<span class="super-tag">SS</span>':'<span style="width:20px;display:inline-block;flex-shrink:0;"></span>'}<span class="name">${escHtml(exName(e))}</span><span>${e.sets}×${e.reps}${e.weight?' · '+dispW(e.weight)+unitW():''}</span></div>`).join('')}</div></div>`).join('');
   el.innerHTML=html;
-  if(S.user&&sb)loadPendingSharedTemplates();
 }
 
 async function loadPendingSharedTemplates(){
   if(!sb||!S.user)return;
   const{data}=await sb.from('shared_templates').select('id,template_name,template_data,sender_id,created_at').eq('receiver_id',S.user.id).eq('status','pending').order('created_at',{ascending:false});
   if(!data)return;
+  if(!window._dismissedSharedTplIds)window._dismissedSharedTplIds=new Set();
+  if(!window._notifiedSharedTplIds)window._notifiedSharedTplIds=new Set();
   const senderIds=[...new Set(data.map(r=>r.sender_id))];
   let names={};
   if(senderIds.length){
     const{data:profiles}=await sb.from('profiles').select('id,display_name,email').in('id',senderIds);
     (profiles||[]).forEach(p=>{names[p.id]=p.display_name||p.email||'Friend';});
   }
-  const prev=window._pendingSharedTpls||[];
-  window._pendingSharedTpls=data.map(r=>({...r,sender_name:names[r.sender_id]||'Friend'}));
-  // Notify about newly received templates
-  const prevIds=new Set(prev.map(x=>x.id));
-  window._pendingSharedTpls.filter(r=>!prevIds.has(r.id)).forEach(r=>{
+  // Filter out locally dismissed (accepted/declined before Supabase confirms)
+  window._pendingSharedTpls=data
+    .filter(r=>!window._dismissedSharedTplIds.has(r.id))
+    .map(r=>({...r,sender_name:names[r.sender_id]||'Friend'}));
+  // Notify only once per template ID
+  window._pendingSharedTpls.filter(r=>!window._notifiedSharedTplIds.has(r.id)).forEach(r=>{
+    window._notifiedSharedTplIds.add(r.id);
     if(typeof addAppNotification==='function')addAppNotification({
       type:'shared_template',
       title:tt({pl:'Nowy szablon',en:'New template',de:'Neue Vorlage',es:'Nueva plantilla'}),
@@ -727,10 +730,7 @@ async function loadPendingSharedTemplates(){
     });
     if(typeof showSyncToast==='function')showSyncToast(tt({pl:`Nowy szablon od ${r.sender_name}`,en:`New template from ${r.sender_name}`,de:`Neue Vorlage von ${r.sender_name}`,es:`Nueva plantilla de ${r.sender_name}`}),'info');
   });
-  if(window._pendingSharedTpls.length){
-    const el=document.getElementById('templateList');
-    if(el)renderTemplates();
-  }
+  renderTemplates();
 }
 window.loadPendingSharedTemplates=loadPendingSharedTemplates;
 
@@ -786,6 +786,8 @@ window.acceptSharedTemplate=function(id){
   const st=window._pendingSharedTpls?.find(x=>x.id===id);
   if(!st||!sb)return;
   if(!isPro()&&S.templates.length>=3){showPaywall('template_limit');return;}
+  if(!window._dismissedSharedTplIds)window._dismissedSharedTplIds=new Set();
+  window._dismissedSharedTplIds.add(id);
   const td=st.template_data;
   const newTpl={...td,id:Date.now(),fromShared:true};
   S.templates.push(newTpl);
@@ -793,12 +795,13 @@ window.acceptSharedTemplate=function(id){
   saveAll();
   renderTemplates();
   showSyncToast(tt({pl:'Szablon zapisany ✓',en:'Template saved ✓',de:'Vorlage gespeichert ✓',es:'Plantilla guardada ✓'}),'success');
-  // Supabase update in background
   sb.from('shared_templates').update({status:'accepted'}).eq('id',id);
   if(typeof syncQueuedCloudChanges==='function')syncQueuedCloudChanges();
 };
 
 window.declineSharedTemplate=function(id){
+  if(!window._dismissedSharedTplIds)window._dismissedSharedTplIds=new Set();
+  window._dismissedSharedTplIds.add(id);
   window._pendingSharedTpls=(window._pendingSharedTpls||[]).filter(x=>x.id!==id);
   renderTemplates();
   if(sb)sb.from('shared_templates').update({status:'declined'}).eq('id',id);

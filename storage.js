@@ -222,7 +222,7 @@ function showScreen(name){
   if(name==='exercises')renderExercises();
   if(name==='programs')renderPrograms();
   if(name==='progress')renderProgress();
-  if(name==='templates')renderTemplates();
+  if(name==='templates'){renderTemplates();if(S.user&&sb&&typeof loadPendingSharedTemplates==='function')loadPendingSharedTemplates();}
   if(name==='workouts')renderWorkout();
   if(typeof updateWorkoutReturnBtn==='function')updateWorkoutReturnBtn();
   // Profile screen removed — its content lives in Settings now (renderSettings handles measurements + Pro card)
