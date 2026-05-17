@@ -14,6 +14,10 @@ body.light {
 }
 :root {
   --btn-text:#000;
+  --dash-logo-bg: url('./logo.jpg');
+}
+body.light {
+  --dash-logo-bg: url('./light_logo.png');
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;overflow:hidden;transition:background 0.2s,color 0.2s;-webkit-user-select:none;user-select:none;}
