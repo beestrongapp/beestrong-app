@@ -702,23 +702,33 @@ function renderTemplates(){
   el.innerHTML=html;
 }
 
+function _sharedTplDismissedIds(){
+  if(!window._dismissedSharedTplIds){
+    window._dismissedSharedTplIds=new Set(JSON.parse(localStorage.getItem('bs-dismissed-stpl-v1')||'[]'));
+  }
+  return window._dismissedSharedTplIds;
+}
+function _sharedTplDismiss(id){
+  const s=_sharedTplDismissedIds();
+  s.add(id);
+  try{localStorage.setItem('bs-dismissed-stpl-v1',JSON.stringify([...s].slice(-100)));}catch(e){}
+}
+
 async function loadPendingSharedTemplates(){
   if(!sb||!S.user)return;
   const{data}=await sb.from('shared_templates').select('id,template_name,template_data,sender_id,created_at').eq('receiver_id',S.user.id).eq('status','pending').order('created_at',{ascending:false});
   if(!data)return;
-  if(!window._dismissedSharedTplIds)window._dismissedSharedTplIds=new Set();
   if(!window._notifiedSharedTplIds)window._notifiedSharedTplIds=new Set();
+  const dismissed=_sharedTplDismissedIds();
   const senderIds=[...new Set(data.map(r=>r.sender_id))];
   let names={};
   if(senderIds.length){
     const{data:profiles}=await sb.from('profiles').select('id,display_name,email').in('id',senderIds);
     (profiles||[]).forEach(p=>{names[p.id]=p.display_name||p.email||'Friend';});
   }
-  // Filter out locally dismissed (accepted/declined before Supabase confirms)
   window._pendingSharedTpls=data
-    .filter(r=>!window._dismissedSharedTplIds.has(r.id))
+    .filter(r=>!dismissed.has(r.id))
     .map(r=>({...r,sender_name:names[r.sender_id]||'Friend'}));
-  // Notify only once per template ID
   window._pendingSharedTpls.filter(r=>!window._notifiedSharedTplIds.has(r.id)).forEach(r=>{
     window._notifiedSharedTplIds.add(r.id);
     if(typeof addAppNotification==='function')addAppNotification({
@@ -794,12 +804,11 @@ window.doShareTemplate=async function(tplId,receiverId,receiverName,rowEl){
   if(typeof sendPushToUser==='function')sendPushToUser(receiverId,{type:'shared_template',title:'BeeStrong',body:tt({pl:`${localStorage.getItem('bs-username')||'Someone'} udostępnił Ci szablon: ${tp.name}`,en:`${localStorage.getItem('bs-username')||'Someone'} shared a template with you: ${tp.name}`,de:`${localStorage.getItem('bs-username')||'Someone'} hat eine Vorlage geteilt: ${tp.name}`,es:`${localStorage.getItem('bs-username')||'Someone'} compartió una plantilla: ${tp.name}`}),url:'./?screen=templates'});
 };
 
-window.acceptSharedTemplate=function(id){
+window.acceptSharedTemplate=async function(id){
   const st=window._pendingSharedTpls?.find(x=>x.id===id);
   if(!st||!sb)return;
   if(!isPro()&&S.templates.length>=3){showPaywall('template_limit');return;}
-  if(!window._dismissedSharedTplIds)window._dismissedSharedTplIds=new Set();
-  window._dismissedSharedTplIds.add(id);
+  _sharedTplDismiss(id);
   const td=st.template_data;
   const newTpl={...td,id:Date.now(),fromShared:true};
   S.templates.push(newTpl);
@@ -807,16 +816,15 @@ window.acceptSharedTemplate=function(id){
   saveAll();
   renderTemplates();
   showSyncToast(tt({pl:'Szablon zapisany ✓',en:'Template saved ✓',de:'Vorlage gespeichert ✓',es:'Plantilla guardada ✓'}),'success');
-  sb.from('shared_templates').update({status:'accepted'}).eq('id',id);
+  await sb.from('shared_templates').update({status:'accepted'}).eq('id',id);
   if(typeof syncQueuedCloudChanges==='function')syncQueuedCloudChanges();
 };
 
-window.declineSharedTemplate=function(id){
-  if(!window._dismissedSharedTplIds)window._dismissedSharedTplIds=new Set();
-  window._dismissedSharedTplIds.add(id);
+window.declineSharedTemplate=async function(id){
+  _sharedTplDismiss(id);
   window._pendingSharedTpls=(window._pendingSharedTpls||[]).filter(x=>x.id!==id);
   renderTemplates();
-  if(sb)sb.from('shared_templates').update({status:'declined'}).eq('id',id);
+  if(sb)await sb.from('shared_templates').update({status:'declined'}).eq('id',id);
 };
 
 function openNewTemplate(){
