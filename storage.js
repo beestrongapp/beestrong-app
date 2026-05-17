@@ -14,7 +14,7 @@ const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 const PUSH_VAPID_PUBLIC_KEY='BK6QlCz2qCc0fPybDGzYJNIjIWC0ln_O37cuNVpEyld7KANqK-oTQLBWICApvbuzsgWq-PeH5kaXY670C9mxNGc';
 let sb=null; // Supabase client, initialized after DOM ready (see initSupabase)
 
-let S={month:new Date().getMonth(),year:new Date().getFullYear(),selectedDate:null,templates:[],workouts:{},measurements:{},activeWorkout:null,timerSecs:0,timerInterval:null,modal:null,loaded:false,isPro:false,coachMode:false,coachVisible:ld('bs-coach-visible-v1',true),programs:[],clients:[],pendingInvites:[],pendingClientRequests:[],user:null,defaultRest:90,units:'metric',layoutMode:localStorage.getItem('bs-layout-mode-v1')||'standard',goal:localStorage.getItem('bs-goal-v1')||'strength',level:localStorage.getItem('bs-level-v1')||'beginner',weekPlan:{},exerciseNotes:ld('bs-ex-notes-v1',{})};
+let S={month:new Date().getMonth(),year:new Date().getFullYear(),selectedDate:null,templates:[],workouts:{},measurements:{},activeWorkout:null,timerSecs:0,timerEnd:null,timerInterval:null,modal:null,loaded:false,isPro:false,coachMode:false,coachVisible:ld('bs-coach-visible-v1',true),programs:[],clients:[],pendingInvites:[],pendingClientRequests:[],user:null,defaultRest:90,units:'metric',layoutMode:localStorage.getItem('bs-layout-mode-v1')||'standard',goal:localStorage.getItem('bs-goal-v1')||'strength',level:localStorage.getItem('bs-level-v1')||'beginner',weekPlan:{},exerciseNotes:ld('bs-ex-notes-v1',{})};
 let progressChart=null;
 
 function exName(e){return e[lang]||e.pl||e.name||'';}

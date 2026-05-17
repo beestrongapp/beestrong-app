@@ -1113,7 +1113,7 @@ function renderWorkout(){
     ex.sets.forEach((s,si)=>{
       const last=getLastSet(ex,si);
       const lastHtml=last?`<div class="set-last">${dispW(last.weight)}<br><span style="color:var(--text3);font-size:10px;">×${last.reps}</span></div>`:`<div class="set-last" style="opacity:0.4;">—</div>`;
-      h+=`<div class="set-grid"><button class="rm-btn" onclick="removeSet(${ei},${si})">✕</button><div class="set-num">${si+1}</div>${lastHtml}<input class="si" type="number" value="${dispW(s.weight)}" onfocus="clearZeroInput(this)" onchange="upd(${ei},${si},'weight',this.value)"/><input class="si" type="number" value="${s.reps}" onfocus="clearZeroInput(this)" onchange="upd(${ei},${si},'reps',this.value)"/><input class="si" type="number" value="${s.rest}" onfocus="clearZeroInput(this)" onchange="upd(${ei},${si},'rest',this.value)"/><button class="set-done ${s.done?'completed':''}" onclick="toggleSet(${ei},${si})">${s.done?'✓':'○'}</button></div>`;
+      h+=`<div class="set-grid"><button class="rm-btn" onclick="removeSet(${ei},${si})">✕</button><div class="set-num">${si+1}</div>${lastHtml}<input class="si" type="number" value="${dispW(s.weight)}" onfocus="clearZeroInput(this)" oninput="upd(${ei},${si},'weight',this.value)"/><input class="si" type="number" value="${s.reps}" onfocus="clearZeroInput(this)" oninput="upd(${ei},${si},'reps',this.value)"/><input class="si" type="number" value="${s.rest}" onfocus="clearZeroInput(this)" oninput="upd(${ei},${si},'rest',this.value)"/><button class="set-done ${s.done?'completed':''}" onclick="toggleSet(${ei},${si})">${s.done?'✓':'○'}</button></div>`;
     });
     h+=`<button class="btn btn-sm btn-ghost" style="font-size:12px;padding:6px 12px;margin-top:6px;width:100%;justify-content:center;" onclick="addSet(${ei})">+ ${t('addSet')}</button>`;
     h+=`</div>`;
@@ -1344,25 +1344,50 @@ window.adjustTimer=adjustTimer;
 function startTimer(s){
   stopTimer();
   S.timerSecs=s;
+  S.timerEnd=Date.now()+s*1000;
   _renderTimerBar();
-  S.timerInterval=setInterval(()=>{
-    S.timerSecs--;
-    if(S.timerSecs<=0){
-      timerAlert('done');
-      stopTimer();
-    } else {
-      if(S.timerSecs<=5)timerAlert('warning');
-      _renderTimerBar();
-    }
-  },1000);
+  S.timerInterval=setInterval(_timerTick,500);
+}
+
+function _timerTick(){
+  if(!S.timerEnd){stopTimer();return;}
+  const remaining=Math.ceil((S.timerEnd-Date.now())/1000);
+  if(remaining<=0){
+    S.timerSecs=0;
+    timerAlert('done');
+    stopTimer();
+  } else {
+    const prev=S.timerSecs;
+    S.timerSecs=remaining;
+    if(prev>5&&remaining<=5)timerAlert('warning');
+    _renderTimerBar();
+  }
 }
 
 function stopTimer(){
   if(S.timerInterval){clearInterval(S.timerInterval);S.timerInterval=null;}
   S.timerSecs=0;
+  S.timerEnd=null;
   if(getWorkoutViewMode()==='minimal'){_renderTimerBar();}
   else{const tb=document.getElementById('workoutTimerBar');if(tb)tb.remove();}
 }
+
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'){
+    if(_audioCtx&&_audioCtx.state==='suspended')_audioCtx.resume();
+    if(S.timerEnd){
+      const remaining=Math.ceil((S.timerEnd-Date.now())/1000);
+      if(remaining<=0){
+        S.timerSecs=0;
+        timerAlert('done');
+        stopTimer();
+      } else {
+        S.timerSecs=remaining;
+        _renderTimerBar();
+      }
+    }
+  }
+});
 
 function _renderTimerBar(){
   const min=Math.floor(S.timerSecs/60);
