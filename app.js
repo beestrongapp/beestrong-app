@@ -772,7 +772,7 @@ function showTplModal(id){
   }
 
   window.toggleType=tp=>{const i=curTypes.indexOf(tp);if(i>=0)curTypes.splice(i,1);else curTypes.push(tp);renderTplModal();};
-  window.clearZeroInput=input=>{if(input&&(+input.value===0))input.value='';else input?.select?.();};
+  window.clearZeroInput=input=>{if(input)input.select();};
   window.rmEx=i=>{exs.splice(i,1);renderTplModal();};
   window.toggleSup=i=>{exs[i].sup=!exs[i].sup;renderTplModal();};
   window.updSetVal=(ei,si,field,val)=>{

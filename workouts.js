@@ -1225,7 +1225,7 @@ function renderWorkoutMinimal(){
 }
 
 function upd(ei,si,f,v){S.activeWorkout.exercises[ei].sets[si][f]=f==='weight'?inputToKg(v):+v;saveActiveWorkout();}
-function clearZeroInput(input){if(input)input.value='';}
+function clearZeroInput(input){if(input)input.select();}
 window.clearZeroInput=clearZeroInput;
 function toggleWorkoutSup(ei){S.activeWorkout.exercises[ei].sup=!S.activeWorkout.exercises[ei].sup;renderWorkout();}
 window.toggleWorkoutSup=toggleWorkoutSup;
