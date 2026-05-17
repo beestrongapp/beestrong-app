@@ -707,14 +707,26 @@ async function loadPendingSharedTemplates(){
   if(!sb||!S.user)return;
   const{data}=await sb.from('shared_templates').select('id,template_name,template_data,sender_id,created_at').eq('receiver_id',S.user.id).eq('status','pending').order('created_at',{ascending:false});
   if(!data)return;
-  // Fetch sender names
   const senderIds=[...new Set(data.map(r=>r.sender_id))];
   let names={};
   if(senderIds.length){
     const{data:profiles}=await sb.from('profiles').select('id,display_name,email').in('id',senderIds);
     (profiles||[]).forEach(p=>{names[p.id]=p.display_name||p.email||'Friend';});
   }
+  const prev=window._pendingSharedTpls||[];
   window._pendingSharedTpls=data.map(r=>({...r,sender_name:names[r.sender_id]||'Friend'}));
+  // Notify about newly received templates
+  const prevIds=new Set(prev.map(x=>x.id));
+  window._pendingSharedTpls.filter(r=>!prevIds.has(r.id)).forEach(r=>{
+    if(typeof addAppNotification==='function')addAppNotification({
+      type:'shared_template',
+      title:tt({pl:'Nowy szablon',en:'New template',de:'Neue Vorlage',es:'Nueva plantilla'}),
+      body:tt({pl:`${r.sender_name} udostępnił Ci szablon: ${r.template_name}`,en:`${r.sender_name} shared a template with you: ${r.template_name}`,de:`${r.sender_name} hat eine Vorlage geteilt: ${r.template_name}`,es:`${r.sender_name} compartió una plantilla: ${r.template_name}`}),
+      at:r.created_at,
+      action:`showScreen('templates')`,
+    });
+    if(typeof showSyncToast==='function')showSyncToast(tt({pl:`Nowy szablon od ${r.sender_name}`,en:`New template from ${r.sender_name}`,de:`Neue Vorlage von ${r.sender_name}`,es:`Nueva plantilla de ${r.sender_name}`}),'info');
+  });
   if(window._pendingSharedTpls.length){
     const el=document.getElementById('templateList');
     if(el)renderTemplates();
@@ -770,26 +782,26 @@ window.doShareTemplate=async function(tplId,receiverId,receiverName,rowEl){
   if(typeof sendPushToUser==='function')sendPushToUser(receiverId,{type:'shared_template',title:'BeeStrong',body:tt({pl:`${localStorage.getItem('bs-username')||'Someone'} udostępnił Ci szablon: ${tp.name}`,en:`${localStorage.getItem('bs-username')||'Someone'} shared a template with you: ${tp.name}`,de:`${localStorage.getItem('bs-username')||'Someone'} hat eine Vorlage geteilt: ${tp.name}`,es:`${localStorage.getItem('bs-username')||'Someone'} compartió una plantilla: ${tp.name}`}),url:'./?screen=templates'});
 };
 
-window.acceptSharedTemplate=async function(id){
+window.acceptSharedTemplate=function(id){
   const st=window._pendingSharedTpls?.find(x=>x.id===id);
   if(!st||!sb)return;
+  if(!isPro()&&S.templates.length>=3){showPaywall('template_limit');return;}
   const td=st.template_data;
   const newTpl={...td,id:Date.now(),fromShared:true};
-  if(!isPro()&&S.templates.length>=3){showPaywall('template_limit');return;}
   S.templates.push(newTpl);
-  saveAll();
-  if(typeof syncQueuedCloudChanges==='function')syncQueuedCloudChanges();
-  await sb.from('shared_templates').update({status:'accepted'}).eq('id',id);
   window._pendingSharedTpls=(window._pendingSharedTpls||[]).filter(x=>x.id!==id);
+  saveAll();
   renderTemplates();
   showSyncToast(tt({pl:'Szablon zapisany ✓',en:'Template saved ✓',de:'Vorlage gespeichert ✓',es:'Plantilla guardada ✓'}),'success');
+  // Supabase update in background
+  sb.from('shared_templates').update({status:'accepted'}).eq('id',id);
+  if(typeof syncQueuedCloudChanges==='function')syncQueuedCloudChanges();
 };
 
-window.declineSharedTemplate=async function(id){
-  if(!sb)return;
-  await sb.from('shared_templates').update({status:'declined'}).eq('id',id);
+window.declineSharedTemplate=function(id){
   window._pendingSharedTpls=(window._pendingSharedTpls||[]).filter(x=>x.id!==id);
   renderTemplates();
+  if(sb)sb.from('shared_templates').update({status:'declined'}).eq('id',id);
 };
 
 function openNewTemplate(){
