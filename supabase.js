@@ -280,7 +280,7 @@ async function pullAllFromCloud(){
     // Coach-assigned programs/workouts (client receives from coach)
     if(!assignRes.error){
       const acceptedInvitationIds=new Set((coachInvRes.data||[]).map(inv=>String(inv.id)));
-      const activeAssignments=(assignRes.data||[]).filter(a=>coachInvRes.error||acceptedInvitationIds.has(String(a.invitation_id)));
+      const activeAssignments=(assignRes.data||[]).filter(a=>acceptedInvitationIds.has(String(a.invitation_id)));
       const coachPrograms=activeAssignments.filter(a=>(a.assignment_type||'program')==='program').map(a=>({
         id:'coach_'+a.id,
         assignmentId:a.id,
@@ -654,7 +654,7 @@ function showAccountModal(){
     <div class="modal-handle"></div>
     <img src="${isDark?'./logo.jpg':'./light_logo.png'}" alt="BeeStrong" style="width:54px;height:54px;object-fit:contain;border-radius:12px;display:block;margin:0 auto 12px;"/>
     <div style="font-size:17px;font-weight:700;margin-bottom:4px;">${tt({pl:'Zalogowany jako',en:'Signed in as',de:'Angemeldet als',es:'Sesión iniciada como'})}</div>
-    <div style="font-size:14px;color:var(--text2);margin-bottom:22px;word-break:break-all;">${S.user.email}</div>
+    <div style="font-size:14px;color:var(--text2);margin-bottom:22px;word-break:break-all;">${escHtml(S.user.email||'')}</div>
     <div style="display:flex;flex-direction:column;gap:8px;text-align:left;">
       <button class="btn btn-ghost" id="acctPush" style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;text-align:left;">
         <span><strong>${tt({pl:'Wyślij do chmury',en:'Upload to cloud',de:'In Cloud hochladen',es:'Subir a la nube'})}</strong><br><span style="font-size:11px;color:var(--text3);font-weight:400;">${tt({pl:'Wysyła tylko zmienione rekordy',en:'Uploads changed records only',de:'Lädt nur geänderte Datensätze hoch',es:'Sube solo registros cambiados'})}</span></span>
@@ -811,9 +811,13 @@ function setupRealtimeSubscriptions(){
   _realtimeChannels.push(sharedTplCh);
 }
 
-// Auto-sync when tab becomes visible
+// Auto-sync when tab becomes visible — throttled to at most once per 30s
+let _lastVisibleSync=0;
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='visible'){
+    const now=Date.now();
+    if(now-_lastVisibleSync<30000)return;
+    _lastVisibleSync=now;
     autoSyncFromCloud();
     if(typeof checkPendingCoachMessages==='function')checkPendingCoachMessages();
     if(typeof checkPendingCoachNotes==='function')checkPendingCoachNotes();

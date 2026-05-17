@@ -403,7 +403,7 @@ function showExPicker(currentExs,onConfirm){
         const nm=e[lang]||e.pl||e.en||'';
         const key=e.pl||e.en;
         const isSel=selected.has(key);
-        const safeId=(e.id||'').toString().replace(/'/g,"\'");
+        const safeId=(e.id||'').toString().replace(/'/g,"\\'");
         return`<div class="ex-picker-item ${isSel?'selected':''}" onclick="toggleExPick('${safeId}','${gk}')">
           <div class="ex-thumb">${thumbHtml(e,gk)}</div>
           <div class="ex-info"><div class="ex-info-name">${nm}</div><div class="ex-info-group">${label}</div></div>

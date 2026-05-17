@@ -357,8 +357,8 @@ function showImportProgramModal(remoteProgram){
     <div class="modal-handle"></div>
     <div style="font-size:36px;margin-bottom:6px;">📋</div>
     <div style="font-size:18px;font-weight:700;margin-bottom:6px;">${tt({pl:'Zaimportować program?',en:'Import this program?',de:'Programm importieren?',es:'¿Importar este programa?'})}</div>
-    <div style="font-size:15px;font-weight:600;margin-bottom:4px;">${pName}</div>
-    ${pShort?`<div style="font-size:13px;color:var(--text2);margin-bottom:6px;">${pShort}</div>`:''}
+    <div style="font-size:15px;font-weight:600;margin-bottom:4px;">${escHtml(pName)}</div>
+    ${pShort?`<div style="font-size:13px;color:var(--text2);margin-bottom:6px;">${escHtml(pShort)}</div>`:''}
     <div style="font-size:12px;color:var(--text3);margin-bottom:18px;">${tplCount} ${t('exExercises')}</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
       <button class="btn btn-ghost" onclick="closeModal()">${tt({pl:'Anuluj',en:'Cancel',de:'Abbrechen',es:'Cancelar'})}</button>

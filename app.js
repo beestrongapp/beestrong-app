@@ -423,16 +423,13 @@ function handleProgressTabEvent(e){
   window.setProgressTab(btn.dataset.progressTab);
 }
 document.addEventListener('click',handleProgressTabEvent,true);
-document.addEventListener('touchstart',handleProgressTabEvent,{capture:true,passive:false});
-document.addEventListener('pointerup',handleProgressTabEvent,true);
 window.setProgressGk=gk=>{_progressGk=gk;renderProgress();};
 window.toggleProgressEquip=eq=>{
   if(eq==='__all__'){_progressEquip.clear();}
   else{if(_progressEquip.has(eq))_progressEquip.delete(eq);else _progressEquip.add(eq);}
   renderProgress();
 };
-window.setProgressTpl=id=>{_progressTpl=id;window._progressTpl=id;renderProgress();};
-window.selProgressTpl=id=>{_progressTpl=id;renderProgress();};
+window.setProgressTpl=id=>{_progressTpl=id;window._progressTpl=id;renderProgress()};
 
 // ===== EXERCISES BROWSE =====
 let _browseGks=new Set();
@@ -583,7 +580,7 @@ function renderPrograms(){
           <button class="btn btn-sm btn-primary" onclick='startProgramWorkout("${safeId}",${ti})' style="font-size:12px;padding:7px 14px;flex-shrink:0;">${t('startTemplate')}</button>
         </div>
         <div style="font-size:12px;color:var(--text3);margin-bottom:8px;">${(tp.exercises||[]).length} ${t('exExercises')} · ${t('exRest')} ${tp.restDefault||90}s</div>
-        ${(tp.exercises||[]).map(e=>`<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);padding:4px 0;border-top:1px solid var(--border);"><span style="flex:1;padding-right:8px;">${e.sup?'<span style="color:#7ec77e;font-weight:700;font-size:10px;">SS </span>':''}${exName(e)}</span><span style="color:var(--text3);flex-shrink:0;">${e.sets}×${e.reps}${e.weight?' · '+dispW(e.weight)+unitW():''}</span></div>`).join('')}
+        ${(tp.exercises||[]).map(e=>`<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);padding:4px 0;border-top:1px solid var(--border);"><span style="flex:1;padding-right:8px;">${e.sup?'<span style="color:#7ec77e;font-weight:700;font-size:10px;">SS </span>':''}${escHtml(exName(e))}</span><span style="color:var(--text3);flex-shrink:0;">${e.sets}×${e.reps}${e.weight?' · '+dispW(e.weight)+unitW():''}</span></div>`).join('')}
       </div>`).join(''):'';
 
     // Coach actions for custom (non-builtin) programs when expanded

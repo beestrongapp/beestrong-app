@@ -1,6 +1,8 @@
 // ===== ADMIN PANEL =====
 
 let _adminTab='all';
+let _adminUsers=[];
+let _adminTabList=[];
 
 function updateAdminNav(){
   const show=isAdmin();
@@ -20,7 +22,7 @@ async function renderAdmin(){
   if(!sb){document.getElementById('adminTabContent').innerHTML='<div style="color:var(--text3);text-align:center;padding:20px;">Supabase not available</div>';return;}
   const {data,error}=await sb.from('profiles').select('id,email,display_name,is_pro,is_coach').order('created_at',{ascending:false});
   if(error){document.getElementById('adminTabContent').innerHTML=`<div style="color:var(--red);padding:12px;">${error.message}</div>`;return;}
-  window._adminUsers=data||[];
+  _adminUsers=data||[];
   _renderAdminTab();
 }
 
@@ -45,7 +47,7 @@ function _adminStatsBar(count,total,color){
 function _renderAdminTab(){
   const el=document.getElementById('adminTabContent');
   if(!el)return;
-  const all=window._adminUsers||[];
+  const all=_adminUsers||[];
   const total=all.length;
   const pro=all.filter(u=>u.is_pro);
   const coach=all.filter(u=>u.is_coach);
@@ -67,7 +69,7 @@ function _renderAdminTab(){
   el.innerHTML=`${statsHtml}
     <div style="margin-bottom:12px;"><input type="text" id="adminSearch" placeholder="${tt({pl:'Szukaj po imieniu lub mailu...',en:'Search by name or email...',de:'Nach Name oder E-Mail suchen...',es:'Buscar por nombre o email...'})}" oninput="filterAdminUsers()" style="font-size:14px;"/></div>
     <div id="adminUserList"></div>`;
-  window._adminTabList=list;
+  _adminTabList=list;
   renderAdminUserList(list);
 }
 
@@ -84,7 +86,7 @@ window.setAdminTab=function(tab){
 
 function filterAdminUsers(){
   const q=(document.getElementById('adminSearch')?.value||'').toLowerCase();
-  const base=window._adminTabList||[];
+  const base=_adminTabList||[];
   const filtered=base.filter(u=>(u.email||'').toLowerCase().includes(q)||(u.display_name||'').toLowerCase().includes(q));
   renderAdminUserList(filtered);
 }
@@ -95,10 +97,10 @@ function renderAdminUserList(users){
   if(!users.length){el.innerHTML=`<div style="text-align:center;color:var(--text3);padding:32px;">${tt({pl:'Brak użytkowników',en:'No users found',de:'Keine Benutzer',es:'Sin usuarios'})}</div>`;return;}
   el.innerHTML=users.map(u=>`
     <div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--bg2);border-radius:12px;margin-bottom:8px;">
-      <div style="width:40px;height:40px;border-radius:50%;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--accent);flex-shrink:0;">${(u.display_name||u.email||'?')[0].toUpperCase()}</div>
+      <div style="width:40px;height:40px;border-radius:50%;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--accent);flex-shrink:0;">${escHtml((u.display_name||u.email||'?')[0].toUpperCase())}</div>
       <div style="flex:1;min-width:0;">
-        <div style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${u.display_name||u.email||'—'}</div>
-        <div style="font-size:12px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${u.display_name?u.email:''}</div>
+        <div style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(u.display_name||u.email||'—')}</div>
+        <div style="font-size:12px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${u.display_name?escHtml(u.email||''):''}</div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">
         <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;color:var(--text2);">
@@ -115,7 +117,7 @@ async function adminToggle(userId,field,value){
   if(!sb||!isAdmin())return;
   const {error}=await sb.from('profiles').update({[field]:value}).eq('id',userId);
   if(error){showSyncToast(error.message,'error');return;}
-  const u=window._adminUsers?.find(x=>x.id===userId);
+  const u=_adminUsers?.find(x=>x.id===userId);
   if(u)u[field]=value;
   _renderAdminTab();
   showSyncToast(tt({pl:'Zaktualizowano',en:'Updated',de:'Aktualisiert',es:'Actualizado'}),'success');

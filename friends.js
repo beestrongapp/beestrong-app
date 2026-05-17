@@ -13,7 +13,7 @@ function friendName(inv){
 }
 function friendId(inv){return S.user?.id===inv.inviter_id?inv.invitee_id:inv.inviter_id;}
 function friendEmail(inv){return S.user?.id===inv.inviter_id?inv.invitee_email:inv.inviter_email;}
-function friendEsc(v){return String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
+// friendEsc removed — use global escHtml() instead
 function friendsLimit(){
   if(typeof isAdmin==='function'&&isAdmin())return Infinity;
   if(S.coachMode)return 50;
@@ -59,7 +59,7 @@ async function loadFriends(){
     _friendInvitations=[...byId.values()];
     renderFriendsList();
   }catch(e){
-    list.innerHTML=`<div style="color:var(--red);padding:12px;">${friendEsc(e.message||'Friends unavailable')}</div>`;
+    list.innerHTML=`<div style="color:var(--red);padding:12px;">${escHtml(e.message||'Friends unavailable')}</div>`;
   }
 }
 
@@ -111,12 +111,12 @@ async function renderChatList(){
       return;
     }
     el.innerHTML=`<div class="section-label">Chat</div>${rows.map(inv=>`
-      <div class="client-card" onclick="openFriendDirectChat('${friendEsc(inv.id)}')">
-        <div style="width:40px;height:40px;border-radius:50%;background:var(--accent);color:var(--btn-text);display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0;">${friendEsc(friendName(inv))[0]?.toUpperCase()||'C'}</div>
-        <div class="client-card-info"><div class="client-card-name">${friendEsc(friendName(inv))}</div><div class="client-card-meta">${friendEsc(friendEmail(inv)||'')}</div></div>
+      <div class="client-card" onclick="openFriendDirectChat('${escHtml(inv.id)}')">
+        <div style="width:40px;height:40px;border-radius:50%;background:var(--accent);color:var(--btn-text);display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0;">${escHtml(friendName(inv))[0]?.toUpperCase()||'C'}</div>
+        <div class="client-card-info"><div class="client-card-name">${escHtml(friendName(inv))}</div><div class="client-card-meta">${escHtml(friendEmail(inv)||'')}</div></div>
       </div>`).join('')}${bottomBack}`;
   }catch(e){
-    el.innerHTML=`<div style="color:var(--red);padding:12px;">${friendEsc(e.message||'Chat unavailable')}</div>${bottomBack}`;
+    el.innerHTML=`<div style="color:var(--red);padding:12px;">${escHtml(e.message||'Chat unavailable')}</div>${bottomBack}`;
   }
 }
 window.renderChatList=renderChatList;
@@ -128,8 +128,8 @@ async function openFriendDirectChat(invId){
 window.openFriendDirectChat=openFriendDirectChat;
 
 function friendCardHtml(inv,needsAction){
-  const name=friendEsc(friendName(inv));
-  const email=friendEsc(friendEmail(inv)||'');
+  const name=escHtml(friendName(inv));
+  const email=escHtml(friendEmail(inv)||'');
   const status=inv.status||'pending';
   const statusText=status==='accepted'?tt({pl:'Friend',en:'Friend',de:'Friend',es:'Friend'}):tt({pl:'Pending',en:'Pending',de:'Ausstehend',es:'Pendiente'});
   return `<div class="client-card" onclick="${status==='accepted'?`openFriendProfile('${inv.id}')`:''}" style="${status==='accepted'?'':'cursor:default;'}">
@@ -173,18 +173,21 @@ async function searchFriendByEmail(){
     const{data:profile}=await sb.from('profiles').select('id,email,display_name').eq('id',uid).maybeSingle();
     const name=profile?.display_name||email;
     out.innerHTML=`<div class="client-card" style="cursor:default;margin-bottom:12px;">
-      <div style="width:40px;height:40px;border-radius:50%;background:var(--accent);color:var(--btn-text);display:flex;align-items:center;justify-content:center;font-weight:800;">${friendEsc(name)[0]?.toUpperCase()||'F'}</div>
-      <div class="client-card-info"><div class="client-card-name">${friendEsc(name)}</div><div class="client-card-meta">${friendEsc(email)}</div></div>
-      <button class="btn btn-sm btn-primary" onclick="sendFriendInvitation('${uid}','${friendEsc(email)}','${friendEsc(name).replace(/'/g,"\\'")}')" style="font-size:12px;padding:7px 12px;">${tt({pl:'Zaproś',en:'Invite',de:'Einladen',es:'Invitar'})}</button>
+      <div style="width:40px;height:40px;border-radius:50%;background:var(--accent);color:var(--btn-text);display:flex;align-items:center;justify-content:center;font-weight:800;">${escHtml(name)[0]?.toUpperCase()||'F'}</div>
+      <div class="client-card-info"><div class="client-card-name">${escHtml(name)}</div><div class="client-card-meta">${escHtml(email)}</div></div>
+      <button class="btn btn-sm btn-primary" onclick="sendFriendInvitation('${uid}','${encodeURIComponent(email)}','${encodeURIComponent(name)}')" style="font-size:12px;padding:7px 12px;">${tt({pl:'Zaproś',en:'Invite',de:'Einladen',es:'Invitar'})}</button>
     </div>`;
   }catch(e){
-    out.innerHTML=`<div style="color:var(--red);font-size:13px;margin-bottom:12px;">${friendEsc(e.message||'Search failed')}</div>`;
+    out.innerHTML=`<div style="color:var(--red);font-size:13px;margin-bottom:12px;">${escHtml(e.message||'Search failed')}</div>`;
   }
 }
 window.searchFriendByEmail=searchFriendByEmail;
 
 async function sendFriendInvitation(inviteeId,email,name){
   if(!sb||!S.user)return;
+  // Params arrive URL-encoded from the onclick attribute to safely handle special chars
+  try{email=decodeURIComponent(email);}catch(_){}
+  try{name=decodeURIComponent(name);}catch(_){}
   const accepted=_friendInvitations.filter(i=>i.status==='accepted').length;
   const limit=friendsLimit();
   if(accepted>=limit)return showSyncToast(tt({pl:`Limit Friends: ${friendsLimitLabel(limit)}.`,en:`Friends limit: ${friendsLimitLabel(limit)}.`,de:`Friends-Limit: ${friendsLimitLabel(limit)}.`,es:`Límite de Friends: ${friendsLimitLabel(limit)}.`}),'error');
@@ -269,7 +272,7 @@ async function openFriendProfile(invId){
     _friendDetail={inv,friendId:fid,profile:profileRes.data||null,workouts:woRes.data||[],canSeeRecords};
     renderFriendHub();
   }catch(e){
-    document.getElementById('friendDetailContent').innerHTML=`<div style="padding:20px;text-align:center;color:var(--red);">${friendEsc(e.message||'Could not load friend')}<br><br><button class="btn btn-ghost" onclick="closeModal()">OK</button></div>`;
+    document.getElementById('friendDetailContent').innerHTML=`<div style="padding:20px;text-align:center;color:var(--red);">${escHtml(e.message||'Could not load friend')}<br><br><button class="btn btn-ghost" onclick="closeModal()">OK</button></div>`;
   }
 }
 window.openFriendProfile=openFriendProfile;
@@ -284,7 +287,7 @@ function friendHeader(title,sub,backMode){
   const bottomBack=backAction&&backMode!=='hub-chat'?`<div class="client-detail-bottom-back"><button class="btn btn-primary" onclick="${backAction}">${friendBackLabel()}</button></div>`:'';
   return `<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:16px;">
     <div>${backBtn}
-      <div class="modal-title" style="margin-bottom:4px;">${friendEsc(title)}</div>${sub?`<div style="font-size:12px;color:var(--text2);">${friendEsc(sub)}</div>`:''}</div>
+      <div class="modal-title" style="margin-bottom:4px;">${escHtml(title)}</div>${sub?`<div style="font-size:12px;color:var(--text2);">${escHtml(sub)}</div>`:''}</div>
     <button class="rm-btn" onclick="closeModal()" style="width:34px;height:34px;font-size:18px;">✕</button>
   </div>${bottomBack}`;
 }
@@ -338,7 +341,7 @@ function renderFriendRecords(){
   el.innerHTML=friendHeader('Records',ctx.profile?.display_name||friendName(ctx.inv),'hub')+
     (records.length?records.map((r,i)=>`<div class="workout-row" style="cursor:pointer;" onclick="showFriendRecordDetail(${i})">
       <div class="workout-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><path d="M6 4v16M18 4v16M3 12h18"/></svg></div>
-      <div class="workout-row-info"><div class="workout-row-name">${friendEsc(r.name)}</div><div class="workout-row-meta">${dispW(r.weight)}${unitW()} × ${r.reps} · e1RM ${dispW(r.score)}${unitW()} · ${r.date||''}</div></div>
+      <div class="workout-row-info"><div class="workout-row-name">${escHtml(r.name)}</div><div class="workout-row-meta">${dispW(r.weight)}${unitW()} × ${r.reps} · e1RM ${dispW(r.score)}${unitW()} · ${r.date||''}</div></div>
       <span style="color:var(--text3);font-size:20px;flex-shrink:0;">›</span>
     </div>`).join(''):`<div class="empty-state">${t('noData')}</div>`);
 }
@@ -370,7 +373,7 @@ function showFriendRecordDetail(idx){
     <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;">
       <div>
         <div style="font-size:18px;font-weight:700;">Records</div>
-        <div style="font-size:13px;color:var(--text2);margin-top:2px;">${friendEsc(name)}</div>
+        <div style="font-size:13px;color:var(--text2);margin-top:2px;">${escHtml(name)}</div>
       </div>
       <button onclick="this.closest('.modal-overlay').remove();" aria-label="Close" style="width:38px;height:38px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-size:28px;cursor:pointer;padding:0;line-height:1;display:flex;align-items:center;justify-content:center;">×</button>
     </div>
@@ -415,7 +418,7 @@ async function renderFriendChat(){
   el.innerHTML=`<div class="chat-top-bar">
       <div>
         <div class="modal-title" style="margin-bottom:4px;">Chat</div>
-        <div style="font-size:12px;color:var(--text2);">${friendEsc(title)}</div>
+        <div style="font-size:12px;color:var(--text2);">${escHtml(title)}</div>
       </div>
       <div class="chat-top-actions">
         <button class="btn btn-ghost chat-clear-top" onclick="clearFriendChat()">${tt({pl:'Clear chat',en:'Clear chat',de:'Chat löschen',es:'Limpiar chat'})}</button>
@@ -462,11 +465,11 @@ async function loadFriendMessages(){
   const ctx=_friendDetail,list=document.getElementById('friendChatMessages');if(!ctx||!list||!sb)return;
   list.innerHTML=`<div style="display:flex;justify-content:center;padding:26px 0;"><div class="spinner"></div></div>`;
   const{data,error}=await sb.from('friend_messages').select('*').eq('invitation_id',ctx.inv.id).order('created_at',{ascending:true});
-  if(error){list.innerHTML=`<div style="color:var(--red);padding:14px;">${friendEsc(error.message)}</div>`;return;}
+  if(error){list.innerHTML=`<div style="color:var(--red);padding:14px;">${escHtml(error.message)}</div>`;return;}
   const rows=data||[];
   list.innerHTML=rows.length?rows.map(m=>{
     const mine=m.sender_id===S.user?.id;
-    return `<div style="display:flex;justify-content:${mine?'flex-end':'flex-start'};margin:8px 0;"><div style="max-width:78%;background:${mine?'var(--accent)':'var(--bg2)'};color:${mine?'var(--btn-text)':'var(--text)'};border:1px solid ${mine?'var(--accent)':'var(--border)'};border-radius:14px;padding:9px 11px;"><div style="font-size:14px;line-height:1.4;white-space:pre-wrap;overflow-wrap:anywhere;">${friendEsc(m.message)}</div><div style="font-size:10px;opacity:0.65;text-align:right;margin-top:5px;">${chatTime(m.created_at)}</div></div></div>`;
+    return `<div style="display:flex;justify-content:${mine?'flex-end':'flex-start'};margin:8px 0;"><div style="max-width:78%;background:${mine?'var(--accent)':'var(--bg2)'};color:${mine?'var(--btn-text)':'var(--text)'};border:1px solid ${mine?'var(--accent)':'var(--border)'};border-radius:14px;padding:9px 11px;"><div style="font-size:14px;line-height:1.4;white-space:pre-wrap;overflow-wrap:anywhere;">${escHtml(m.message)}</div><div style="font-size:10px;opacity:0.65;text-align:right;margin-top:5px;">${chatTime(m.created_at)}</div></div></div>`;
   }).join(''):`<div class="empty-state" style="padding:36px 16px;">${tt({pl:'Brak wiadomości.',en:'No messages yet.',de:'Noch keine Nachrichten.',es:'Sin mensajes todavía.'})}</div>`;
   list.scrollTop=list.scrollHeight;
 }
@@ -494,7 +497,7 @@ function rememberFriendNotification(payload){
   const m=payload?.new;
   if(!m||m.sender_id===S.user?.id)return;
   if(typeof addAppNotification==='function'){
-    addAppNotification({type:'friend_message',title:'Friends',body:(m.message||'').slice(0,120),at:m.created_at,invitationId:m.invitation_id,action:`openFriendChatFromNotification('${friendEsc(m.invitation_id)}')`});
+    addAppNotification({type:'friend_message',title:'Friends',body:(m.message||'').slice(0,120),at:m.created_at,invitationId:m.invitation_id,action:`openFriendChatFromNotification('${escHtml(m.invitation_id)}')`});
   }
   if(typeof showSyncToast==='function')showSyncToast(tt({pl:'Nowa wiadomość od frienda',en:'New friend message',de:'Neue Friend-Nachricht',es:'Nuevo mensaje de friend'}),'info');
 }
