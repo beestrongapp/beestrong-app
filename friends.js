@@ -261,13 +261,12 @@ async function openFriendProfile(invId){
   if(window._bsHistoryReady&&!window._bsHandlingBack&&typeof ensureBackTrap==='function')ensureBackTrap({modal:'friend-detail'});
   try{
     const fid=friendId(inv);
-    const[profileRes,woRes]=await Promise.all([
-      sb.from('profiles').select('id,email,display_name').eq('id',fid).maybeSingle(),
-      sb.from('workouts').select('*').eq('user_id',fid).order('date',{ascending:false}),
-    ]);
+    const profileRes=await sb.from('profiles').select('id,email,display_name,share_records').eq('id',fid).maybeSingle();
     if(profileRes.error)throw profileRes.error;
+    const canSeeRecords=profileRes.data?.share_records===true;
+    const woRes=canSeeRecords?await sb.from('workouts').select('*').eq('user_id',fid).order('date',{ascending:false}):{data:[],error:null};
     if(woRes.error)throw woRes.error;
-    _friendDetail={inv,friendId:fid,profile:profileRes.data||null,workouts:woRes.data||[]};
+    _friendDetail={inv,friendId:fid,profile:profileRes.data||null,workouts:woRes.data||[],canSeeRecords};
     renderFriendHub();
   }catch(e){
     document.getElementById('friendDetailContent').innerHTML=`<div style="padding:20px;text-align:center;color:var(--red);">${friendEsc(e.message||'Could not load friend')}<br><br><button class="btn btn-ghost" onclick="closeModal()">OK</button></div>`;
@@ -306,7 +305,9 @@ function renderFriendHub(){
       <div class="stat-card"><div class="stat-top"><span class="stat-label">Records</span></div><div class="stat-value">${friendRecords(ctx.workouts).length}</div><div class="stat-unit">PR</div></div>
     </div>
     <div class="quick-access-grid" style="grid-template-columns:repeat(2,minmax(0,1fr));">
-      ${friendTile('renderFriendRecords()','Records','<path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M5 4H3v3a4 4 0 0 0 4 4"/><path d="M19 4h2v3a4 4 0 0 1-4 4"/>')}
+      ${ctx.canSeeRecords
+        ? friendTile('renderFriendRecords()','Records','<path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M5 4H3v3a4 4 0 0 0 4 4"/><path d="M19 4h2v3a4 4 0 0 1-4 4"/>')
+        : `<div class="qa-tile" style="opacity:0.45;cursor:default;"><div class="qa-tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="22" height="22"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><div class="qa-tile-label">Records</div></div>`}
       ${friendTile('renderFriendChat()','Chat','<path d="M21 15a4 4 0 0 1-4 4H7l-4 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/>')}
     </div>`;
 }

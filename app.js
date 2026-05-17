@@ -683,9 +683,114 @@ window.startProgramWorkout=function(pid,tidx){
 // ===== TEMPLATES =====
 function renderTemplates(){
   const el=document.getElementById('templateList');
-  if(!S.templates.length){el.innerHTML=`<div class="empty-state">${t('noTemplates')}</div>`;return;}
-  el.innerHTML=S.templates.map(tp=>`<div class="tpl-card"><div class="tpl-card-header"><div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><div class="tpl-name">${escHtml(tp.name)}</div>${typeTagHtml(tp.types||[])}</div><div class="tpl-meta">${tp.exercises.length} ${t('exExercises')} · ${t('exRest')} ${tp.restDefault}s</div></div><div style="display:flex;gap:6px;flex-shrink:0;"><button class="btn btn-sm btn-primary" onclick="startWorkout(${tp.id})">${t('startTemplate')}</button><button class="btn btn-sm btn-ghost" onclick="editTemplate(${tp.id})">${t('editTemplate')}</button></div></div><div class="tpl-exercises">${tp.exercises.map(e=>`<div class="tpl-ex-row">${e.sup?'<span class="super-tag">SS</span>':'<span style="width:20px;display:inline-block;flex-shrink:0;"></span>'}<span class="name">${escHtml(exName(e))}</span><span>${e.sets}×${e.reps}${e.weight?' · '+dispW(e.weight)+unitW():''}</span></div>`).join('')}</div></div>`).join('');
+  if(!S.templates.length&&!window._pendingSharedTpls?.length){el.innerHTML=`<div class="empty-state">${t('noTemplates')}</div>`;return;}
+  let html='';
+  // Pending received templates at top
+  if(window._pendingSharedTpls?.length){
+    html+=`<div style="margin-bottom:16px;"><div class="section-label" style="margin-bottom:8px;">${tt({pl:'Otrzymane szablony',en:'Received templates',de:'Erhaltene Vorlagen',es:'Plantillas recibidas'})}</div>`;
+    html+=window._pendingSharedTpls.map(st=>`<div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--accent-dim);border:1px solid var(--accent);border-radius:12px;margin-bottom:8px;">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:14px;font-weight:700;margin-bottom:2px;">${escHtml(st.template_name)}</div>
+        <div style="font-size:12px;color:var(--text2);">${tt({pl:'od',en:'from',de:'von',es:'de'})} ${escHtml(st.sender_name||'Friend')}</div>
+      </div>
+      <button class="btn btn-sm btn-primary" onclick="acceptSharedTemplate('${st.id}')" style="font-size:12px;">${tt({pl:'Zapisz',en:'Save',de:'Speichern',es:'Guardar'})}</button>
+      <button class="btn btn-sm btn-ghost" onclick="declineSharedTemplate('${st.id}')" style="font-size:12px;">✕</button>
+    </div>`).join('');
+    html+='</div>';
+  }
+  html+=S.templates.map(tp=>`<div class="tpl-card"><div class="tpl-card-header"><div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><div class="tpl-name">${escHtml(tp.name)}</div>${typeTagHtml(tp.types||[])}</div><div class="tpl-meta">${tp.exercises.length} ${t('exExercises')} · ${t('exRest')} ${tp.restDefault}s</div></div><div style="display:flex;gap:6px;flex-shrink:0;">${S.user?`<button class="btn btn-sm btn-ghost" onclick="showShareTemplateModal(${tp.id})" title="${tt({pl:'Wyślij znajomemu',en:'Share with friend',de:'Mit Freund teilen',es:'Compartir con amigo'})}" style="padding:7px 10px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>`:''}<button class="btn btn-sm btn-primary" onclick="startWorkout(${tp.id})">${t('startTemplate')}</button><button class="btn btn-sm btn-ghost" onclick="editTemplate(${tp.id})">${t('editTemplate')}</button></div></div><div class="tpl-exercises">${tp.exercises.map(e=>`<div class="tpl-ex-row">${e.sup?'<span class="super-tag">SS</span>':'<span style="width:20px;display:inline-block;flex-shrink:0;"></span>'}<span class="name">${escHtml(exName(e))}</span><span>${e.sets}×${e.reps}${e.weight?' · '+dispW(e.weight)+unitW():''}</span></div>`).join('')}</div></div>`).join('');
+  el.innerHTML=html;
+  if(S.user&&sb)loadPendingSharedTemplates();
 }
+
+async function loadPendingSharedTemplates(){
+  if(!sb||!S.user)return;
+  const{data}=await sb.from('shared_templates').select('id,template_name,template_data,sender_id,created_at').eq('receiver_id',S.user.id).eq('status','pending').order('created_at',{ascending:false});
+  if(!data)return;
+  // Fetch sender names
+  const senderIds=[...new Set(data.map(r=>r.sender_id))];
+  let names={};
+  if(senderIds.length){
+    const{data:profiles}=await sb.from('profiles').select('id,display_name,email').in('id',senderIds);
+    (profiles||[]).forEach(p=>{names[p.id]=p.display_name||p.email||'Friend';});
+  }
+  window._pendingSharedTpls=data.map(r=>({...r,sender_name:names[r.sender_id]||'Friend'}));
+  if(window._pendingSharedTpls.length){
+    const el=document.getElementById('templateList');
+    if(el)renderTemplates();
+  }
+}
+window.loadPendingSharedTemplates=loadPendingSharedTemplates;
+
+window.showShareTemplateModal=function(tplId){
+  const tp=S.templates.find(x=>x.id===tplId);
+  if(!tp||!sb||!S.user)return;
+  // Load accepted friends
+  Promise.all([
+    sb.from('friend_invitations').select('*').eq('inviter_id',S.user.id).eq('status','accepted'),
+    sb.from('friend_invitations').select('*').eq('invitee_id',S.user.id).eq('status','accepted'),
+  ]).then(([a,b])=>{
+    const byId=new Map([...(a.data||[]),...(b.data||[])].map(i=>[i.id,i]));
+    const friends=[...byId.values()];
+    const ov=document.createElement('div');ov.className='modal-overlay';
+    const friendList=friends.length?friends.map(inv=>{
+      const fName=S.user.id===inv.inviter_id?(inv.invitee_name||inv.invitee_email||'Friend'):(inv.inviter_name||inv.inviter_email||'Friend');
+      const fId=S.user.id===inv.inviter_id?inv.invitee_id:inv.inviter_id;
+      return`<div class="client-card" style="cursor:pointer;" onclick="doShareTemplate(${tplId},'${fId}','${escHtml(fName).replace(/'/g,"\\'")}',this)">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--accent);color:var(--btn-text);display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0;">${(fName[0]||'F').toUpperCase()}</div>
+        <div class="client-card-info"><div class="client-card-name">${escHtml(fName)}</div></div>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text3);flex-shrink:0;"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+      </div>`;
+    }).join(''):`<div class="empty-state">${tt({pl:'Brak znajomych.',en:'No friends yet.',de:'Noch keine Freunde.',es:'Sin amigos todavía.'})}</div>`;
+    ov.innerHTML=`<div class="modal"><div class="modal-handle"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div><div style="font-size:18px;font-weight:700;">${tt({pl:'Wyślij szablon',en:'Share template',de:'Vorlage teilen',es:'Compartir plantilla'})}</div>
+        <div style="font-size:13px;color:var(--text2);margin-top:2px;">${escHtml(tp.name)}</div></div>
+        <button onclick="this.closest('.modal-overlay').remove()" style="width:34px;height:34px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-size:22px;cursor:pointer;">✕</button>
+      </div>
+      <div style="max-height:60vh;overflow-y:auto;">${friendList}</div>
+    </div>`;
+    document.body.appendChild(ov);S.modal=ov;
+  });
+};
+
+window.doShareTemplate=async function(tplId,receiverId,receiverName,rowEl){
+  const tp=S.templates.find(x=>x.id===tplId);
+  if(!tp||!sb||!S.user)return;
+  if(rowEl){rowEl.style.opacity='0.5';rowEl.style.pointerEvents='none';}
+  const{error}=await sb.from('shared_templates').insert({
+    sender_id:S.user.id,
+    receiver_id:receiverId,
+    template_name:tp.name,
+    template_data:JSON.parse(JSON.stringify(tp)),
+  });
+  if(error){showSyncToast(error.message,'error');if(rowEl){rowEl.style.opacity='';rowEl.style.pointerEvents='';}return;}
+  closeModal();
+  showSyncToast(tt({pl:`Szablon wysłany do ${receiverName} ✓`,en:`Template sent to ${receiverName} ✓`,de:`Vorlage an ${receiverName} gesendet ✓`,es:`Plantilla enviada a ${receiverName} ✓`}),'success');
+  if(typeof sendPushToUser==='function')sendPushToUser(receiverId,{type:'shared_template',title:'BeeStrong',body:tt({pl:`${localStorage.getItem('bs-username')||'Someone'} udostępnił Ci szablon: ${tp.name}`,en:`${localStorage.getItem('bs-username')||'Someone'} shared a template with you: ${tp.name}`,de:`${localStorage.getItem('bs-username')||'Someone'} hat eine Vorlage geteilt: ${tp.name}`,es:`${localStorage.getItem('bs-username')||'Someone'} compartió una plantilla: ${tp.name}`}),url:'./?screen=templates'});
+};
+
+window.acceptSharedTemplate=async function(id){
+  const st=window._pendingSharedTpls?.find(x=>x.id===id);
+  if(!st||!sb)return;
+  const td=st.template_data;
+  const newTpl={...td,id:Date.now(),fromShared:true};
+  if(!isPro()&&S.templates.length>=3){showPaywall('template_limit');return;}
+  S.templates.push(newTpl);
+  saveAll();
+  if(typeof syncQueuedCloudChanges==='function')syncQueuedCloudChanges();
+  await sb.from('shared_templates').update({status:'accepted'}).eq('id',id);
+  window._pendingSharedTpls=(window._pendingSharedTpls||[]).filter(x=>x.id!==id);
+  renderTemplates();
+  showSyncToast(tt({pl:'Szablon zapisany ✓',en:'Template saved ✓',de:'Vorlage gespeichert ✓',es:'Plantilla guardada ✓'}),'success');
+};
+
+window.declineSharedTemplate=async function(id){
+  if(!sb)return;
+  await sb.from('shared_templates').update({status:'declined'}).eq('id',id);
+  window._pendingSharedTpls=(window._pendingSharedTpls||[]).filter(x=>x.id!==id);
+  renderTemplates();
+};
 
 function openNewTemplate(){
   // Free tier: max 3 templates
@@ -1463,6 +1568,18 @@ function renderSettings(){
       const isPush=row.key==='push';
       const isCoachVisible=row.key==='coachVisible';
       const isWorkoutView=row.key==='workoutView';
+      const isShareRecords=row.key==='shareRecords';
+      if(isShareRecords){
+        const isOn=!!S.shareRecords;
+        return`<div style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--bg2);transition:background 0.12s;${i>0?'border-top:1px solid var(--border);':''}">
+          <div style="width:36px;height:36px;border-radius:10px;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;color:var(--accent);flex-shrink:0;">${row.icon}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:14px;font-weight:600;">${row.label}</div>
+            <div style="font-size:12px;color:var(--text2);margin-top:2px;">${isOn?tt({pl:'Widoczne dla znajomych',en:'Visible to friends',de:'Für Freunde sichtbar',es:'Visible para amigos'}):tt({pl:'Prywatne',en:'Private',de:'Privat',es:'Privado'})}</div>
+          </div>
+          <div class="toggle-switch ${isOn?'on':''}" onclick="event.stopPropagation();toggleShareRecordsInline()"><div class="toggle-knob"></div></div>
+        </div>`;
+      }
       if(isLayout){
         const isOn=S.layoutMode==='minimal';
         return`<div style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--bg2);transition:background 0.12s;${i>0?'border-top:1px solid var(--border);':''}">
@@ -1597,6 +1714,7 @@ function renderSettings(){
     {key:'restTimer',label:tt({pl:'Czas odpoczynku',en:'Rest timer',de:'Pausenzeit',es:'Tiempo de descanso'}),value:`${S.defaultRest||90} s`,icon:svg(icon.timer),action:'openSettingsRestTimer'},
     {key:'workoutView',label:tt({pl:'Widok treningu',en:'Workout view',de:'Trainingsansicht',es:'Vista de entrenamiento'}),value:'',icon:svg(icon.layout),action:''},
     {key:'push',label:tt({pl:'Powiadomienia telefonu',en:'Phone notifications',de:'Telefon-Benachrichtigungen',es:'Notificaciones del teléfono'}),value:typeof pushStatusLabel==='function'?pushStatusLabel():tt({pl:'Niedostępne',en:'Unavailable',de:'Nicht verfügbar',es:'No disponible'}),icon:svg(icon.bell),action:'togglePushNotifications'},
+    {key:'shareRecords',label:tt({pl:'Udostępnij rekordy znajomym',en:'Share records with friends',de:'Rekorde mit Freunden teilen',es:'Compartir récords con amigos'}),value:'',icon:svg('<path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M5 4H3v3a4 4 0 0 0 4 4"/><path d="M19 4h2v3a4 4 0 0 1-4 4"/>'),action:''},
   ];
   if(S.user&&S.coachMode){
     preferenceRows.push({key:'coachVisible',label:tt({pl:'Widoczny dla PRO',en:'Visible to PRO users',de:'Für PRO sichtbar',es:'Visible para PRO'}),value:S.coachVisible!==false?tt({pl:'Pokazuj w dostępnych coachach',en:'Show in available coaches',de:'In verfügbaren Coaches anzeigen',es:'Mostrar en coaches disponibles'}):tt({pl:'Ukryty dla nowych klientów',en:'Hidden from new clients',de:'Für neue Klienten verborgen',es:'Oculto para nuevos clientes'}),icon:svg(icon.coachVisible),action:'toggleCoachVisibility'});
@@ -1764,6 +1882,14 @@ async function toggleCoachVisibility(){
   }
 }
 window.toggleCoachVisibility=toggleCoachVisibility;
+
+function toggleShareRecordsInline(){
+  S.shareRecords=!S.shareRecords;
+  saveAll();
+  if(sb&&S.user)sb.from('profiles').update({share_records:S.shareRecords}).eq('id',S.user.id).then(({error})=>{if(error)console.warn('share_records sync:',error);});
+  renderSettings();
+}
+window.toggleShareRecordsInline=toggleShareRecordsInline;
 
 function profileMeasurementsHtml(){
   return `${bodyMeasurementsHtml(true)}<button class="btn btn-primary" onclick="openAddMeasure()" style="width:100%;font-size:15px;padding:14px;margin-top:14px;">+ ${t('addMeasure')}</button>`;
